@@ -38,3 +38,18 @@ a:hover {
   border: 2px solid currentColor;
   font-size: 1.25rem;
 }
+
+.custom-header {
+  background-color: #457B9D;
+}
+
+.custom-sidebar {
+  background-color: #457B9D;
+}
+
+.custom-navlink:hover,
+.custom-navlink.active {
+  background-color: #E63946 !important;
+  border-color: #E63946 !important;
+  color: white !important;
+}

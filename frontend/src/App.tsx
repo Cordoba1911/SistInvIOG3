@@ -10,6 +10,7 @@ function App() {
       <div className="min-h-screen">
         <Routes>
           <Route path="/login" element={<AuthForm />} />
+           <Route path="/" element={<HomePage />} />
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="productos" element={<ProductTable />} />

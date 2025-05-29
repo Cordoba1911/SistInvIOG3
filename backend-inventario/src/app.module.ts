@@ -10,7 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     port: 3306,
     database: 'inventario',
     entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    synchronize: true
+    synchronize: false
   }), ArticulosModule],
 })
 export class AppModule { }

@@ -36,7 +36,7 @@ export default function ProductTable() {
             <th>Código</th>
             <th>Imagen</th>
             <th>Modelo</th>
-            <th>Producto</th>
+            <th>Artículo</th>
             <th>Fabricante</th>
             <th>Estado</th>
           </tr>

@@ -1,6 +1,6 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5fafd;
+  font-family: 'Poppins', sans-serif;
+  background-color: #A8DADC;
   color: #333;
 }
 
@@ -52,4 +52,15 @@ a:hover {
   background-color: #E63946 !important;
   border-color: #E63946 !important;
   color: white !important;
+}
+
+.custom-navlink {
+  color: #F1FAEE !important;
+  text-decoration: none;
+}
+
+.custom-navlink:hover,
+.custom-navlink.active {
+  background-color: #457B9D; 
+  color: #F1FAEE !important;
 }

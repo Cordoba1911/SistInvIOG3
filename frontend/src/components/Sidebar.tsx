@@ -13,14 +13,18 @@ export default function Sidebar() {
 
       {/* Menú desplegable */}
       <div className={`d-flex flex-column ${isOpen ? 'd-block' : 'd-none'}`}>
-        <NavLink to="/" className={({ isActive }) => `nav-link text-white p-2 rounded mb-1 ${isActive ? "bg-secondary" : ""}`}>Inicio</NavLink>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Compras</a>
-        <NavLink to="/productos" className={({ isActive }) => "nav-link text-white p-2 rounded mb-1 " + (isActive ? "bg-secondary" : "hover:bg-secondary")}>Productos</NavLink>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Fabricantes</a>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Contactos</a>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Facturación</a>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Reportes</a>
-        <a href="#" className="nav-link text-white hover:bg-secondary p-2 rounded mb-1">Configuración</a>
+        <NavLink to="/" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Inicio</NavLink>
+
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Compras</a>
+
+<NavLink to="/productos" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Artículos</NavLink>
+
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Fabricantes</a>
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Contactos</a>
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Facturación</a>
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Reportes</a>
+<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Configuración</a>
+
       </div>
     </aside>
   );

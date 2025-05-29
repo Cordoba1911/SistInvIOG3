@@ -64,3 +64,14 @@ a:hover {
   background-color: #457B9D; 
   color: #F1FAEE !important;
 }
+
+.register {
+  background-color: #457B9D;
+  color: #F1FAEE !important;
+}
+.register:hover,
+.register.active {
+  background-color: #E63946 !important;
+  border-color: #E63946 !important;
+  color: white !important;
+}

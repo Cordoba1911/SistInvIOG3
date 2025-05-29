@@ -5,19 +5,20 @@ export default function AuthForm() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
 
   return (
-    <div className="container d-flex justify-content-center align-items-center vh-100 position-relative">
-      {/* Botón para volver al inicio */}
-      <Link 
-        to="/" 
-        className="btn btn-outline-primary position-absolute" 
-        style={{ top: '20px', right: '20px' }}
-      >
-        ← Inicio
-      </Link>
+    <div className="container d-flex justify-content-center align-items-center vh-100">
+      <div className="card shadow p-4 position-relative" style={{ width: '100%', maxWidth: '400px' }}>
+        
+        {/* Link para volver al inicio */}
+        <Link 
+          to="/" 
+          className="position-absolute text-decoration-none text-muted"
+          style={{ top: '10px', right: '10px', fontSize: '0.9rem' }}
+        >
+          Volver al inicio
+        </Link>
 
-      <div className="card shadow p-4" style={{ width: '100%', maxWidth: '400px' }}>
         {/* Tabs */}
-        <ul className="nav nav-tabs mb-4">
+        <ul className="nav nav-tabs mb-4 mt-4">
           <li className="nav-item">
             <button
               className={`nav-link ${activeTab === 'login' ? 'active' : ''}`}

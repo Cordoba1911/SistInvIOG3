@@ -1,16 +1,27 @@
 import { Module } from '@nestjs/common';
-import { ArticulosModule } from './articulos/articulos.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ArticulosModule } from './articulos/articulos.module';
+
 @Module({
-  imports: [TypeOrmModule.forRoot({
-    type: 'mysql',
-    username: 'root',
-    password: 'root',
-    host: 'localhost',
-    port: 3306,
-    database: 'inventario',
-    entities: [__dirname + '/**/*.entity{.ts,.js}'],
-    synchronize: false
-  }), ArticulosModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // hace que el módulo esté disponible globalmente
+    }),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'mysql',
+        host: config.get<string>('DB_HOST'),
+        port: config.get<number>('DB_PORT'),
+        username: config.get<string>('DB_USERNAME'),
+        password: config.get<string>('DB_PASSWORD'),
+        database: config.get<string>('DB_NAME'),
+        entities: [__dirname + '/**/*.entity{.ts,.js}'],
+        synchronize: false,
+      }),
+    }),
+    ArticulosModule,
+  ],
 })
-export class AppModule { }
+export class AppModule {}

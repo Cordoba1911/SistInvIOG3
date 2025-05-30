@@ -1,22 +1,24 @@
-import { useState } from 'react';
-import { Form, Button, InputGroup } from 'react-bootstrap';
-import BuscarProductosModal from '../../components/BuscarProductosModal';
+import { useState } from "react";
+import { Form, Button, InputGroup } from "react-bootstrap";
+import BuscarProductosModal from "../../components/BuscarProductosModal";
 
 export default function NuevaOrden() {
-  const [fecha, setFecha] = useState('2025-05-29');
-  const [numeroCompra, setNumeroCompra] = useState('23141');
-  const [proveedor, setProveedor] = useState('');
+  const [fecha, setFecha] = useState("2025-05-29");
+  const [numeroCompra, setNumeroCompra] = useState("23141");
+  const [proveedor, setProveedor] = useState("");
   // Estado para abrir/cerrar modal
-const [mostrarModal, setMostrarModal] = useState(false);
+  const [mostrarModal, setMostrarModal] = useState(false);
 
-const handleAgregarProducto = (producto: any) => {
-  console.log('Agregar producto:', producto);
-  // Aquí podés agregar el producto a tu lista de compra
-  setMostrarModal(false);
-};
+  const handleAgregarProducto = (producto: any) => {
+    console.log("Agregar producto:", producto);
+    // Aquí podés agregar el producto a tu lista de compra
+    setMostrarModal(false);
+  };
   return (
     <div className="container mt-4">
-      <h5><i className="bi bi-pencil-square me-2"></i>Agregar nueva compra</h5>
+      <h5>
+        <i className="bi bi-pencil-square me-2"></i>Agregar nueva compra
+      </h5>
       <hr />
 
       <div className="border p-3 rounded bg-white shadow-sm">
@@ -26,7 +28,10 @@ const handleAgregarProducto = (producto: any) => {
           <div className="col-md-4">
             <label className="form-label fw-bold">Proveedor</label>
             <InputGroup>
-              <Form.Select value={proveedor} onChange={(e) => setProveedor(e.target.value)}>
+              <Form.Select
+                value={proveedor}
+                onChange={(e) => setProveedor(e.target.value)}
+              >
                 <option>Selecciona Proveedor</option>
                 <option value="1">Proveedor 1</option>
                 <option value="2">Proveedor 2</option>
@@ -38,8 +43,14 @@ const handleAgregarProducto = (producto: any) => {
           <div className="col-md-4">
             <label className="form-label fw-bold">Fecha</label>
             <InputGroup>
-              <Form.Control type="date" value={fecha} onChange={(e) => setFecha(e.target.value)} />
-              <InputGroup.Text><i className="bi bi-calendar" /></InputGroup.Text>
+              <Form.Control
+                type="date"
+                value={fecha}
+                onChange={(e) => setFecha(e.target.value)}
+              />
+              <InputGroup.Text>
+                <i className="bi bi-calendar" />
+              </InputGroup.Text>
             </InputGroup>
           </div>
 
@@ -51,14 +62,14 @@ const handleAgregarProducto = (producto: any) => {
 
         <div className="text-end mb-3">
           <Button variant="info" onClick={() => setMostrarModal(true)}>
-  <i className="bi bi-search"></i> Buscar productos
-</Button>
+            <i className="bi bi-search"></i> Buscar productos
+          </Button>
 
-<BuscarProductosModal
-  show={mostrarModal}
-  onClose={() => setMostrarModal(false)}
-  onAgregar={handleAgregarProducto}
-/>
+          <BuscarProductosModal
+            show={mostrarModal}
+            onClose={() => setMostrarModal(false)}
+            onAgregar={handleAgregarProducto}
+          />
         </div>
 
         {/* Tabla de productos */}
@@ -91,7 +102,9 @@ const handleAgregarProducto = (producto: any) => {
                 <td>0.00</td>
               </tr>
               <tr>
-                <td colSpan={4} className="text-end fw-bold">TOTAL $</td>
+                <td colSpan={4} className="text-end fw-bold">
+                  TOTAL $
+                </td>
                 <td>0.00</td>
               </tr>
             </tbody>

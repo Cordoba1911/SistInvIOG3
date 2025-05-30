@@ -5,7 +5,7 @@ export enum ModeloInventario {
   intervalo_fijo = 'Intervalo Fijo',
 }
 
-@Entity({name: 'Articulos'})
+@Entity({ name: 'Articulos' })
 export class Articulo {
   @PrimaryGeneratedColumn()
   id: number;

@@ -4,12 +4,10 @@ import { ArticulosService } from './articulos.service';
 
 @Controller('articulos')
 export class ArticulosController {
+  constructor(private articulosService: ArticulosService) {}
 
-    constructor(private articulosService: ArticulosService) { }
-
-    @Post()
-    createArticulo(@Body() newArticulo: CreateArticuloDto) {
-        return this.articulosService.createArticulo(newArticulo)
-    }
-
+  @Post()
+  createArticulo(@Body() newArticulo: CreateArticuloDto) {
+    return this.articulosService.createArticulo(newArticulo);
+  }
 }

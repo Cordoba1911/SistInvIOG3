@@ -3,11 +3,14 @@ import DashboardLayout from './components/DashboardLayout';
 import AuthForm from './components/AuthForm';
 import ProductTable from './components/ProductTable';
 import HomePage from './pages/HomePage';
-import './App.css'; // Asegúrate de tener estilos básicos
+import './App.css'; 
 import ArticulosForm from './pages/ABM Forms/ArticulosForm';
 import ProveedoresForm from './pages/ABM Forms/ProveedoresForm';
 import OrdenForm from './pages/ABM Forms/OrdenForm';
 import VentasForm from './pages/ABM Forms/VentasForm';
+import OrdenList from './pages/OrdenCompra/OrdenList';
+import NuevaOrden from './pages/OrdenCompra/NuevaOrden';
+import ProveedoresList from './pages/Proveedores/ProveedoresList';
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="productos" element={<ProductTable />} />
+            <Route path="/ordenes" element={<OrdenList />} />
+            <Route path="/ordenes/nueva" element={<NuevaOrden />} />
+            <Route path="/proveedores" element={<ProveedoresList />} />
             <Route path="alta-articulo" element={<ArticulosForm />} />
             <Route path="alta-proveedor" element={<ProveedoresForm />} />
             <Route path="alta-orden" element={<OrdenForm />} />

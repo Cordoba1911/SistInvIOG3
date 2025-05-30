@@ -14,7 +14,7 @@ export class Proveedor {
   @Column({ nullable: true })
   email: string;
 
-  @Column({ nullable: true })
+  @Column({ default: true })
   estado: boolean;
 
   @Column({ nullable: true, type: 'datetime' })

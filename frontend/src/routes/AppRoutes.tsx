@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import ProveedoresForm from '../pages/ABM Forms/ProveedoresForm';
+import ProveedoresForm from '../pages/Proveedores/ProveedoresForm';
 import ArticulosForm from '../pages/ABM Forms/ArticulosForm';
 import OrdenForm from '../pages/ABM Forms/OrdenForm';
 import VentasForm from '../pages/ABM Forms/VentasForm';

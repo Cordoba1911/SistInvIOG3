@@ -1,4 +1,4 @@
-export class CreateArticuloDto{
-    codigo: number
-    descripcion: string
+export class CreateArticuloDto {
+  codigo: number;
+  descripcion: string;
 }

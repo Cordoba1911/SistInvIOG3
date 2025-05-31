@@ -9,10 +9,26 @@ export class ArticulosService {
   constructor(
     @InjectRepository(Articulo)
     private articuloRepository: Repository<Articulo>,
-  ) {}
+  ) { }
 
   createArticulo(articulo: CreateArticuloDto) {
     const newArticulo = this.articuloRepository.create(articulo);
     return this.articuloRepository.save(newArticulo);
+  }
+
+  getArticulos() {
+    return this.articuloRepository.find();
+  }
+
+  getArticulo(id: number) {
+    return this.articuloRepository.findOne({
+      where: {
+        id
+      }
+    });
+  }
+
+  deleteArticulo(id: number) {
+    return this.articuloRepository.delete({id});
   }
 }

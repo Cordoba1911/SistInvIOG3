@@ -31,14 +31,13 @@ export default function Sidebar() {
   </Dropdown.Menu>
 </Dropdown>
 
-<NavLink to="/productos" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Artículos</NavLink>
-<NavLink to="/proveedores" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Proveedores</NavLink>
+<NavLink to="articulos/*" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Artículos</NavLink>
+<NavLink to="proveedores/*" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Proveedores</NavLink>
+<NavLink to="ventas/*" className={({ isActive }) => `nav-link p-2 rounded mb-1 custom-navlink ${isActive ? "bg-secondary" : ""}`}>Ventas</NavLink>
 
-<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Contactos</a>
-<a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Facturación</a>
 <a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Reportes</a>
 <a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">Configuración</a>
-
+ventas/*
       </div>
     </aside>
   );

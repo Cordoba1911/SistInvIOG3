@@ -1,4 +1,13 @@
 import Form from '../../components/Form';
+import type { OrdenCompra } from '../../routes/OrdenCompraRoutes';
+import { useNavigate } from 'react-router-dom';
+
+interface PropsOrdenForm {
+  // Definición de las propiedades del componente OrdenForm
+  onAlta: (datos: OrdenCompra) => void;
+}
+
+const OrdenForm = ({onAlta}: PropsOrdenForm) => {
 
     // Estado inicial del Formulario
     const campos = [ 
@@ -26,10 +35,26 @@ import Form from '../../components/Form';
     fecha_finalizacion: '',
   };
 
-const OrdenForm = () =>{
-  //Enviar el formulario (Por ahora solo muestra los datos en consola)
+const navigate = useNavigate();
+
+  // Función para manejar el envío del formulario
   const manejarEnvio = (datos: Record<string, string>) => {
-    console.log('Datos de la Orden:', datos);
+    // Llama a la función onAlta con los datos del formulario
+    // Asegúrate de que los datos coincidan con OrdenCompraSinID
+    onAlta({
+      id: '', // Valor temporal, el backend debería asignar el id real
+      nombre: datos.nombre,
+      proveedor: datos.proveedor,
+      cantidad: parseInt(datos.cantidad, 10) || 0, // Asegura que sea un número
+      estado: datos.estado as 'Pendiente' | 'Enviada' | 'Finalizada' | 'Cancelada',
+      fecha_creacion: datos.fecha_creacion,
+      fecha_envio: datos.fecha_envio || undefined,
+      fecha_finalizacion: datos.fecha_finalizacion || undefined,
+      activo: true // O el valor por defecto que corresponda
+    });
+
+    // Redirige al usuario a la lista de órdenes después de guardar
+    navigate('/orden-compra/admin-orden-compra'); // Redirige a la lista de órdenes
   };
 
   return (
@@ -37,8 +62,8 @@ const OrdenForm = () =>{
       campos={campos}
       valoresIniciales={valoresIniciales}
       onSubmit={manejarEnvio}
-      titulo="Orden Articulo"
-      textoBoton="Enviar"
+      titulo="Agregar Compra"
+      textoBoton="Guardar Compra"
     />
   );
 }

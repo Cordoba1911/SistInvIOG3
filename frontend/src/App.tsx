@@ -6,8 +6,7 @@ import './App.css';
 import ProveedoresRouter from './routes/ProveedoresRouter';
 import ArticulosRouter from './routes/ArticulosRoutes';
 import VentasRouter from './routes/VentasRoute';
-
-
+import OrdenCompraRouter from './routes/OrdenCompraRoutes'; 
 
 function App() {
   return (
@@ -17,14 +16,14 @@ function App() {
           <Route path="/login" element={<AuthForm />} />
           
           <Route path="/" element={<DashboardLayout />}>
-
-          <Route index element={<HomePage />} />
-          <Route path="proveedores/*" element={<ProveedoresRouter />} />
-          <Route path="articulos/*" element={<ArticulosRouter />} />
-          <Route path="ventas/*" element={<VentasRouter />} />
             <Route index element={<HomePage />} />
-            {/* Otras rutas protegidas */}
+            <Route path="proveedores/*" element={<ProveedoresRouter />} />
+            <Route path="articulos/*" element={<ArticulosRouter />} />
+            <Route path="ventas/*" element={<VentasRouter />} />
+            <Route path="ordenes/*" element={<OrdenCompraRouter />} /> 
           </Route>
+
+          {/* Ruta comodín */}
           <Route path="*" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
           </Route>

@@ -1,4 +1,3 @@
-// src/models/OrdenCompra.ts
 
 export type EstadoOrden = "Pendiente" | "Enviada" | "Finalizada" | "Cancelada";
 

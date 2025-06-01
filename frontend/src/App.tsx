@@ -8,7 +8,7 @@ import ArticulosRouter from './routes/ArticulosRoutes';
 import VentasRouter from './routes/VentasRoute';
 import OrdenCompraRouter from './routes/OrdenCompraRoutes'; 
 
-function App() {
+function App() { 
   return (
     <BrowserRouter>
       <div className="min-h-screen">

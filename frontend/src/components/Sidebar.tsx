@@ -60,17 +60,18 @@ export default function Sidebar() {
         </Dropdown>
 
         <NavLink
-          to="articulos/*"
-          className={({ isActive }) =>
-            `nav-link p-2 rounded mb-1 custom-navlink ${
-              isActive ? "bg-secondary" : ""
-            }`
-          }
-        >
-          Artículos
-        </NavLink>
+  to="articulos"
+  className={({ isActive }) =>
+    `nav-link p-2 rounded mb-1 custom-navlink ${
+      isActive ? "bg-secondary" : ""
+    }`
+  }
+>
+  Artículos
+</NavLink>
+
         <NavLink
-          to="proveedores/*"
+          to="proveedores"
           className={({ isActive }) =>
             `nav-link p-2 rounded mb-1 custom-navlink ${
               isActive ? "bg-secondary" : ""
@@ -80,7 +81,7 @@ export default function Sidebar() {
           Proveedores
         </NavLink>
         <NavLink
-          to="ventas/*"
+          to="ventas"
           className={({ isActive }) =>
             `nav-link p-2 rounded mb-1 custom-navlink ${
               isActive ? "bg-secondary" : ""
@@ -89,10 +90,6 @@ export default function Sidebar() {
         >
           Ventas
         </NavLink>
-
-        <a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">
-          Reportes
-        </a>
         <a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">
           Configuración
         </a>

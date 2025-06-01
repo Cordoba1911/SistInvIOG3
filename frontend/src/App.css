@@ -75,3 +75,7 @@ a:hover {
   border-color: #E63946 !important;
   color: white !important;
 }
+
+.bg-purple {
+  background-color: #6f42c1;
+}

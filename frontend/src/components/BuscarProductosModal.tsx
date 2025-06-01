@@ -53,7 +53,7 @@ export default function BuscarProductosModal({ show, onClose, onAgregar }: Props
             <tr>
               <th>Código</th>
               <th>Producto</th>
-              <th>Fabricante</th>
+              <th>Proveedor</th>
               <th>Cant.</th>
               <th>Costo</th>
               <th></th>

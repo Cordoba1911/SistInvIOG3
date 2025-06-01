@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import AuthForm from './components/AuthForm';
-import ProductTable from './components/ProductTable';
+import ProductTable from './pages/Articulos/ProductTable';
 import HomePage from './pages/HomePage';
 <<<<<<< HEAD
 import './App.css'; // Asegúrate de tener estilos básicos

@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
 import AuthForm from './components/AuthForm';
-import ProductTable from './components/ProductTable';
 import HomePage from './pages/HomePage';
 import './App.css'; // Asegúrate de tener estilos básicos
 import ProveedoresRouter from './routes/ProveedoresRouter';
 import ArticulosRouter from './routes/ArticulosRoutes';
+import VentasRouter from './routes/VentasRoute';
 
 
 
@@ -19,11 +19,10 @@ function App() {
           <Route path="/" element={<DashboardLayout />}>
 
           <Route index element={<HomePage />} />
-          <Route path="productos" element={<ProductTable />} />
           <Route path="proveedores/*" element={<ProveedoresRouter />} />
           <Route path="articulos/*" element={<ArticulosRouter />} />
+          <Route path="ventas/*" element={<VentasRouter />} />
             <Route index element={<HomePage />} />
-            <Route path="productos" element={<ProductTable />} />
             {/* Otras rutas protegidas */}
           </Route>
           <Route path="*" element={<DashboardLayout />}>

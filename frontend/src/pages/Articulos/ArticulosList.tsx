@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Form from '../../components/Form';
+import EntidadList from '../../components/EntityList';
 import type { Articulo } from '../../routes/ArticulosRoutes';
 
 interface PropsArticulosList {
@@ -20,6 +21,17 @@ const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) =>
     { nombre: 'categoria', etiqueta: 'Categoría' },
     { nombre: 'proveedor', etiqueta: 'Proveedor' },
     { nombre: 'imagen', etiqueta: 'Imagen', tipo: 'file' },
+  ];
+
+  // Las columnas para la lista de artículos
+  const columnas = [
+    { campo: 'nombre', etiqueta: 'Nombre' },
+    { campo: 'precio', etiqueta: 'Precio' },
+    { campo: 'cantidad', etiqueta: 'Cantidad' },
+    { campo: 'descripcion', etiqueta: 'Descripción' },
+    { campo: 'categoria', etiqueta: 'Categoría' },
+    { campo: 'proveedor', etiqueta: 'Proveedor' },
+    { campo: 'imagen', etiqueta: 'Imagen' }, // Aquí podrías mostrar una miniatura de la imagen
   ];
 
 // Aquí puedes definir los valores iniciales o el estado de los artículos
@@ -70,23 +82,16 @@ const manejarEditar = (id: string) => {
         titulo={articuloSeleccionado ? "Editar Articulo" : "Editar Nombre" }
         textoBoton="Guardar"
       />
-
-      <h3 className="mt-5">Lista de Articulos</h3>
-      <ul className="list-group">
-        {articulo.map((p) => (
-          <li key={p.id} className="list-group-item d-flex justify-content-between align-items-center">
-            <span style={{ textDecoration: p.activo ? 'none' : 'line-through' }}>
-              {p.nombre}
-            </span>
-            <div>
-              <button className="btn btn-sm btn-outline-primary me-2" onClick={() => manejarEditar(p.id)}>Editar</button>
-              <button className="btn btn-sm btn-outline-danger" onClick={() => onBaja(p.id)}>Eliminar</button>
-            </div>
-          </li>
-        ))}
-      </ul>
+      <EntidadList
+        titulo="Artículos"
+        datos={articulo}
+        columnas={columnas}
+        onEditar={manejarEditar}
+        onEliminar={onBaja}
+        campoId="id"
+      />
     </div>
   );
- };
+};
 
 export default ArticulosList;

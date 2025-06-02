@@ -59,16 +59,31 @@ export default function Sidebar() {
           </Dropdown.Menu>
         </Dropdown>
 
-        <NavLink
-  to="articulos"
-  className={({ isActive }) =>
-    `nav-link p-2 rounded mb-1 custom-navlink ${
-      isActive ? "bg-secondary" : ""
-    }`
-  }
->
-  Artículos
-</NavLink>
+        <Dropdown className="mb-1">
+      <Dropdown.Toggle
+        variant="link"
+        className="nav-link p-2 rounded custom-navlink"
+      >
+        Artículos
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/nuevo"
+          className={isActive("/articulos/nuevo") ? "bg-secondary" : ""}
+        >
+          Agregar artículos
+        </Dropdown.Item>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/admin-articulos"
+          className={isActive("/articulos/admin-articulos") ? "bg-secondary" : ""}
+        >
+          Lista de artículos
+        </Dropdown.Item>
+      </Dropdown.Menu>
+    </Dropdown>
 
         <NavLink
           to="proveedores"

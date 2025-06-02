@@ -21,7 +21,7 @@ export class ArticulosService {
     })
 
     if (articuloFound) {
-      return new HttpException('Codigo repetido', HttpStatus.CONFLICT);
+      return new HttpException('El articulo ya existe', HttpStatus.CONFLICT);
     }
 
     const newArticulo = this.articuloRepository.create(articulo);

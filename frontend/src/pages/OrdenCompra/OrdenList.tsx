@@ -2,7 +2,6 @@ import { useState } from "react";
 import Form from "../../components/Form";
 import EntidadList from "../../components/EntityList";
 import type { OrdenCompra } from "../../routes/OrdenCompraRoutes";
-import { Button } from "react-bootstrap";
 
 interface PropsOrdenCompraList {
   ordenes: OrdenCompra[];
@@ -81,41 +80,6 @@ const OrdenCompraList = ({ ordenes, onModificar, onBaja }: PropsOrdenCompraList)
     if (ordenEncontrada) setOrdenSeleccionada(ordenEncontrada);
   };
 
-  // Función para cambiar orden de estado
-  const cambiarEstado = (id: string, nuevoEstado: OrdenCompra["estado"]) => {
-  const orden = ordenes.find((o) => o.id === id);
-  if (!orden) return;
-
-  // Reglas de transición de estado
-  if (orden.estado === "Pendiente") {
-    if (nuevoEstado === "Cancelada") {
-      if (!confirm("¿Estás seguro de cancelar esta orden?")) return;
-    }
-    if (nuevoEstado === "Enviada") {
-      onModificar(id, {
-        estado: "Enviada",
-        fecha_envio: new Date().toISOString().split("T")[0],
-      });
-      return;
-    }
-  }
-
-  if (orden.estado === "Enviada" && nuevoEstado === "Finalizada") {
-    // ⚠️ Lógica de inventario y punto de pedido: se asume backend
-    onModificar(id, {
-      estado: "Finalizada",
-      fecha_finalizacion: new Date().toISOString().split("T")[0],
-    });
-
-    return;
-  }
-
-  if (nuevoEstado === "Cancelada") {
-    onModificar(id, { estado: "Cancelada" });
-  }
-};
-
-
   return (
     <div className="container mt-4">
       <Form
@@ -126,33 +90,13 @@ const OrdenCompraList = ({ ordenes, onModificar, onBaja }: PropsOrdenCompraList)
         textoBoton="Guardar"
       />
       <EntidadList
-  titulo="Órdenes de Compra"
-  datos={ordenes}
-  columnas={columnas}
-  onEditar={manejarEditar}
-  onEliminar={onBaja}
-  campoId="id"
-  accionesPersonalizadas={(orden) => (
-    <div className="d-flex gap-1 justify-content-center flex-wrap">
-      {orden.estado === "Pendiente" && (
-        <>
-          <Button variant="warning" size="sm" onClick={() => cambiarEstado(orden.id, "Enviada")}>
-            Enviar
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => cambiarEstado(orden.id, "Cancelada")}>
-            Cancelar
-          </Button>
-        </>
-      )}
-      {orden.estado === "Enviada" && (
-        <Button variant="success" size="sm" onClick={() => cambiarEstado(orden.id, "Finalizada")}>
-          Finalizar
-        </Button>
-      )}
-    </div>
-  )}
-/>
-
+        titulo="Órdenes de Compra"
+        datos={ordenes}
+        columnas={columnas}
+        onEditar={manejarEditar}
+        onEliminar={onBaja}
+        campoId="id"
+      />
     </div>
   );
 }

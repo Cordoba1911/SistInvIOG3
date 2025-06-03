@@ -70,7 +70,7 @@ export default function Sidebar() {
       <Dropdown.Menu>
         <Dropdown.Item
           as={Link}
-          to="/articulos/nuevo"
+          to="/articulos/articulos"
           className={isActive("/articulos/nuevo") ? "bg-secondary" : ""}
         >
           Agregar artículos
@@ -84,7 +84,7 @@ export default function Sidebar() {
         </Dropdown.Item>
       </Dropdown.Menu>
     </Dropdown>
-
+        
         <NavLink
           to="proveedores"
           className={({ isActive }) =>
@@ -105,9 +105,16 @@ export default function Sidebar() {
         >
           Ventas
         </NavLink>
-        <a href="#" className="nav-link p-2 rounded mb-1 custom-navlink">
-          Configuración
-        </a>
+        <NavLink
+          to="/modelos"
+          className={({ isActive }) =>
+            `nav-link p-2 rounded mb-1 custom-navlink ${
+              isActive ? "bg-secondary" : ""
+            }`
+          }
+        >
+          Modelos
+        </NavLink>
       </div>
     </aside>
   );

@@ -1,4 +1,3 @@
-// src/components/EntityList.tsx
 import { Table, Button, Badge, Image } from 'react-bootstrap';
 
 interface Columna {

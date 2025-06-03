@@ -7,57 +7,48 @@ interface PropsArticulosList {
   articulo: Articulo[];
   onModificar: (id: string, nuevosDatos: Partial<Articulo>) => void;
   onBaja: (id: string) => void;
-  modelosInventario: string[];
 }
 
-const ArticulosList = ({
-  articulo,
-  onModificar,
-  onBaja,
-  modelosInventario,
-}: PropsArticulosList) => {
+const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) => {
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null);
 
+  // Aquí puedes definir los campos que quieres mostrar en la lista de artículos
   const campos = [
     { nombre: 'nombre', etiqueta: 'Nombre' },
-    { nombre: 'precio', etiqueta: 'Precio', tipo: 'number' },
-    { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'number' },
-    { nombre: 'descripcion', etiqueta: 'Descripción', tipo: 'textarea' },
+    { nombre: 'precio', etiqueta: 'Precio' },
+    { nombre: 'cantidad', etiqueta: 'Cantidad' },
+    { nombre: 'descripcion', etiqueta: 'Descripción' },
     { nombre: 'categoria', etiqueta: 'Categoría' },
     { nombre: 'proveedor', etiqueta: 'Proveedor' },
     { nombre: 'imagen', etiqueta: 'Imagen', tipo: 'file' },
-    {
-      nombre: 'modeloInventario',
-      etiqueta: 'Modelo de Inventario',
-      tipo: 'select',
-      opciones: modelosInventario,
-      requerido: true,
-    },
   ];
 
-  const valoresIniciales = articuloSeleccionado
-    ? {
-        nombre: articuloSeleccionado.nombre,
-        precio: articuloSeleccionado.precio.toString(),
-        cantidad: articuloSeleccionado.cantidad.toString(),
-        descripcion: articuloSeleccionado.descripcion,
-        categoria: articuloSeleccionado.categoria,
-        proveedor: articuloSeleccionado.proveedor,
-        imagen: articuloSeleccionado.imagen || '',
-        modeloInventario: articuloSeleccionado.modeloInventario,
-      }
-    : {
-        nombre: '',
-        precio: '',
-        cantidad: '',
-        descripcion: '',
-        categoria: '',
-        proveedor: '',
-        imagen: '',
-        modeloInventario: modelosInventario[0] || '',
-      };
+  // Las columnas para la lista de artículos
+  const columnas = [
+    { campo: 'nombre', etiqueta: 'Nombre' },
+    { campo: 'precio', etiqueta: 'Precio' },
+    { campo: 'cantidad', etiqueta: 'Cantidad' },
+    { campo: 'descripcion', etiqueta: 'Descripción' },
+    { campo: 'categoria', etiqueta: 'Categoría' },
+    { campo: 'proveedor', etiqueta: 'Proveedor' },
+    { campo: 'imagen', etiqueta: 'Imagen' }, // Aquí podrías mostrar una miniatura de la imagen
+  ];
 
-  const manejarEnvio = (datos: Record<string, string>) => {
+// Aquí puedes definir los valores iniciales o el estado de los artículos
+const valoresIniciales = articuloSeleccionado
+  ? { nombre: articuloSeleccionado.nombre,
+    precio: articuloSeleccionado.precio.toString(),
+    cantidad: articuloSeleccionado.cantidad.toString(),
+    descripcion: articuloSeleccionado.descripcion,
+    categoria: articuloSeleccionado.categoria,
+    proveedor: articuloSeleccionado.proveedor,
+    imagen: articuloSeleccionado.imagen || '' }
+  : { nombre: '', precio: '', cantidad: '', descripcion: '', categoria: '', proveedor: '', imagen: '' };
+
+// Función para manejar el envío del formulario
+const manejarEnvio = (datos: Record<string, string>) => {
+    // Si hay un artículo seleccionado, lo modificamos
+    // Si no, podrías manejar la creación de un nuevo artículo
     if (articuloSeleccionado) {
       onModificar(articuloSeleccionado.id, {
         nombre: datos.nombre,
@@ -66,41 +57,31 @@ const ArticulosList = ({
         descripcion: datos.descripcion,
         categoria: datos.categoria,
         proveedor: datos.proveedor,
-        imagen: datos.imagen,
-        modeloInventario: datos.modeloInventario,
+        imagen: datos.imagen, // Aquí deberías manejar la subida de archivos
       });
-      setArticuloSeleccionado(null);
     }
-  };
+    // Limpia el formulario después de guardar
+    setArticuloSeleccionado(null); 
+};
 
-  const manejarEditar = (id: string) => {
-    const encontrado = articulo.find((a) => a.id === id);
-    if (encontrado) setArticuloSeleccionado(encontrado);
-  };
+// Función para manejar la edición de un artículo
+const manejarEditar = (id: string) => {
+    const articuloEncontrado = articulo.find((a) => a.id === id);
+    // Si encontramos el artículo, lo establecemos como seleccionado
+    // Esto permitirá que el formulario se llene con los datos del artículo seleccionado
+    if (articuloEncontrado) setArticuloSeleccionado(articuloEncontrado);
+};
 
-  const columnas = [
-    { campo: 'nombre', etiqueta: 'Nombre' },
-    { campo: 'precio', etiqueta: 'Precio' },
-    { campo: 'cantidad', etiqueta: 'Cantidad' },
-    { campo: 'descripcion', etiqueta: 'Descripción' },
-    { campo: 'categoria', etiqueta: 'Categoría' },
-    { campo: 'proveedor', etiqueta: 'Proveedor' },
-    { campo: 'imagen', etiqueta: 'Imagen' },
-    { campo: 'modeloInventario', etiqueta: 'Modelo de Inventario' },
-  ];
-
+// Renderiza el formulario y la lista de artículos
   return (
     <div className="container mt-4">
-      {articuloSeleccionado && (
-        <Form
-          campos={campos}
-          valoresIniciales={valoresIniciales}
-          onSubmit={manejarEnvio}
-          titulo="Editar Artículo"
-          textoBoton="Guardar"
-        />
-      )}
-
+      <Form
+        campos={campos}
+        valoresIniciales={valoresIniciales}
+        onSubmit={manejarEnvio}
+        titulo={articuloSeleccionado ? "Editar Articulo" : "Editar Nombre" }
+        textoBoton="Guardar"
+      />
       <EntidadList
         titulo="Artículos"
         datos={articulo}

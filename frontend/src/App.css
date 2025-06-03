@@ -1,7 +1,7 @@
 body {
   font-family: 'Poppins', sans-serif;
   background-color: #A8DADC;
-  color: #333;
+  color: #1D3557;
 }
 
 header {
@@ -40,11 +40,12 @@ a:hover {
 }
 
 .custom-header {
-  background-color: #457B9D;
+  background-color: #1D3557;
 }
 
 .custom-sidebar {
-  background-color: #457B9D;
+  background-color: #1D3557;
+  color: #F1FAEE
 }
 
 .custom-navlink:hover,
@@ -57,6 +58,8 @@ a:hover {
 .custom-navlink {
   color: #F1FAEE !important;
   text-decoration: none;
+  width: 150px;
+  text-align: center;
 }
 
 .custom-navlink:hover,
@@ -79,3 +82,4 @@ a:hover {
 .bg-purple {
   background-color: #6f42c1;
 }
+

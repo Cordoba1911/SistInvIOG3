@@ -86,7 +86,7 @@ export default function Sidebar() {
     </Dropdown>
         
         <NavLink
-          to="proveedores"
+          to="/proveedores/admin-proveedores"
           className={({ isActive }) =>
             `nav-link p-2 rounded mb-1 custom-navlink ${
               isActive ? "bg-secondary" : ""

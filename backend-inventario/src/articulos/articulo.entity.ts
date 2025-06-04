@@ -69,9 +69,6 @@ export class Articulo {
   @Column({ type: 'datetime', nullable: true })
   fecha_baja: Date;
 
-  @Column({ nullable: true })
-  proveedor_predeterminado_id: string;
-
   @OneToOne(() => Proveedor)
   @JoinColumn({ name: 'proveedor_predeterminado_id' })
   proveedor_predeterminado: Proveedor;

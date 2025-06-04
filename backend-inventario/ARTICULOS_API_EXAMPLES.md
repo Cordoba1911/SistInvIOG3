@@ -68,7 +68,34 @@
 
 **Respuesta exitosa (200):** (mismo formato que crear artículo)
 
-### 4. Actualizar Artículo (PATCH /articulos/:id)
+### 4. Verificar Posibilidad de Baja (GET /articulos/:id/verificar-baja)
+
+**Endpoint:** `GET http://localhost:3000/articulos/1/verificar-baja`
+
+**Respuesta cuando PUEDE ser dado de baja (200):**
+```json
+{
+  "puedeSerDadoDeBaja": true,
+  "impedimentos": [],
+  "stockActual": 0,
+  "ordenesActivas": 0
+}
+```
+
+**Respuesta cuando NO PUEDE ser dado de baja (200):**
+```json
+{
+  "puedeSerDadoDeBaja": false,
+  "impedimentos": [
+    "El artículo tiene 25 unidades en stock",
+    "El artículo tiene 2 órdenes de compra activas: ID: 101 (pendiente), ID: 102 (enviada)"
+  ],
+  "stockActual": 25,
+  "ordenesActivas": 2
+}
+```
+
+### 5. Actualizar Artículo (PATCH /articulos/:id)
 
 **Endpoint:** `PATCH http://localhost:3000/articulos/1`
 
@@ -83,18 +110,38 @@
 
 **Respuesta exitosa (200):** (artículo actualizado completo)
 
-### 5. Eliminar Artículo (DELETE /articulos/:id)
+### 6. Eliminar Artículo con Validaciones (DELETE /articulos/:id)
 
 **Endpoint:** `DELETE http://localhost:3000/articulos/1`
 
 **Respuesta exitosa (200):**
 ```json
 {
-  "id": 1,
-  "codigo": 12345,
-  "descripcion": "Tornillo M8x25mm",
-  "estado": false,
-  "fecha_baja": "2024-01-15T10:30:00.000Z"
+  "message": "Artículo dado de baja exitosamente",
+  "articulo": {
+    "id": 1,
+    "codigo": 12345,
+    "descripcion": "Tornillo M8x25mm",
+    "estado": false,
+    "fecha_baja": "2024-01-15T10:30:00.000Z",
+    "stock_actual": 0
+  }
+}
+```
+
+**Error por stock (400):**
+```json
+{
+  "statusCode": 400,
+  "message": "No se puede dar de baja el artículo porque tiene 25 unidades en stock. Debe reducir el stock a 0 antes de darlo de baja."
+}
+```
+
+**Error por órdenes activas (400):**
+```json
+{
+  "statusCode": 400,
+  "message": "No se puede dar de baja el artículo porque tiene órdenes de compra activas: ID: 101 (pendiente), ID: 102 (enviada). Debe cancelar o finalizar todas las órdenes antes de dar de baja el artículo."
 }
 ```
 
@@ -115,11 +162,19 @@
 - No se pueden actualizar artículos inactivos
 - El stock inicial se establece en 0 automáticamente
 
+### Validaciones de Baja (DELETE)
+1. **Stock en cero**: El artículo no puede tener unidades en stock
+2. **Sin órdenes activas**: No puede tener órdenes de compra en estado "pendiente" o "enviada"
+3. **Estado activo**: Solo se pueden dar de baja artículos activos
+
 ## Códigos de Error
 
 ### 400 - Bad Request
 - Valores numéricos negativos o cero
 - Datos de entrada inválidos
+- **NUEVO**: Intento de baja con stock > 0
+- **NUEVO**: Intento de baja con órdenes de compra activas
+- **NUEVO**: Intento de baja de artículo ya inactivo
 
 ### 404 - Not Found
 - Artículo no existe o está inactivo
@@ -133,4 +188,16 @@
 1. **Soft Delete**: Los artículos eliminados se marcan como inactivos en lugar de eliminarse físicamente
 2. **Validación de Unicidad**: Código y descripción deben ser únicos
 3. **Estado por Defecto**: Los artículos nuevos se crean activos con stock en 0
-4. **Filtrado Automático**: Solo se muestran artículos activos en las consultas 
+4. **Filtrado Automático**: Solo se muestran artículos activos en las consultas
+5. **🆕 Validaciones de Baja Robustas**: Control estricto contra stock y órdenes activas
+6. **🆕 Endpoint de Verificación**: Permite consultar impedimentos antes de intentar la baja
+7. **🆕 Mensajes Detallados**: Información específica sobre las razones de rechazo
+
+## Flujo Recomendado para Baja de Artículos
+
+1. **Consultar estado**: `GET /articulos/{id}/verificar-baja`
+2. **Si hay impedimentos**: 
+   - Reducir stock a 0 (si aplica)
+   - Cancelar/finalizar órdenes activas (si aplica)
+3. **Realizar baja**: `DELETE /articulos/{id}`
+4. **Confirmar resultado**: Verificar respuesta y mensaje de éxito 

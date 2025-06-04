@@ -8,5 +8,6 @@ import { OrdenCompraController } from './orden-compra.controller';
   imports: [TypeOrmModule.forFeature([OrdenCompra])],
   controllers: [OrdenCompraController],
   providers: [OrdenCompraService],
+  exports: [OrdenCompraService],
 })
 export class OrdenCompraModule {}

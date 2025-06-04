@@ -37,6 +37,20 @@ export class ArticulosController {
   }
 
   /**
+   * Verificar si un artículo puede ser dado de baja
+   * Devuelve información sobre impedimentos para la baja
+   */
+  @Get(':id/verificar-baja')
+  async verificarBaja(@Param('id', ParseIntPipe) id: number): Promise<{
+    puedeSerDadoDeBaja: boolean;
+    impedimentos: string[];
+    stockActual?: number;
+    ordenesActivas?: number;
+  }> {
+    return this.articulosService.verificarPosibilidadBaja(id);
+  }
+
+  /**
    * Crear un nuevo artículo
    * Requiere: código, descripción, demanda, costo_almacenamiento, costo_pedido, costo_compra
    */
@@ -59,12 +73,12 @@ export class ArticulosController {
   }
 
   /**
-   * Eliminar un artículo (soft delete)
-   * Marca el artículo como inactivo en lugar de eliminarlo físicamente
+   * Eliminar un artículo (soft delete con validaciones)
+   * Valida que no tenga stock ni órdenes de compra activas
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<Articulo> {
+  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; articulo: Articulo }> {
     return this.articulosService.deleteArticulo(id);
   }
 }

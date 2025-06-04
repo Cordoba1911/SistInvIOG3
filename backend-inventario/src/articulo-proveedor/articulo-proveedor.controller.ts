@@ -12,6 +12,8 @@ export class ArticuloProveedorController {
   async createArticuloProveedor(
     @Body() createArticuloProveedorDto: CreateArticuloProveedorDto,
   ) {
-    return this.articuloProveedorService.create(createArticuloProveedorDto);
+    return this.articuloProveedorService.createArticuloProveedor(
+      createArticuloProveedorDto,
+    );
   }
 }

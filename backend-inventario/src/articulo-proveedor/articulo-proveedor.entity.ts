@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Proveedor } from '../proveedores/proveedor.entity';
 import { Articulo } from 'src/articulos/articulo.entity';
 
@@ -16,12 +22,11 @@ export class ArticuloProveedor {
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   cargos_pedido: number;
 
-  @Column()
-  proveedor_id: number;
-
   @ManyToOne(() => Proveedor, (proveedor) => proveedor.articulo_proveedor)
+  @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 
   @ManyToOne(() => Articulo, (articulo) => articulo.articulo_proveedor)
+  @JoinColumn({ name: 'articulo_id' })
   articulo: Articulo;
 }

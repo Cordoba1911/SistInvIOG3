@@ -4,24 +4,55 @@ import { Repository } from 'typeorm';
 import { OrdenCompra } from './orden-compra.entity';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
+import { Articulo } from 'src/articulos/articulo.entity';
+import { Proveedor } from 'src/proveedores/proveedor.entity';
 
 @Injectable()
 export class OrdenCompraService {
   constructor(
     @InjectRepository(OrdenCompra)
     private ordenCompraRepository: Repository<OrdenCompra>,
+
+    @InjectRepository(Articulo)
+    private readonly articuloRepository: Repository<Articulo>,
+
+    @InjectRepository(Proveedor)
+    private readonly proveedorRepository: Repository<Proveedor>,
   ) {}
 
   // Crear una nueva orden de compra
-  async createOrdenCompra(dto: CreateOrdenCompraDto) {
-    const nuevaOrden = this.ordenCompraRepository.create({
+  // Cambiar los errores por HttpException
+  //chequeo que los id de los artículos y proveedores del dto existan
+  async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
+    const articulo = await this.articuloRepository.findOneBy({
+      id: dto.articulo_id,
+    });
+    if (!articulo) throw new Error('Artículo no encontrado');
+
+    const proveedor = await this.proveedorRepository.findOneBy({
+      id: dto.proveedor_id,
+    });
+    if (!proveedor) throw new Error('Proveedor no encontrado');
+
+    const ordenCompra = this.ordenCompraRepository.create({
+      articulo,
+      proveedor,
       cantidad: dto.cantidad,
-      estado: 'pendiente',
+      estado: 'pendiente', // Estado inicial
       fecha_creacion: new Date(),
     });
 
-    return await this.ordenCompraRepository.save(nuevaOrden);
+    return this.ordenCompraRepository.save(ordenCompra);
   }
+  // async createOrdenCompra(dto: CreateOrdenCompraDto) {
+  //   const nuevaOrden = this.ordenCompraRepository.create({
+  //     cantidad: dto.cantidad,
+  //     estado: 'pendiente',
+  //     fecha_creacion: new Date(),
+  //   });
+
+  //   return await this.ordenCompraRepository.save(nuevaOrden);
+  // }
 
   // Obtener todas las órdenes de compra
   getOrdenesCompra() {

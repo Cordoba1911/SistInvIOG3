@@ -21,7 +21,9 @@ export class ArticuloProveedorService {
   ) {}
 
   //cambiar los errores por httpException
-  async create(dto: CreateArticuloProveedorDto): Promise<ArticuloProveedor> {
+  async createArticuloProveedor(
+    dto: CreateArticuloProveedorDto,
+  ): Promise<ArticuloProveedor> {
     const articulo = await this.articuloRepository.findOneBy({
       id: dto.articulo_id,
     });

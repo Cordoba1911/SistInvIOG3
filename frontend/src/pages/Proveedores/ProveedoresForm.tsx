@@ -48,7 +48,7 @@ const ProveedoresForm = ({onAlta}: PropsProveedoresForm ) => {
       titulo="Agregar Proveedor"
       textoBoton="Guardar Proveedor"
     />
-  );
+  ); 
 }
 
 export default ProveedoresForm;

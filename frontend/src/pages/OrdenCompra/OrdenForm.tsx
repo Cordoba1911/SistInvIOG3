@@ -54,7 +54,7 @@ const navigate = useNavigate();
     });
 
     // Redirige al usuario a la lista de órdenes después de guardar
-    navigate('/orden-compra/admin-orden-compra'); // Redirige a la lista de órdenes
+    navigate('/ordenes/admin-orden-compra'); // Redirige a la lista de órdenes
   };
 
   return (

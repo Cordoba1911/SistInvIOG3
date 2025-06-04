@@ -43,7 +43,7 @@ const OrdenCompraRouter = () => {
       prev.map((o) => (o.id === id ? { ...o, activo: false } : o))
     );
   };
-
+ 
   return (
     <Routes>
       <Route path="/orden-compra" element={<OrdenCompraForm onAlta={agregarOrden} />} />

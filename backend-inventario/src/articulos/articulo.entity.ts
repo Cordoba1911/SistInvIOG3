@@ -1,5 +1,5 @@
 import { Proveedor } from 'src/proveedores/proveedor.entity';
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 'typeorm';
 
 export enum ModeloInventario {
   lote_fijo = 'Lote Fijo',
@@ -61,8 +61,10 @@ export class Articulo {
   fecha_baja: Date;
 
   @Column({ nullable: true })
-  proveedor_predeterminado_id: string;
-  /* @OneToOne(() => Proveedor)
-  @JoinColumn()
-  proveedor_predeterminado_id: Proveedor; */
+  proveedor_predeterminado_id: number;
+
+  // Relación con proveedor predeterminado
+  @ManyToOne(() => Proveedor, { nullable: true })
+  @JoinColumn({ name: 'proveedor_predeterminado_id' })
+  proveedor_predeterminado: Proveedor;
 }

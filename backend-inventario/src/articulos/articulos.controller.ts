@@ -13,8 +13,9 @@ import {
 } from '@nestjs/common';
 import { CreateArticuloDto } from './dto/create-articulo.dto';
 import { ArticulosService } from './articulos.service';
-import { Articulo } from './articulo.entity';
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
+import { ArticuloResponseDto } from './dto/articulo-response.dto';
+import { ProveedorResponseDto } from '../proveedores/dto/proveedor-response.dto';
 
 @Controller('articulos')
 export class ArticulosController {
@@ -24,61 +25,57 @@ export class ArticulosController {
    * Obtener todos los artículos activos
    */
   @Get()
-  async getArticulos(): Promise<Articulo[]> {
+  async getArticulos(): Promise<ArticuloResponseDto[]> {
     return this.articulosService.getArticulos();
+  }
+
+  /**
+   * Obtener proveedores disponibles para selección
+   */
+  @Get('proveedores-disponibles')
+  async getProveedoresDisponibles(): Promise<ProveedorResponseDto[]> {
+    return this.articulosService.getProveedoresDisponibles();
   }
 
   /**
    * Obtener un artículo específico por ID
    */
   @Get(':id')
-  async getArticulo(@Param('id', ParseIntPipe) id: number): Promise<Articulo> {
+  async getArticulo(@Param('id', ParseIntPipe) id: number): Promise<ArticuloResponseDto> {
     return this.articulosService.getArticulo(id);
-  }
-
-  /**
-   * Verificar si un artículo puede ser dado de baja
-   * Devuelve información sobre impedimentos para la baja
-   */
-  @Get(':id/verificar-baja')
-  async verificarBaja(@Param('id', ParseIntPipe) id: number): Promise<{
-    puedeSerDadoDeBaja: boolean;
-    impedimentos: string[];
-    stockActual?: number;
-    ordenesActivas?: number;
-  }> {
-    return this.articulosService.verificarPosibilidadBaja(id);
   }
 
   /**
    * Crear un nuevo artículo
    * Requiere: código, descripción, demanda, costo_almacenamiento, costo_pedido, costo_compra
+   * Opcional: proveedor_predeterminado_id
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createArticulo(@Body() newArticulo: CreateArticuloDto): Promise<Articulo> {
+  async createArticulo(@Body() newArticulo: CreateArticuloDto): Promise<ArticuloResponseDto> {
     return this.articulosService.createArticulo(newArticulo);
   }
 
   /**
    * Actualizar un artículo existente
-   * Permite actualización parcial de campos
+   * Permite actualización parcial de campos incluyendo proveedor predeterminado
    */
   @Patch(':id')
   async updateArticulo(
     @Param('id', ParseIntPipe) id: number, 
     @Body() articulo: UpdateArticuloDto
-  ): Promise<Articulo> {
+  ): Promise<ArticuloResponseDto> {
     return this.articulosService.updateArticulo(id, articulo);
   }
 
   /**
    * Eliminar un artículo (soft delete con validaciones)
    * Valida que no tenga stock ni órdenes de compra activas
+   * Proporciona mensajes de error descriptivos en caso de impedimentos
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; articulo: Articulo }> {
+  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; articulo: ArticuloResponseDto }> {
     return this.articulosService.deleteArticulo(id);
   }
 }

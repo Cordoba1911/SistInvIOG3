@@ -4,11 +4,13 @@ import { ArticulosService } from './articulos.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Articulo } from './articulo.entity';
 import { OrdenCompraModule } from '../orden_compra/orden-compra.module';
+import { ProveedorModule } from '../proveedores/proveedor.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Articulo]),
-    OrdenCompraModule
+    OrdenCompraModule,
+    ProveedorModule
   ],
   controllers: [ArticulosController],
   providers: [ArticulosService],

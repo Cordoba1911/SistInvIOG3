@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArticulosModule } from './articulos/articulos.module';
 import { ProveedorModule } from './proveedores/proveedor.module';
+import { OrdenCompraModule } from './orden_compra/orden-compra.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { ProveedorModule } from './proveedores/proveedor.module';
     }),
     ArticulosModule,
     ProveedorModule,
+    OrdenCompraModule,
   ],
 })
 export class AppModule {}

@@ -1,4 +1,16 @@
-import { Controller, Post, Body, Get, Param, NotFoundException, ParseIntPipe, Delete, Patch } from '@nestjs/common';
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  Get, 
+  Param, 
+  NotFoundException, 
+  ParseIntPipe, 
+  Delete, 
+  Patch,
+  HttpCode,
+  HttpStatus
+} from '@nestjs/common';
 import { CreateArticuloDto } from './dto/create-articulo.dto';
 import { ArticulosService } from './articulos.service';
 import { Articulo } from './articulo.entity';
@@ -8,33 +20,51 @@ import { UpdateArticuloDto } from './dto/update-articulo.dto';
 export class ArticulosController {
   constructor(private articulosService: ArticulosService) { }
 
+  /**
+   * Obtener todos los artículos activos
+   */
   @Get()
-  getArticulos(): Promise<Articulo[]> {
+  async getArticulos(): Promise<Articulo[]> {
     return this.articulosService.getArticulos();
   }
 
+  /**
+   * Obtener un artículo específico por ID
+   */
   @Get(':id')
-  async getArticulo(@Param('id', ParseIntPipe) id: number){
-    const articulo = await this.articulosService.getArticulo(id);
-    if (!articulo) {
-      throw new NotFoundException(`Artículo con ID ${id} no encontrado`);
-    }
-    return articulo;
+  async getArticulo(@Param('id', ParseIntPipe) id: number): Promise<Articulo> {
+    return this.articulosService.getArticulo(id);
   }
 
+  /**
+   * Crear un nuevo artículo
+   * Requiere: código, descripción, demanda, costo_almacenamiento, costo_pedido, costo_compra
+   */
   @Post()
-  createArticulo(@Body() newArticulo: CreateArticuloDto){
+  @HttpCode(HttpStatus.CREATED)
+  async createArticulo(@Body() newArticulo: CreateArticuloDto): Promise<Articulo> {
     return this.articulosService.createArticulo(newArticulo);
   }
 
-  @Delete(':id')
-  deleteArticulo(@Param('id', ParseIntPipe) id: number) {
-    return this.articulosService.deleteArticulo(id);
-  }
-
+  /**
+   * Actualizar un artículo existente
+   * Permite actualización parcial de campos
+   */
   @Patch(':id')
-  updateArticulo(@Param('id', ParseIntPipe) id: number, @Body() articulo: UpdateArticuloDto) {
+  async updateArticulo(
+    @Param('id', ParseIntPipe) id: number, 
+    @Body() articulo: UpdateArticuloDto
+  ): Promise<Articulo> {
     return this.articulosService.updateArticulo(id, articulo);
   }
 
+  /**
+   * Eliminar un artículo (soft delete)
+   * Marca el artículo como inactivo en lugar de eliminarlo físicamente
+   */
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<Articulo> {
+    return this.articulosService.deleteArticulo(id);
+  }
 }

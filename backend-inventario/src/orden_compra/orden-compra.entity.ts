@@ -1,5 +1,3 @@
-import { Articulo } from 'src/articulos/articulo.entity';
-import { Proveedor } from 'src/proveedores/proveedor.entity';
 import {
   Entity,
   Column,
@@ -7,11 +5,19 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Articulo } from 'src/articulos/articulo.entity';
+import { Proveedor } from 'src/proveedores/proveedor.entity';
 
 @Entity({ name: 'ordenes_compra' })
 export class OrdenCompra {
   @PrimaryGeneratedColumn()
   id: number;
+
+  @Column()
+  articulo_id: number;
+
+  @Column()
+  proveedor_id: number;
 
   @Column()
   cantidad: number;
@@ -31,11 +37,12 @@ export class OrdenCompra {
   @Column({ type: 'datetime', nullable: true })
   fecha_finalizacion: Date;
 
-  @ManyToOne(() => Proveedor, (proveedor) => proveedor.articulo_proveedor)
-  @JoinColumn({ name: 'proveedor_id' })
-  proveedor: Proveedor;
-
-  @ManyToOne(() => Articulo, (articulo) => articulo.articulo_proveedor)
+  // Relaciones
+  @ManyToOne(() => Articulo)
   @JoinColumn({ name: 'articulo_id' })
   articulo: Articulo;
+
+  @ManyToOne(() => Proveedor)
+  @JoinColumn({ name: 'proveedor_id' })
+  proveedor: Proveedor;
 }

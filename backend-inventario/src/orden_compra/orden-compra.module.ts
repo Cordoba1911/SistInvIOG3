@@ -10,5 +10,6 @@ import { Proveedor } from 'src/proveedores/proveedor.entity';
   imports: [TypeOrmModule.forFeature([OrdenCompra, Articulo, Proveedor])],
   controllers: [OrdenCompraController],
   providers: [OrdenCompraService],
+  exports: [OrdenCompraService],
 })
 export class OrdenCompraModule {}

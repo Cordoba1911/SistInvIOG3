@@ -18,5 +18,6 @@ import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.ent
   ],
   controllers: [ProveedorController],
   providers: [ProveedorService],
+  exports: [ProveedorService],
 })
 export class ProveedorModule {}

@@ -1,6 +1,6 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { OrdenCompra } from './orden-compra.entity';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
@@ -71,6 +71,31 @@ export class OrdenCompraService {
     }
 
     return orden;
+  }
+
+  // Verificar si un artículo tiene órdenes de compra activas (pendientes o enviadas)
+  async tieneOrdenesActivas(articuloId: number): Promise<boolean> {
+    const ordenesActivas = await this.ordenCompraRepository.find({
+      where: {
+        articulo_id: articuloId,
+        estado: In(['pendiente', 'enviada'])
+      }
+    });
+
+    return ordenesActivas.length > 0;
+  }
+
+  // Obtener órdenes activas de un artículo para información detallada
+  async getOrdenesActivasPorArticulo(articuloId: number): Promise<OrdenCompra[]> {
+    return await this.ordenCompraRepository.find({
+      where: {
+        articulo_id: articuloId,
+        estado: In(['pendiente', 'enviada'])
+      },
+      order: {
+        fecha_creacion: 'DESC'
+      }
+    });
   }
 
   // Actualizar una orden por ID

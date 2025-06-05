@@ -5,9 +5,9 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  OneToMany,
-  OneToOne,
+  ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 
 export enum ModeloInventario {
@@ -69,7 +69,11 @@ export class Articulo {
   @Column({ type: 'datetime', nullable: true })
   fecha_baja: Date;
 
-  @OneToOne(() => Proveedor)
+  @Column({ nullable: true })
+  proveedor_predeterminado_id: number;
+
+  // Relación con proveedor predeterminado
+  @ManyToOne(() => Proveedor, { nullable: true })
   @JoinColumn({ name: 'proveedor_predeterminado_id' })
   proveedor_predeterminado: Proveedor;
 

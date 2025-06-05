@@ -1,7 +1,18 @@
-export default function Footer() {
-  return (
-    <footer className="text-center text-sm text-gray-500 py-4 mt-6 border-t">
+import React from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 
+const Footer: React.FC = () => {
+  return (
+    <footer style={{ backgroundColor: '#1D3557'}} className="text-light py-4 w-100">
+      <Container>
+        <Row>
+          <Col className="text-center">
+            <small>&copy; {new Date().getFullYear()} Inventario. Todos los derechos reservados.</small>
+          </Col>
+        </Row>
+      </Container>
     </footer>
   );
-}
+};
+
+export default Footer;

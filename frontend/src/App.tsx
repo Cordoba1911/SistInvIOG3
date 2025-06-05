@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
-import AuthForm from './components/AuthForm';
+import AuthForm from './components/Formularios/AuthForm';
 import HomePage from './pages/HomePage';
 import './App.css'; 
 import ProveedoresRouter from './routes/ProveedoresRouter';

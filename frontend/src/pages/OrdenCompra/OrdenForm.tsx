@@ -1,4 +1,4 @@
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
 import type { OrdenCompra } from '../../routes/OrdenCompraRoutes';
 import { useNavigate } from 'react-router-dom';
 

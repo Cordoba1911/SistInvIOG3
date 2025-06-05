@@ -1,6 +1,6 @@
 // src/pages/Proveedores/ProveedoresList.tsx
 import { useState } from 'react';
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
 import EntidadList from '../../components/EntityList';
 import type { Proveedor } from '../../routes/ProveedoresRouter'; // Asegurate de exportar Proveedor correctamente
 

@@ -158,4 +158,31 @@ export class ProveedorService {
 
     return this.proveedorRepository.save(proveedorFound);
   }
+  
+  //Listar artículos de un proveedor
+  async getArticulosDeProveedor(id: number) {
+  const proveedor = await this.proveedorRepository.findOne({ where: { id } });
+
+  if (!proveedor) {
+    throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
+  }
+
+  const articulosProveedor = await this.articuloProveedorRepository.find({
+    where: { proveedor: { id } },
+    relations: ['articulo'], // Importante para traer el objeto articulo completo
+  });
+
+  const resultado = articulosProveedor.map((relacion) => {
+    const articulo = relacion.articulo;
+    return {
+      articulo_id: articulo.id,
+      codigo: articulo.codigo,
+      descripcion: articulo.descripcion,
+      esPredeterminado: articulo.proveedor_predeterminado_id === id,
+    };
+  });
+
+  return resultado;
+}
+
 }

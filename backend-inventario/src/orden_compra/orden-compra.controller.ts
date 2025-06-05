@@ -12,7 +12,7 @@ import { OrdenCompraService } from './orden-compra.service';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
 
-@Controller('ordenes-compra')
+@Controller('ordenes_compra')
 export class OrdenCompraController {
   constructor(private readonly ordenCompraService: OrdenCompraService) {}
 

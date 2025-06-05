@@ -6,6 +6,8 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { CreateProveedorDto } from './dto/create-proveedor.dto';
 import { ProveedorService } from './proveedor.service';
@@ -42,5 +44,17 @@ export class ProveedorController {
   @Patch(':id/baja')
   bajaProveedor(@Param('id', ParseIntPipe) id: number) {
     return this.proveedorService.bajaProveedor(id);
+  }
+
+  @Get(':id/articulos')
+  async getArticulosDeProveedor(@Param('id', ParseIntPipe) id: number) {
+    try {
+      return await this.proveedorService.getArticulosDeProveedor(id);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Error al obtener artículos del proveedor',
+        error.status || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 }

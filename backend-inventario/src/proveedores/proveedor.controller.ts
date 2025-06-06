@@ -13,6 +13,7 @@ import { CreateProveedorDto } from './dto/create-proveedor.dto';
 import { ProveedorService } from './proveedor.service';
 import { Proveedor } from './proveedor.entity';
 import { UpdateProveedorDto } from './dto/update-proveedor.dto';
+import { RelacionarArticulosDto } from './dto/relacionar-articulos.dto';
 
 @Controller('proveedores')
 export class ProveedorController {
@@ -56,5 +57,14 @@ export class ProveedorController {
         error.status || HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  // Endpoint para relacionar artículos con un proveedor
+  @Post('relacionar/:id')
+  relacionarArticulos(
+    @Param('id', ParseIntPipe) proveedorId: number,
+    @Body() dto: RelacionarArticulosDto,
+  ) {
+    return this.proveedorService.relacionarConArticulos(proveedorId, dto);
   }
 }

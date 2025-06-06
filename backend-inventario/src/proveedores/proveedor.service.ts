@@ -7,6 +7,7 @@ import { UpdateProveedorDto } from './dto/update-proveedor.dto';
 import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
 import { Articulo } from 'src/articulos/articulo.entity';
 import { OrdenCompra } from 'src/orden_compra/orden-compra.entity';
+import { RelacionarArticulosDto } from './dto/relacionar-articulos.dto';
 
 @Injectable()
 export class ProveedorService {
@@ -211,5 +212,63 @@ export class ProveedorService {
     });
 
     return resultado;
+  }
+
+  // Relacionar artículos con un proveedor
+  async relacionarConArticulos(
+    proveedorId: number,
+    dto: RelacionarArticulosDto,
+  ) {
+    const proveedor = await this.proveedorRepository.findOne({
+      where: { id: proveedorId },
+    });
+
+    if (!proveedor) {
+      throw new HttpException(
+        `Proveedor con ID ${proveedorId} no encontrado`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    for (const item of dto.articulos) {
+      const articulo = await this.articuloRepository.findOne({
+        where: { id: item.articulo_id },
+      });
+
+      if (!articulo) {
+        throw new HttpException(
+          `Artículo con ID ${item.articulo_id} no encontrado`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      const yaRelacionado = await this.articuloProveedorRepository.findOne({
+        where: {
+          proveedor: { id: proveedorId },
+          articulo: { id: item.articulo_id },
+        },
+      });
+
+      if (yaRelacionado) {
+        throw new HttpException(
+          `Ya existe una relación con el artículo ID ${item.articulo_id}`,
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      const nuevaRelacion = this.articuloProveedorRepository.create({
+        proveedor,
+        articulo,
+        precio_unitario: item.precio_unitario,
+        demora_entrega: item.demora_entrega,
+        cargos_pedido: item.cargos_pedido,
+      });
+
+      await this.articuloProveedorRepository.save(nuevaRelacion);
+    }
+
+    return {
+      message: `Se relacionaron ${dto.articulos.length} artículo(s) con el proveedor ID ${proveedorId}`,
+    };
   }
 }

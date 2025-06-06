@@ -26,6 +26,7 @@ export class ProveedorService {
 
   //Crear un nuevo proveedor
   async createProveedor(dto: CreateProveedorDto) {
+    // Validar que no exista un proveedor con el mismo nombre
     const proveedorFound = await this.proveedorRepository.findOne({
       where: { nombre: dto.nombre },
     });
@@ -34,6 +35,7 @@ export class ProveedorService {
       throw new HttpException('Proveedor ya existe', HttpStatus.CONFLICT);
     }
 
+    // Validar que haya al menos un artículo relacionado
     if (!dto.articulos || dto.articulos.length === 0) {
       throw new HttpException(
         'El proveedor debe estar asociado al menos a un artículo',
@@ -41,6 +43,21 @@ export class ProveedorService {
       );
     }
 
+    // Validar que todos los artículos existan
+    for (const art of dto.articulos) {
+      const articulo = await this.articuloRepository.findOne({
+        where: { id: art.articulo_id },
+      });
+
+      if (!articulo) {
+        throw new HttpException(
+          `No se encontró el artículo con ID ${art.articulo_id}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+    }
+
+    // Crear el proveedor
     const proveedor = this.proveedorRepository.create({
       nombre: dto.nombre,
       telefono: dto.telefono,
@@ -50,15 +67,27 @@ export class ProveedorService {
 
     const savedProveedor = await this.proveedorRepository.save(proveedor);
 
-    // Guardar las relaciones con los artículos
+    // Crear las relaciones en la tabla intermedia articulo_proveedor
     for (const art of dto.articulos) {
+      const articulo = await this.articuloRepository.findOne({
+        where: { id: art.articulo_id },
+      });
+
+      if (!articulo) {
+        throw new HttpException(
+          `No se encontró el artículo con ID ${art.articulo_id}`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       const articuloProveedor = this.articuloProveedorRepository.create({
         proveedor: savedProveedor,
-        articulo: { id: art.articulo_id },
+        articulo, // entidad completa
         demora_entrega: art.demora_entrega,
         precio_unitario: art.precio_unitario,
         cargos_pedido: art.cargos_pedido,
       });
+
       await this.articuloProveedorRepository.save(articuloProveedor);
     }
 
@@ -108,7 +137,6 @@ export class ProveedorService {
   }
 
   //Dar de baja un proveedor por ID
-  //FALTA: No permitir la baja si el proveedor es el predeterminado o tiene una orden de compra pendiente o en curso
   async bajaProveedor(id: number) {
     const proveedorFound = await this.proveedorRepository.findOne({
       where: { id },
@@ -158,31 +186,30 @@ export class ProveedorService {
 
     return this.proveedorRepository.save(proveedorFound);
   }
-  
+
   //Listar artículos de un proveedor
   async getArticulosDeProveedor(id: number) {
-  const proveedor = await this.proveedorRepository.findOne({ where: { id } });
+    const proveedor = await this.proveedorRepository.findOne({ where: { id } });
 
-  if (!proveedor) {
-    throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
+    if (!proveedor) {
+      throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    const articulosProveedor = await this.articuloProveedorRepository.find({
+      where: { proveedor: { id } },
+      relations: ['articulo'], // Importante para traer el objeto articulo completo
+    });
+
+    const resultado = articulosProveedor.map((relacion) => {
+      const articulo = relacion.articulo;
+      return {
+        articulo_id: articulo.id,
+        codigo: articulo.codigo,
+        descripcion: articulo.descripcion,
+        esPredeterminado: articulo.proveedor_predeterminado_id === id,
+      };
+    });
+
+    return resultado;
   }
-
-  const articulosProveedor = await this.articuloProveedorRepository.find({
-    where: { proveedor: { id } },
-    relations: ['articulo'], // Importante para traer el objeto articulo completo
-  });
-
-  const resultado = articulosProveedor.map((relacion) => {
-    const articulo = relacion.articulo;
-    return {
-      articulo_id: articulo.id,
-      codigo: articulo.codigo,
-      descripcion: articulo.descripcion,
-      esPredeterminado: articulo.proveedor_predeterminado_id === id,
-    };
-  });
-
-  return resultado;
-}
-
 }

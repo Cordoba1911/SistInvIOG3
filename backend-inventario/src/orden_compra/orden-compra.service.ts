@@ -21,38 +21,71 @@ export class OrdenCompraService {
   ) {}
 
   // Crear una nueva orden de compra
-  // Cambiar los errores por HttpException
-  //chequeo que los id de los artículos y proveedores del dto existan
   async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
-    const articulo = await this.articuloRepository.findOneBy({
-      id: dto.articulo_id,
+    // Buscar el artículo
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: dto.articulo_id },
     });
-    if (!articulo) throw new Error('Artículo no encontrado');
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    //Verificar si el artículo tiene órdenes de compra activas
+    const ocActiva = await this.ordenCompraRepository.findOne({
+      where: {
+        articulo_id: dto.articulo_id,
+        estado: In(['pendiente', 'enviada']),
+      },
+    });
+
+    if (ocActiva) {
+      throw new HttpException(
+        `Ya existe una orden de compra activa (ID: ${ocActiva.id}) para este artículo.`,
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // Determinar el proveedor: usar el dto si está, si no el predeterminado del artículo
+    const proveedorId =
+      dto.proveedor_id ?? articulo.proveedor_predeterminado_id;
+
+    if (!proveedorId) {
+      throw new HttpException(
+        'No se proporcionó un proveedor y el artículo no tiene un proveedor predeterminado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const proveedor = await this.proveedorRepository.findOneBy({
-      id: dto.proveedor_id,
+      id: proveedorId,
     });
-    if (!proveedor) throw new Error('Proveedor no encontrado');
 
+    if (!proveedor) {
+      throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Determinar la cantidad: usar la del dto o sugerir lote óptimo
+    const cantidad = dto.cantidad ?? articulo.lote_optimo;
+
+    if (!cantidad || cantidad <= 0) {
+      throw new HttpException(
+        'La cantidad no es válida ni se puede sugerir un lote óptimo',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Crear la orden
     const ordenCompra = this.ordenCompraRepository.create({
       articulo,
       proveedor,
-      cantidad: dto.cantidad,
-      estado: 'pendiente', // Estado inicial
+      cantidad,
+      estado: 'pendiente',
       fecha_creacion: new Date(),
     });
 
     return this.ordenCompraRepository.save(ordenCompra);
   }
-  // async createOrdenCompra(dto: CreateOrdenCompraDto) {
-  //   const nuevaOrden = this.ordenCompraRepository.create({
-  //     cantidad: dto.cantidad,
-  //     estado: 'pendiente',
-  //     fecha_creacion: new Date(),
-  //   });
-
-  //   return await this.ordenCompraRepository.save(nuevaOrden);
-  // }
 
   // Obtener todas las órdenes de compra
   getOrdenesCompra() {
@@ -78,23 +111,25 @@ export class OrdenCompraService {
     const ordenesActivas = await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada'])
-      }
+        estado: In(['pendiente', 'enviada']),
+      },
     });
 
     return ordenesActivas.length > 0;
   }
 
   // Obtener órdenes activas de un artículo para información detallada
-  async getOrdenesActivasPorArticulo(articuloId: number): Promise<OrdenCompra[]> {
+  async getOrdenesActivasPorArticulo(
+    articuloId: number,
+  ): Promise<OrdenCompra[]> {
     return await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada'])
+        estado: In(['pendiente', 'enviada']),
       },
       order: {
-        fecha_creacion: 'DESC'
-      }
+        fecha_creacion: 'DESC',
+      },
     });
   }
 

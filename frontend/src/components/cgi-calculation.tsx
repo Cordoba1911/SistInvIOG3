@@ -18,11 +18,7 @@ import { TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/tab
 export function CGICalculation() {
   // Estado que contiene la lista de artículos actuales
   const [items, setItems] = useState<CGIItem[]>([
-    { id: "1", nombre: "Producto A", valorAnual: 50000 },
-    { id: "2", nombre: "Producto B", valorAnual: 25000 },
-    { id: "3", nombre: "Producto C", valorAnual: 10000 },
-    { id: "4", nombre: "Producto D", valorAnual: 5000 },
-    { id: "5", nombre: "Producto E", valorAnual: 1000 },
+   
   ])
 
   // Estado para el nuevo artículo que se está ingresando

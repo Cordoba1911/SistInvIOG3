@@ -11,11 +11,6 @@ import type { CGIItem } from "../../types/inventory" // Tipo de dato de cada ít
 export function CGICalculation() {
   // Estado con lista inicial de artículos de ejemplo
   const [items, setItems] = useState<CGIItem[]>([
-    { id: "1", nombre: "Producto A", valorAnual: 50000 },
-    { id: "2", nombre: "Producto B", valorAnual: 25000 },
-    { id: "3", nombre: "Producto C", valorAnual: 10000 },
-    { id: "4", nombre: "Producto D", valorAnual: 5000 },
-    { id: "5", nombre: "Producto E", valorAnual: 1000 },
   ])
 
   // Estado para el nuevo artículo a agregar

@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import DashboardLayout from './components/DashboardLayout';
-import AuthForm from './components/Formularios/AuthForm';
 import HomePage from './pages/HomePage';
 import './App.css'; 
 import ProveedoresRouter from './routes/ProveedoresRouter';
@@ -14,8 +13,6 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen">
         <Routes>
-          <Route path="/login" element={<AuthForm />} />
-          
           <Route path="/" element={<DashboardLayout />}>
             <Route index element={<HomePage />} />
             <Route path="proveedores/*" element={<ProveedoresRouter />} />

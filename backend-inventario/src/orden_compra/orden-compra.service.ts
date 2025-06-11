@@ -51,39 +51,13 @@ export class OrdenCompraService {
       );
     }
 
-    // Determinar el proveedor: usar el dto si está, si no el predeterminado del artículo
-    const proveedorId =
-      dto.proveedor_id ?? articulo.proveedor_predeterminado_id;
-
-    if (!proveedorId) {
-      throw new HttpException(
-        'No se proporcionó un proveedor y el artículo no tiene un proveedor predeterminado',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const proveedor = await this.proveedorRepository.findOneBy({
-      id: proveedorId,
-    });
-
-    if (!proveedor) {
-      throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
-    }
-
     // Verificar si el proveedor está relacionado con el artículo
     const relacion = await this.articuloProveedorRepository.findOne({
       where: {
-        proveedor: { id: proveedorId },
         articulo: { id: articulo.id },
       },
     });
 
-    if (!relacion) {
-      throw new HttpException(
-        `El proveedor con ID ${proveedorId} no está relacionado con el artículo`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
 
     // Determinar la cantidad: usar la del dto o sugerir lote óptimo
     const cantidad = dto.cantidad ?? articulo.lote_optimo;
@@ -98,7 +72,6 @@ export class OrdenCompraService {
     // Crear la orden
     const ordenCompra = this.ordenCompraRepository.create({
       articulo,
-      proveedor,
       cantidad,
       estado: 'pendiente',
       fecha_creacion: new Date(),

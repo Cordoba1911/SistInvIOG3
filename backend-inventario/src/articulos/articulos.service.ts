@@ -51,11 +51,6 @@ export class ArticulosService {
       );
     }
 
-    // Validar proveedor predeterminado si se proporciona
-    if (articulo.proveedor_predeterminado_id) {
-      await this.validateProveedor(articulo.proveedor_predeterminado_id);
-    }
-
     const newArticulo = this.articuloRepository.create({
       ...articulo,
       estado: true, // Por defecto, el artículo está activo
@@ -214,16 +209,6 @@ export class ArticulosService {
       }
     }
 
-    // Validar proveedor predeterminado si se está actualizando
-    if (articulo.proveedor_predeterminado_id !== undefined) {
-      if (articulo.proveedor_predeterminado_id === null) {
-        // Se está removiendo el proveedor predeterminado
-        articulo.proveedor_predeterminado_id = null;
-      } else {
-        // Se está asignando un nuevo proveedor
-        await this.validateProveedor(articulo.proveedor_predeterminado_id);
-      }
-    }
 
     const updateArticulo = Object.assign(articuloFound, articulo);
     const articuloActualizado =
@@ -283,10 +268,6 @@ export class ArticulosService {
       stock_actual: articulo.stock_actual,
       estado: articulo.estado,
       fecha_baja: articulo.fecha_baja,
-      proveedor_predeterminado_id: articulo.proveedor_predeterminado_id,
-      proveedor_predeterminado: articulo.proveedor_predeterminado
-        ? this.toProveedorResponseDto(articulo.proveedor_predeterminado)
-        : undefined,
     };
   }
 

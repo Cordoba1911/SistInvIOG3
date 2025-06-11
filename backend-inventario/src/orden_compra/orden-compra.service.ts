@@ -1,13 +1,12 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { OrdenCompra } from './orden-compra.entity';
+import { OrdenCompra, EstadoOrdenCompra } from './orden-compra.entity';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
-import { Articulo } from 'src/articulos/articulo.entity';
+import { Articulo, ModeloInventario } from 'src/articulos/articulo.entity';
 import { Proveedor } from 'src/proveedores/proveedor.entity';
 import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
-import { ModeloInventario } from 'src/articulos/articulo.entity';
 
 @Injectable()
 export class OrdenCompraService {
@@ -51,16 +50,15 @@ export class OrdenCompraService {
       );
     }
 
-    // Determinar el proveedor: usar el dto si está, si no el predeterminado del artículo
-    const proveedorId =
-      dto.proveedor_id ?? articulo.proveedor_predeterminado_id;
-
-    if (!proveedorId) {
+    // Verificar que se proporcionó un proveedor
+    if (!dto.proveedor_id) {
       throw new HttpException(
-        'No se proporcionó un proveedor y el artículo no tiene un proveedor predeterminado',
+        'Debe proporcionar un proveedor para crear la orden de compra',
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    const proveedorId = dto.proveedor_id;
 
     const proveedor = await this.proveedorRepository.findOneBy({
       id: proveedorId,
@@ -97,11 +95,10 @@ export class OrdenCompraService {
 
     // Crear la orden
     const ordenCompra = this.ordenCompraRepository.create({
-      articulo,
-      proveedor,
+      articulo_id: articulo.id,
+      proveedor_id: proveedor.id,
       cantidad,
-      estado: 'pendiente',
-      fecha_creacion: new Date(),
+      estado: EstadoOrdenCompra.PENDIENTE,
     });
 
     return this.ordenCompraRepository.save(ordenCompra);
@@ -131,7 +128,7 @@ export class OrdenCompraService {
     const ordenesActivas = await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada']),
+        estado: In([EstadoOrdenCompra.PENDIENTE, EstadoOrdenCompra.ENVIADA]),
       },
     });
 
@@ -145,7 +142,7 @@ export class OrdenCompraService {
     return await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada']),
+        estado: In([EstadoOrdenCompra.PENDIENTE, EstadoOrdenCompra.ENVIADA]),
       },
       order: {
         fecha_creacion: 'DESC',
@@ -168,7 +165,7 @@ export class OrdenCompraService {
     }
 
     // Solo se puede modificar si está en estado 'pendiente'
-    if (orden.estado !== 'pendiente') {
+    if (orden.estado !== EstadoOrdenCompra.PENDIENTE) {
       throw new HttpException(
         `Solo se puede modificar una orden en estado pendiente`,
         HttpStatus.BAD_REQUEST,
@@ -226,14 +223,14 @@ export class OrdenCompraService {
       );
     }
 
-    if (orden.estado !== 'pendiente') {
+    if (orden.estado !== EstadoOrdenCompra.PENDIENTE) {
       throw new HttpException(
         `Solo se puede cancelar una orden en estado pendiente`,
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    orden.estado = 'cancelada';
+    orden.estado = EstadoOrdenCompra.CANCELADA;
     return await this.ordenCompraRepository.save(orden);
   }
 
@@ -248,14 +245,14 @@ export class OrdenCompraService {
       );
     }
 
-    if (orden.estado !== 'pendiente') {
+    if (orden.estado !== EstadoOrdenCompra.PENDIENTE) {
       throw new HttpException(
         `Solo se puede enviar una orden en estado pendiente`,
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    orden.estado = 'enviada';
+    orden.estado = EstadoOrdenCompra.ENVIADA;
     orden.fecha_envio = new Date();
     return await this.ordenCompraRepository.save(orden);
   }
@@ -274,7 +271,7 @@ export class OrdenCompraService {
       );
     }
 
-    if (orden.estado !== 'enviada') {
+    if (orden.estado !== EstadoOrdenCompra.ENVIADA) {
       throw new HttpException(
         `Solo se puede finalizar una orden que esté en estado enviada`,
         HttpStatus.BAD_REQUEST,
@@ -293,7 +290,7 @@ export class OrdenCompraService {
     orden.articulo.stock_actual = nuevoStock;
     await this.articuloRepository.save(orden.articulo);
 
-    orden.estado = 'finalizada';
+    orden.estado = EstadoOrdenCompra.FINALIZADA;
     orden.fecha_finalizacion = new Date();
     const ordenGuardada = await this.ordenCompraRepository.save(orden);
 
@@ -306,7 +303,7 @@ export class OrdenCompraService {
 
     let warning: string | null = null;
     if (
-      orden.articulo.modelo_inventario === 'Lote Fijo' &&
+      orden.articulo.modelo_inventario === ModeloInventario.lote_fijo &&
       nuevoStock < (orden.articulo.punto_pedido || 0)
     ) {
       warning = `Atención: El stock final (${nuevoStock}) sigue por debajo del punto de pedido (${orden.articulo.punto_pedido}).`;

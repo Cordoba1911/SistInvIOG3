@@ -22,6 +22,9 @@ export class ArticuloProveedor {
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
   cargos_pedido: number;
 
+  @Column({ default: false })
+  es_predeterminado: boolean;
+
   @ManyToOne(() => Proveedor, (proveedor) => proveedor.articulo_proveedor)
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;

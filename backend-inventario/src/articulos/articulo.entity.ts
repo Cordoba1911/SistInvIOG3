@@ -69,14 +69,6 @@ export class Articulo {
   @Column({ type: 'datetime', nullable: true })
   fecha_baja: Date;
 
-  @Column({ nullable: true })
-  proveedor_predeterminado_id: number;
-
-  // Relación con proveedor predeterminado
-  @ManyToOne(() => Proveedor, { nullable: true })
-  @JoinColumn({ name: 'proveedor_predeterminado_id' })
-  proveedor_predeterminado: Proveedor;
-
   @OneToMany(
     () => ArticuloProveedor,
     (articuloProveedor) => articuloProveedor.articulo,

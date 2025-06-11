@@ -1,11 +1,22 @@
-import { IsOptional, IsNumber, IsString, IsPositive } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateArticuloDto } from './create-articulo.dto';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  IsPositive,
+  IsOptional,
+} from 'class-validator';
 
-export class UpdateArticuloDto {
+export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   @IsOptional()
+  @IsNotEmpty({ message: 'El código es obligatorio' })
   @IsNumber({}, { message: 'El código debe ser un número' })
+  @IsPositive({ message: 'El código debe ser mayor a 0' })
   codigo?: number;
 
   @IsOptional()
+  @IsNotEmpty({ message: 'La descripción es obligatoria' })
   @IsString({ message: 'La descripción debe ser un texto' })
   descripcion?: string;
 
@@ -55,5 +66,21 @@ export class UpdateArticuloDto {
 
   @IsOptional()
   @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
-  proveedor_predeterminado_id?: number | null;
+  @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
+  proveedor_id?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El precio unitario debe ser un número' })
+  @IsPositive({ message: 'El precio unitario debe ser mayor a 0' })
+  precio_unitario?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'La demora de entrega debe ser un número' })
+  @IsPositive({ message: 'La demora de entrega debe ser mayor a 0' })
+  demora_entrega?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Los cargos de pedido debe ser un número' })
+  @IsPositive({ message: 'Los cargos de pedido debe ser mayor a 0' })
+  cargos_pedido?: number;
 }

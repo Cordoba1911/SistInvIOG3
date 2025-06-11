@@ -6,6 +6,8 @@ import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
 import { Articulo } from 'src/articulos/articulo.entity';
 import { Proveedor } from 'src/proveedores/proveedor.entity';
+import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
+import { ModeloInventario } from 'src/articulos/articulo.entity';
 
 @Injectable()
 export class OrdenCompraService {
@@ -18,41 +20,92 @@ export class OrdenCompraService {
 
     @InjectRepository(Proveedor)
     private readonly proveedorRepository: Repository<Proveedor>,
+
+    @InjectRepository(ArticuloProveedor)
+    private readonly articuloProveedorRepository: Repository<ArticuloProveedor>,
   ) {}
 
   // Crear una nueva orden de compra
-  // Cambiar los errores por HttpException
-  //chequeo que los id de los artículos y proveedores del dto existan
   async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
-    const articulo = await this.articuloRepository.findOneBy({
-      id: dto.articulo_id,
+    // Buscar el artículo
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: dto.articulo_id },
     });
-    if (!articulo) throw new Error('Artículo no encontrado');
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    //Verificar si el artículo tiene órdenes de compra activas
+    const ocActiva = await this.ordenCompraRepository.findOne({
+      where: {
+        articulo_id: dto.articulo_id,
+        estado: In(['pendiente', 'enviada']),
+      },
+    });
+
+    if (ocActiva) {
+      throw new HttpException(
+        `Ya existe una orden de compra activa (ID: ${ocActiva.id}) para este artículo.`,
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // Determinar el proveedor: usar el dto si está, si no el predeterminado del artículo
+    const proveedorId =
+      dto.proveedor_id ?? articulo.proveedor_predeterminado_id;
+
+    if (!proveedorId) {
+      throw new HttpException(
+        'No se proporcionó un proveedor y el artículo no tiene un proveedor predeterminado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const proveedor = await this.proveedorRepository.findOneBy({
-      id: dto.proveedor_id,
+      id: proveedorId,
     });
-    if (!proveedor) throw new Error('Proveedor no encontrado');
 
+    if (!proveedor) {
+      throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Verificar si el proveedor está relacionado con el artículo
+    const relacion = await this.articuloProveedorRepository.findOne({
+      where: {
+        proveedor: { id: proveedorId },
+        articulo: { id: articulo.id },
+      },
+    });
+
+    if (!relacion) {
+      throw new HttpException(
+        `El proveedor con ID ${proveedorId} no está relacionado con el artículo`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Determinar la cantidad: usar la del dto o sugerir lote óptimo
+    const cantidad = dto.cantidad ?? articulo.lote_optimo;
+
+    if (!cantidad || cantidad <= 0) {
+      throw new HttpException(
+        'La cantidad no es válida ni se puede sugerir un lote óptimo',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Crear la orden
     const ordenCompra = this.ordenCompraRepository.create({
       articulo,
       proveedor,
-      cantidad: dto.cantidad,
-      estado: 'pendiente', // Estado inicial
+      cantidad,
+      estado: 'pendiente',
       fecha_creacion: new Date(),
     });
 
     return this.ordenCompraRepository.save(ordenCompra);
   }
-  // async createOrdenCompra(dto: CreateOrdenCompraDto) {
-  //   const nuevaOrden = this.ordenCompraRepository.create({
-  //     cantidad: dto.cantidad,
-  //     estado: 'pendiente',
-  //     fecha_creacion: new Date(),
-  //   });
-
-  //   return await this.ordenCompraRepository.save(nuevaOrden);
-  // }
 
   // Obtener todas las órdenes de compra
   getOrdenesCompra() {
@@ -78,29 +131,34 @@ export class OrdenCompraService {
     const ordenesActivas = await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada'])
-      }
+        estado: In(['pendiente', 'enviada']),
+      },
     });
 
     return ordenesActivas.length > 0;
   }
 
   // Obtener órdenes activas de un artículo para información detallada
-  async getOrdenesActivasPorArticulo(articuloId: number): Promise<OrdenCompra[]> {
+  async getOrdenesActivasPorArticulo(
+    articuloId: number,
+  ): Promise<OrdenCompra[]> {
     return await this.ordenCompraRepository.find({
       where: {
         articulo_id: articuloId,
-        estado: In(['pendiente', 'enviada'])
+        estado: In(['pendiente', 'enviada']),
       },
       order: {
-        fecha_creacion: 'DESC'
-      }
+        fecha_creacion: 'DESC',
+      },
     });
   }
 
   // Actualizar una orden por ID
   async updateOrdenCompra(id: number, dto: UpdateOrdenCompraDto) {
-    const orden = await this.ordenCompraRepository.findOne({ where: { id } });
+    const orden = await this.ordenCompraRepository.findOne({
+      where: { id },
+      relations: ['articulo', 'proveedor'],
+    });
 
     if (!orden) {
       throw new HttpException(
@@ -109,7 +167,6 @@ export class OrdenCompraService {
       );
     }
 
-    // Reglas de negocio:
     // Solo se puede modificar si está en estado 'pendiente'
     if (orden.estado !== 'pendiente') {
       throw new HttpException(
@@ -118,14 +175,40 @@ export class OrdenCompraService {
       );
     }
 
-    // Si se actualiza a 'enviada', registrar la fecha_envio
-    if (dto.estado === 'enviada') {
-      orden.fecha_envio = new Date();
+    // Validar proveedor nuevo si se quiere actualizar
+    if (dto.proveedorId) {
+      const nuevoProveedor = await this.proveedorRepository.findOne({
+        where: { id: dto.proveedorId },
+      });
+
+      if (!nuevoProveedor) {
+        throw new HttpException(
+          `Proveedor con ID ${dto.proveedorId} no encontrado`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Verificar relación con el artículo
+      const relacion = await this.articuloProveedorRepository.findOne({
+        where: {
+          proveedor: { id: dto.proveedorId },
+          articulo: { id: orden.articulo.id },
+        },
+      });
+
+      if (!relacion) {
+        throw new HttpException(
+          `El proveedor con ID ${dto.proveedorId} no está relacionado con el artículo de esta orden`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      orden.proveedor = nuevoProveedor;
     }
 
-    // Si se actualiza a 'finalizada', registrar la fecha_finalizacion
-    if (dto.estado === 'finalizada') {
-      orden.fecha_finalizacion = new Date();
+    // Si se quiere actualizar cantidad
+    if (dto.cantidad !== undefined) {
+      orden.cantidad = dto.cantidad;
     }
 
     const ordenActualizada = Object.assign(orden, dto);
@@ -177,9 +260,12 @@ export class OrdenCompraService {
     return await this.ordenCompraRepository.save(orden);
   }
 
-  // Finalizar una orden de compra
+  // Finalizar una orden de compra y actualizar el stock del artículo
   async finalizarOrdenCompra(id: number) {
-    const orden = await this.ordenCompraRepository.findOne({ where: { id } });
+    const orden = await this.ordenCompraRepository.findOne({
+      where: { id },
+      relations: ['articulo'],
+    });
 
     if (!orden) {
       throw new HttpException(
@@ -195,8 +281,40 @@ export class OrdenCompraService {
       );
     }
 
+    if (!orden.articulo) {
+      throw new HttpException(
+        'No se encontró el artículo asociado a la orden',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+
+    const nuevoStock = (orden.articulo.stock_actual || 0) + orden.cantidad;
+
+    orden.articulo.stock_actual = nuevoStock;
+    await this.articuloRepository.save(orden.articulo);
+
     orden.estado = 'finalizada';
     orden.fecha_finalizacion = new Date();
-    return await this.ordenCompraRepository.save(orden);
+    const ordenGuardada = await this.ordenCompraRepository.save(orden);
+
+    console.log('Modelo inventario:', orden.articulo.modelo_inventario);
+    console.log('Enum modelo:', ModeloInventario.lote_fijo);
+
+    function normalizeModel(model: string) {
+      return model.toLowerCase().replace(' ', '_');
+    }
+
+    let warning: string | null = null;
+    if (
+      orden.articulo.modelo_inventario === 'Lote Fijo' &&
+      nuevoStock < (orden.articulo.punto_pedido || 0)
+    ) {
+      warning = `Atención: El stock final (${nuevoStock}) sigue por debajo del punto de pedido (${orden.articulo.punto_pedido}).`;
+    }
+
+    return {
+      orden: ordenGuardada,
+      warning,
+    };
   }
 }

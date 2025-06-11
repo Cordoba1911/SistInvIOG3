@@ -8,7 +8,7 @@ import {
 import { Proveedor } from '../proveedores/proveedor.entity';
 import { Articulo } from 'src/articulos/articulo.entity';
 
-@Entity({ name: 'Articulo-Proveedor' })
+@Entity({ name: 'articulo_proveedor' })
 export class ArticuloProveedor {
   @PrimaryGeneratedColumn()
   id: number;

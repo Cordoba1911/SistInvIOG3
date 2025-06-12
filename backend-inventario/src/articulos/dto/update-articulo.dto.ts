@@ -1,7 +1,6 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateArticuloDto } from './create-articulo.dto';
 import {
-  IsNotEmpty,
   IsNumber,
   IsString,
   IsPositive,

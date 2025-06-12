@@ -17,11 +17,6 @@ export class DetalleVentaDto {
   @IsNumber()
   @IsPositive()
   cantidad: number;
-
-  @IsNotEmpty()
-  @IsNumber()
-  @IsPositive()
-  precio_unitario: number;
 }
 
 export class CreateVentaDto {

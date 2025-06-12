@@ -314,9 +314,6 @@ export class OrdenCompraService {
     orden.fecha_finalizacion = new Date();
     const ordenGuardada = await this.ordenCompraRepository.save(orden);
 
-    console.log('Modelo inventario:', orden.articulo.modelo_inventario);
-    console.log('Enum modelo:', ModeloInventario.lote_fijo);
-
     function normalizeModel(model: string) {
       return model.toLowerCase().replace(' ', '_');
     }

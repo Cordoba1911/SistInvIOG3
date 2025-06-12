@@ -39,6 +39,13 @@ export class VentaService {
         );
       }
 
+      if (!articulo.precio_venta) {
+        throw new HttpException(
+          `El artículo ${articulo.codigo} no tiene un precio de venta definido`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
       if (articulo.stock_actual < detalleDto.cantidad) {
         throw new HttpException(
           `Stock insuficiente para el artículo ${articulo.codigo}. Stock actual: ${articulo.stock_actual}`,
@@ -55,14 +62,6 @@ export class VentaService {
 
     // Guardar detalles y actualizar stock
     for (const detalle of detalles) {
-      const detalleVenta = this.detalleVentaRepository.create({
-        articulo_id: detalle.articulo_id,
-        cantidad: detalle.cantidad,
-        precio_unitario: detalle.precio_unitario,
-        venta_id: ventaGuardada.id,
-      });
-      await this.detalleVentaRepository.save(detalleVenta);
-
       const articulo = await this.articuloRepository.findOne({
         where: { id: detalle.articulo_id },
       });
@@ -73,6 +72,14 @@ export class VentaService {
           HttpStatus.NOT_FOUND,
         );
       }
+
+      const detalleVenta = this.detalleVentaRepository.create({
+        articulo_id: detalle.articulo_id,
+        cantidad: detalle.cantidad,
+        precio_unitario: articulo.precio_venta,
+        venta_id: ventaGuardada.id,
+      });
+      await this.detalleVentaRepository.save(detalleVenta);
 
       articulo.stock_actual -= detalle.cantidad;
       await this.articuloRepository.save(articulo);

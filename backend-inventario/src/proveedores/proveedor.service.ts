@@ -36,28 +36,6 @@ export class ProveedorService {
       throw new HttpException('Proveedor ya existe', HttpStatus.CONFLICT);
     }
 
-    // Validar que haya al menos un artículo relacionado
-    if (!dto.articulos || dto.articulos.length === 0) {
-      throw new HttpException(
-        'El proveedor debe estar asociado al menos a un artículo',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    // Validar que todos los artículos existan
-    for (const art of dto.articulos) {
-      const articulo = await this.articuloRepository.findOne({
-        where: { id: art.articulo_id },
-      });
-
-      if (!articulo) {
-        throw new HttpException(
-          `No se encontró el artículo con ID ${art.articulo_id}`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-    }
-
     // Crear el proveedor
     const proveedor = this.proveedorRepository.create({
       nombre: dto.nombre,
@@ -68,28 +46,30 @@ export class ProveedorService {
 
     const savedProveedor = await this.proveedorRepository.save(proveedor);
 
-    // Crear las relaciones en la tabla intermedia articulo_proveedor
-    for (const art of dto.articulos) {
-      const articulo = await this.articuloRepository.findOne({
-        where: { id: art.articulo_id },
-      });
+    // Si hay artículos, crear las relaciones en la tabla intermedia articulo_proveedor
+    if (dto.articulos && dto.articulos.length > 0) {
+      for (const art of dto.articulos) {
+        const articulo = await this.articuloRepository.findOne({
+          where: { id: art.articulo_id },
+        });
 
-      if (!articulo) {
-        throw new HttpException(
-          `No se encontró el artículo con ID ${art.articulo_id}`,
-          HttpStatus.BAD_REQUEST,
-        );
+        if (!articulo) {
+          throw new HttpException(
+            `No se encontró el artículo con ID ${art.articulo_id}`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+
+        const articuloProveedor = this.articuloProveedorRepository.create({
+          proveedor: savedProveedor,
+          articulo,
+          demora_entrega: art.demora_entrega,
+          precio_unitario: art.precio_unitario,
+          cargos_pedido: art.cargos_pedido,
+        });
+
+        await this.articuloProveedorRepository.save(articuloProveedor);
       }
-
-      const articuloProveedor = this.articuloProveedorRepository.create({
-        proveedor: savedProveedor,
-        articulo, // entidad completa
-        demora_entrega: art.demora_entrega,
-        precio_unitario: art.precio_unitario,
-        cargos_pedido: art.cargos_pedido,
-      });
-
-      await this.articuloProveedorRepository.save(articuloProveedor);
     }
 
     return savedProveedor;
@@ -133,6 +113,13 @@ export class ProveedorService {
       );
     }
 
+    if (!proveedorFound.estado) {
+      throw new HttpException(
+        'No se puede actualizar un proveedor que está dado de baja',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const updateProveedor = Object.assign(proveedorFound, proveedor);
     return this.proveedorRepository.save(updateProveedor);
   }
@@ -150,13 +137,21 @@ export class ProveedorService {
       );
     }
 
+    if (!proveedorFound.estado) {
+      throw new HttpException(
+        'El proveedor ya está dado de baja',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     // Validación: ¿Es proveedor predeterminado de algún artículo?
-    const relacionesPredeterminadas = await this.articuloProveedorRepository.count({
-      where: {
-        proveedor: { id: id },
-        proveedor_predeterminado: true,
-      },
-    });
+    const relacionesPredeterminadas =
+      await this.articuloProveedorRepository.count({
+        where: {
+          proveedor: { id: id },
+          proveedor_predeterminado: true,
+        },
+      });
 
     if (relacionesPredeterminadas > 0) {
       throw new HttpException(
@@ -229,6 +224,13 @@ export class ProveedorService {
       );
     }
 
+    if (!proveedor.estado) {
+      throw new HttpException(
+        'No se pueden relacionar artículos con un proveedor que está dado de baja',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     for (const item of dto.articulos) {
       const articulo = await this.articuloRepository.findOne({
         where: { id: item.articulo_id },
@@ -255,12 +257,23 @@ export class ProveedorService {
         );
       }
 
+      // Verificar si el artículo ya tiene un proveedor predeterminado
+      const proveedorPredeterminado =
+        await this.articuloProveedorRepository.findOne({
+          where: {
+            articulo: { id: item.articulo_id },
+            proveedor_predeterminado: true,
+          },
+        });
+
       const nuevaRelacion = this.articuloProveedorRepository.create({
         proveedor,
         articulo,
         precio_unitario: item.precio_unitario,
         demora_entrega: item.demora_entrega,
         cargos_pedido: item.cargos_pedido,
+        // Si no hay proveedor predeterminado, este será el predeterminado
+        proveedor_predeterminado: !proveedorPredeterminado,
       });
 
       await this.articuloProveedorRepository.save(nuevaRelacion);

@@ -50,15 +50,28 @@ export class OrdenCompraService {
       );
     }
 
-    // Verificar que se proporcionó un proveedor
-    if (!dto.proveedor_id) {
-      throw new HttpException(
-        'Debe proporcionar un proveedor para crear la orden de compra',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
+    let proveedorId = dto.proveedor_id;
 
-    const proveedorId = dto.proveedor_id;
+    // Si no se proporcionó un proveedor, buscar el proveedor predeterminado
+    if (!proveedorId) {
+      const proveedorPredeterminado =
+        await this.articuloProveedorRepository.findOne({
+          where: {
+            articulo: { id: dto.articulo_id },
+            proveedor_predeterminado: true,
+          },
+          relations: ['proveedor'],
+        });
+
+      if (!proveedorPredeterminado) {
+        throw new HttpException(
+          'No se proporcionó un proveedor y el artículo no tiene un proveedor predeterminado',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      proveedorId = proveedorPredeterminado.proveedor.id;
+    }
 
     const proveedor = await this.proveedorRepository.findOneBy({
       id: proveedorId,
@@ -68,13 +81,27 @@ export class OrdenCompraService {
       throw new HttpException('Proveedor no encontrado', HttpStatus.NOT_FOUND);
     }
 
+    if (!proveedor.estado) {
+      throw new HttpException(
+        'No se puede crear una orden de compra para un proveedor que está dado de baja',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     // Verificar si el proveedor está relacionado con el artículo
     const relacion = await this.articuloProveedorRepository.findOne({
       where: {
         articulo: { id: articulo.id },
+        proveedor: { id: proveedorId },
       },
     });
 
+    if (!relacion) {
+      throw new HttpException(
+        'El proveedor no está relacionado con el artículo solicitado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     // Determinar la cantidad: usar la del dto o sugerir lote óptimo
     const cantidad = dto.cantidad ?? articulo.lote_optimo;
@@ -166,14 +193,14 @@ export class OrdenCompraService {
     }
 
     // Validar proveedor nuevo si se quiere actualizar
-    if (dto.proveedorId) {
+    if (dto.proveedor_id) {
       const nuevoProveedor = await this.proveedorRepository.findOne({
-        where: { id: dto.proveedorId },
+        where: { id: dto.proveedor_id },
       });
 
       if (!nuevoProveedor) {
         throw new HttpException(
-          `Proveedor con ID ${dto.proveedorId} no encontrado`,
+          `Proveedor con ID ${dto.proveedor_id} no encontrado`,
           HttpStatus.NOT_FOUND,
         );
       }
@@ -181,14 +208,14 @@ export class OrdenCompraService {
       // Verificar relación con el artículo
       const relacion = await this.articuloProveedorRepository.findOne({
         where: {
-          proveedor: { id: dto.proveedorId },
+          proveedor: { id: dto.proveedor_id },
           articulo: { id: orden.articulo.id },
         },
       });
 
       if (!relacion) {
         throw new HttpException(
-          `El proveedor con ID ${dto.proveedorId} no está relacionado con el artículo de esta orden`,
+          `El proveedor con ID ${dto.proveedor_id} no está relacionado con el artículo de esta orden`,
           HttpStatus.BAD_REQUEST,
         );
       }

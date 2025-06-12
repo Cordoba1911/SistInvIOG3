@@ -3,7 +3,7 @@ import {
   IsNumber,
   IsOptional,
   IsPositive,
-  ValidateNested
+  ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -25,6 +25,9 @@ class ArticuloRelacionDto {
   @IsNumber()
   @IsPositive({ message: 'Los cargos de pedido deben ser un número positivo' })
   cargos_pedido?: number;
+
+  @IsOptional()
+  proveedor_predeterminado?: boolean;
 }
 
 export class RelacionarArticulosDto {

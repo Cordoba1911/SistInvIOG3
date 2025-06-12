@@ -76,10 +76,10 @@ export class CreateArticuloDto {
   @IsPositive({ message: 'El stock actual debe ser mayor a 0' })
   stock_actual?: number;
 
-  @IsOptional()
-  @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
-  @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
-  proveedor_id?: number;
+  // @IsOptional()
+  // @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
+  // @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
+  // proveedor_id?: number;
 
   @IsOptional()
   @IsNumber({}, { message: 'El precio unitario debe ser un número' })

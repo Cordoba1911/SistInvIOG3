@@ -1,15 +1,15 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  Get, 
-  Param, 
-  NotFoundException, 
-  ParseIntPipe, 
-  Delete, 
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  NotFoundException,
+  ParseIntPipe,
+  Delete,
   Patch,
   HttpCode,
-  HttpStatus
+  HttpStatus,
 } from '@nestjs/common';
 import { CreateArticuloDto } from './dto/create-articulo.dto';
 import { ArticulosService } from './articulos.service';
@@ -19,7 +19,7 @@ import { ProveedorResponseDto } from '../proveedores/dto/proveedor-response.dto'
 
 @Controller('articulos')
 export class ArticulosController {
-  constructor(private articulosService: ArticulosService) { }
+  constructor(private articulosService: ArticulosService) {}
 
   /**
    * Obtener todos los artículos activos
@@ -41,7 +41,9 @@ export class ArticulosController {
    * Obtener un artículo específico por ID
    */
   @Get(':id')
-  async getArticulo(@Param('id', ParseIntPipe) id: number): Promise<ArticuloResponseDto> {
+  async getArticulo(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ArticuloResponseDto> {
     return this.articulosService.getArticulo(id);
   }
 
@@ -52,7 +54,9 @@ export class ArticulosController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createArticulo(@Body() newArticulo: CreateArticuloDto): Promise<ArticuloResponseDto> {
+  async createArticulo(
+    @Body() newArticulo: CreateArticuloDto,
+  ): Promise<ArticuloResponseDto> {
     return this.articulosService.createArticulo(newArticulo);
   }
 
@@ -62,8 +66,8 @@ export class ArticulosController {
    */
   @Patch(':id')
   async updateArticulo(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() articulo: UpdateArticuloDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() articulo: UpdateArticuloDto,
   ): Promise<ArticuloResponseDto> {
     return this.articulosService.updateArticulo(id, articulo);
   }
@@ -75,7 +79,9 @@ export class ArticulosController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async deleteArticulo(@Param('id', ParseIntPipe) id: number): Promise<{ message: string; articulo: ArticuloResponseDto }> {
+  async deleteArticulo(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string; articulo: ArticuloResponseDto }> {
     return this.articulosService.deleteArticulo(id);
   }
 }

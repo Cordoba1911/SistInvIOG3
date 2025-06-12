@@ -16,5 +16,5 @@ export class UpdateOrdenCompraDto {
   @IsOptional()
   @IsInt({ message: 'El ID del proveedor debe ser un número entero' })
   @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
-  proveedorId?: number;
+  proveedor_id?: number;
 }

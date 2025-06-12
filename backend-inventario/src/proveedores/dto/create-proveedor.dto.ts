@@ -42,8 +42,9 @@ export class CreateProveedorDto {
   @IsString()
   email?: string;
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ArticuloProveedorDto)
-  articulos: ArticuloProveedorDto[];
+  articulos?: ArticuloProveedorDto[];
 }

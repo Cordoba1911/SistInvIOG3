@@ -68,9 +68,6 @@ export class Articulo {
   @Column({ type: 'datetime', nullable: true })
   fecha_baja: Date;
 
-  @Column({ type: 'int', nullable: true })
-  periodo_revision: number;
-
   @OneToMany(
     () => ArticuloProveedor,
     (articuloProveedor) => articuloProveedor.articulo,

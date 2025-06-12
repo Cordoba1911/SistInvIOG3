@@ -1,15 +1,11 @@
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
 import { OrdenCompra } from 'src/orden_compra/orden-compra.entity';
-import {
-  Entity,
-  Column,
-  PrimaryGeneratedColumn,
-  OneToMany,
-} from 'typeorm';
+import { DetalleVenta } from 'src/ventas/detalle-venta.entity';
 
 export enum ModeloInventario {
   lote_fijo = 'lote_fijo',
-  intervalo_fijo = 'intervalo_fijo',
+  periodo_fijo = 'periodo_fijo',
 }
 
 @Entity({ name: 'articulos' })
@@ -38,9 +34,13 @@ export class Articulo {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   costo_compra: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  precio_venta: number;
+
   @Column({
     type: 'enum',
     enum: ModeloInventario,
+    default: ModeloInventario.lote_fijo,
   })
   modelo_inventario: ModeloInventario;
 
@@ -68,6 +68,9 @@ export class Articulo {
   @Column({ type: 'datetime', nullable: true })
   fecha_baja: Date;
 
+  @Column({ type: 'int', nullable: true })
+  periodo_revision: number;
+
   @OneToMany(
     () => ArticuloProveedor,
     (articuloProveedor) => articuloProveedor.articulo,
@@ -75,5 +78,8 @@ export class Articulo {
   articulo_proveedor: ArticuloProveedor[];
 
   @OneToMany(() => OrdenCompra, (ordenCompra) => ordenCompra.articulo)
-  orden_compra: OrdenCompra[];
+  ordenes_compra: OrdenCompra[];
+
+  @OneToMany(() => DetalleVenta, (detalleVenta) => detalleVenta.articulo)
+  detalle_venta: DetalleVenta[];
 }

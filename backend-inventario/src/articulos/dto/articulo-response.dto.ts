@@ -10,6 +10,7 @@ export class ArticuloResponseDto {
   costo_almacenamiento?: number;
   costo_pedido?: number;
   costo_compra: number;
+  precio_venta?: number;
   modelo_inventario?: ModeloInventario;
   lote_optimo?: number;
   punto_pedido?: number;
@@ -19,4 +20,4 @@ export class ArticuloResponseDto {
   stock_actual?: number;
   estado: boolean;
   fecha_baja?: Date;
-} 
+}

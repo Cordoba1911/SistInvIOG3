@@ -5,6 +5,7 @@ import { ArticulosModule } from './articulos/articulos.module';
 import { ProveedorModule } from './proveedores/proveedor.module';
 import { OrdenCompraModule } from './orden_compra/orden-compra.module';
 import { ArticuloProveedorModule } from './articulo-proveedor/articulo-proveedor.module';
+import { VentaModule } from './ventas/venta.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ArticuloProveedorModule } from './articulo-proveedor/articulo-proveedor
     ProveedorModule,
     OrdenCompraModule,
     ArticuloProveedorModule,
+    VentaModule,
   ],
 })
 export class AppModule {}

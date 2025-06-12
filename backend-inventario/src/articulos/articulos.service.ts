@@ -231,6 +231,7 @@ export class ArticulosService {
       costo_almacenamiento: articulo.costo_almacenamiento,
       costo_pedido: articulo.costo_pedido,
       costo_compra: articulo.costo_compra,
+      precio_venta: articulo.precio_venta,
       modelo_inventario: articulo.modelo_inventario,
       lote_optimo: articulo.lote_optimo,
       punto_pedido: articulo.punto_pedido,

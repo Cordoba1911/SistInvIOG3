@@ -42,8 +42,15 @@ export class CreateArticuloDto {
   @IsPositive({ message: 'El costo de compra debe ser mayor a 0' })
   costo_compra?: number;
 
+  @IsOptional()
+  @IsNumber({}, { message: 'El precio de venta debe ser un número' })
+  @IsPositive({ message: 'El precio de venta debe ser mayor a 0' })
+  precio_venta?: number;
+
   @IsNotEmpty({ message: 'El modelo de inventario es obligatorio' })
-  @IsEnum(ModeloInventario, { message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"' })
+  @IsEnum(ModeloInventario, {
+    message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"',
+  })
   modelo_inventario: ModeloInventario;
 
   @IsOptional()

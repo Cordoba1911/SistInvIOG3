@@ -4,9 +4,11 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  CreateDateColumn,
 } from 'typeorm';
 import { Articulo } from 'src/articulos/articulo.entity';
 import { Proveedor } from 'src/proveedores/proveedor.entity';
+import { Venta } from 'src/ventas/venta.entity';
 
 export enum EstadoOrdenCompra {
   PENDIENTE = 'pendiente',
@@ -36,7 +38,7 @@ export class OrdenCompra {
   })
   estado: EstadoOrdenCompra;
 
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   fecha_creacion: Date;
 
   @Column({ type: 'datetime', nullable: true })
@@ -46,7 +48,7 @@ export class OrdenCompra {
   fecha_finalizacion: Date;
 
   // Relaciones
-  @ManyToOne(() => Articulo, (articulo) => articulo.orden_compra)
+  @ManyToOne(() => Articulo, (articulo) => articulo.ordenes_compra)
   @JoinColumn({ name: 'articulo_id' })
   articulo: Articulo;
 

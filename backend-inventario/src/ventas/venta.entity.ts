@@ -1,8 +1,8 @@
 import {
   Entity,
-  Column,
   PrimaryGeneratedColumn,
   OneToMany,
+  CreateDateColumn,
 } from 'typeorm';
 import { DetalleVenta } from './detalle-venta.entity';
 
@@ -11,9 +11,9 @@ export class Venta {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   fecha_venta: Date;
 
-  @OneToMany(() => DetalleVenta, (detalle) => detalle.venta)
+  @OneToMany(() => DetalleVenta, (detalleVenta) => detalleVenta.venta)
   detalle_venta: DetalleVenta[];
-} 
+}

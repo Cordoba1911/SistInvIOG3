@@ -45,7 +45,14 @@ export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   costo_compra?: number;
 
   @IsOptional()
-  @IsEnum(ModeloInventario, { message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"' })
+  @IsNumber({}, { message: 'El precio de venta debe ser un número' })
+  @IsPositive({ message: 'El precio de venta debe ser mayor a 0' })
+  precio_venta?: number;
+
+  @IsOptional()
+  @IsEnum(ModeloInventario, {
+    message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"',
+  })
   modelo_inventario?: ModeloInventario;
 
   @IsOptional()

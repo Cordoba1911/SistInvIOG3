@@ -31,14 +31,4 @@ export class VentaController {
   getVenta(@Param('id', ParseIntPipe) id: number) {
     return this.ventaService.getVenta(id);
   }
-
-  @Patch(':id/cancelar')
-  cancelarVenta(@Param('id', ParseIntPipe) id: number) {
-    return this.ventaService.cancelarVenta(id);
-  }
-
-  @Patch(':id/completar')
-  completarVenta(@Param('id', ParseIntPipe) id: number) {
-    return this.ventaService.completarVenta(id);
-  }
 }

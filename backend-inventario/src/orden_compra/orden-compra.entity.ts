@@ -8,27 +8,35 @@ import {
 import { Articulo } from 'src/articulos/articulo.entity';
 import { Proveedor } from 'src/proveedores/proveedor.entity';
 
+export enum EstadoOrdenCompra {
+  PENDIENTE = 'pendiente',
+  ENVIADA = 'enviada',
+  FINALIZADA = 'finalizada',
+  CANCELADA = 'cancelada',
+}
+
 @Entity({ name: 'ordenes_compra' })
 export class OrdenCompra {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ type: 'int' })
   articulo_id: number;
 
-  @Column()
+  @Column({ type: 'int' })
   proveedor_id: number;
 
-  @Column()
+  @Column({ type: 'int' })
   cantidad: number;
 
   @Column({
     type: 'enum',
-    enum: ['pendiente', 'enviada', 'cancelada', 'finalizada'],
+    enum: EstadoOrdenCompra,
+    default: EstadoOrdenCompra.PENDIENTE,
   })
-  estado: 'pendiente' | 'enviada' | 'cancelada' | 'finalizada';
+  estado: EstadoOrdenCompra;
 
-  @Column({ type: 'datetime' })
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   fecha_creacion: Date;
 
   @Column({ type: 'datetime', nullable: true })
@@ -38,11 +46,11 @@ export class OrdenCompra {
   fecha_finalizacion: Date;
 
   // Relaciones
-  @ManyToOne(() => Articulo)
+  @ManyToOne(() => Articulo, (articulo) => articulo.orden_compra)
   @JoinColumn({ name: 'articulo_id' })
   articulo: Articulo;
 
-  @ManyToOne(() => Proveedor)
+  @ManyToOne(() => Proveedor, (proveedor) => proveedor.orden_compra)
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor;
 }

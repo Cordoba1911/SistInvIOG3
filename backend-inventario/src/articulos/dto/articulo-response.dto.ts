@@ -3,7 +3,8 @@ import { ModeloInventario } from '../articulo.entity';
 
 export class ArticuloResponseDto {
   id: number;
-  codigo: number;
+  codigo: string;
+  nombre: string;
   descripcion: string;
   demanda?: number;
   costo_almacenamiento?: number;
@@ -18,6 +19,4 @@ export class ArticuloResponseDto {
   stock_actual?: number;
   estado: boolean;
   fecha_baja?: Date;
-  proveedor_predeterminado_id?: number;
-  proveedor_predeterminado?: ProveedorResponseDto;
 } 

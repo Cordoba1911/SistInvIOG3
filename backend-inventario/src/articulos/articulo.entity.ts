@@ -1,69 +1,68 @@
 import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
 import { OrdenCompra } from 'src/orden_compra/orden-compra.entity';
-import { Proveedor } from 'src/proveedores/proveedor.entity';
 import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
   OneToMany,
 } from 'typeorm';
 
 export enum ModeloInventario {
-  lote_fijo = 'Lote Fijo',
-  intervalo_fijo = 'Intervalo Fijo',
+  lote_fijo = 'lote_fijo',
+  intervalo_fijo = 'intervalo_fijo',
 }
 
-@Entity({ name: 'Articulos' })
+@Entity({ name: 'articulos' })
 export class Articulo {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  codigo: number;
+  @Column({ type: 'varchar', length: 50, unique: true })
+  codigo: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100 })
+  nombre: string;
+
+  @Column({ type: 'varchar', length: 255 })
   descripcion: string;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', default: 0 })
   demanda: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   costo_almacenamiento: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   costo_pedido: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   costo_compra: number;
 
   @Column({
     type: 'enum',
     enum: ModeloInventario,
-    nullable: true,
   })
   modelo_inventario: ModeloInventario;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', nullable: true })
   lote_optimo: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', nullable: true })
   punto_pedido: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', nullable: true })
   stock_seguridad: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', nullable: true })
   inventario_maximo: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cgi: number;
 
-  @Column('float', { nullable: true })
+  @Column({ type: 'int', default: 0 })
   stock_actual: number;
 
-  @Column({ nullable: true, default: true })
+  @Column({ type: 'boolean', default: true })
   estado: boolean;
 
   @Column({ type: 'datetime', nullable: true })
@@ -75,6 +74,6 @@ export class Articulo {
   )
   articulo_proveedor: ArticuloProveedor[];
 
-  @OneToMany(() => OrdenCompra, (ordenCompra) => ordenCompra.proveedor)
-  orden_compra: OrdenCompra[]; // Relación con OrdenCompra
+  @OneToMany(() => OrdenCompra, (ordenCompra) => ordenCompra.articulo)
+  orden_compra: OrdenCompra[];
 }

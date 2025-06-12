@@ -4,61 +4,77 @@ import {
   IsString,
   IsPositive,
   IsOptional,
+  IsEnum,
+  IsInt,
 } from 'class-validator';
+import { ModeloInventario } from '../articulo.entity';
 
 export class CreateArticuloDto {
   @IsNotEmpty({ message: 'El código es obligatorio' })
-  @IsNumber({}, { message: 'El código debe ser un número' })
-  @IsPositive({ message: 'El código debe ser mayor a 0' })
-  codigo: number;
+  @IsString({ message: 'El código debe ser una cadena de texto' })
+  codigo: string;
+
+  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @IsString({ message: 'El nombre debe ser una cadena de texto' })
+  nombre: string;
 
   @IsNotEmpty({ message: 'La descripción es obligatoria' })
-  @IsString({ message: 'La descripción debe ser un texto' })
+  @IsString({ message: 'La descripción debe ser una cadena de texto' })
   descripcion: string;
 
-  @IsNotEmpty({ message: 'La demanda es obligatoria' })
-  @IsNumber({}, { message: 'La demanda debe ser un número' })
+  @IsOptional()
+  @IsInt({ message: 'La demanda debe ser un número entero' })
   @IsPositive({ message: 'La demanda debe ser mayor a 0' })
-  demanda: number;
+  demanda?: number;
 
-  @IsNotEmpty({ message: 'El costo de almacenamiento es obligatorio' })
+  @IsOptional()
   @IsNumber({}, { message: 'El costo de almacenamiento debe ser un número' })
   @IsPositive({ message: 'El costo de almacenamiento debe ser mayor a 0' })
-  costo_almacenamiento: number;
+  costo_almacenamiento?: number;
 
-  @IsNotEmpty({ message: 'El costo de pedido es obligatorio' })
+  @IsOptional()
   @IsNumber({}, { message: 'El costo de pedido debe ser un número' })
   @IsPositive({ message: 'El costo de pedido debe ser mayor a 0' })
-  costo_pedido: number;
+  costo_pedido?: number;
 
-  @IsNotEmpty({ message: 'El costo de compra es obligatorio' })
+  @IsOptional()
   @IsNumber({}, { message: 'El costo de compra debe ser un número' })
   @IsPositive({ message: 'El costo de compra debe ser mayor a 0' })
-  costo_compra: number;
+  costo_compra?: number;
+
+  @IsNotEmpty({ message: 'El modelo de inventario es obligatorio' })
+  @IsEnum(ModeloInventario, { message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"' })
+  modelo_inventario: ModeloInventario;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El lote optimo debe ser un número' })
-  @IsPositive({ message: 'El lote optimo debe ser mayor a 0' })
-  lote_optimo: number;
+  @IsInt({ message: 'El lote óptimo debe ser un número entero' })
+  @IsPositive({ message: 'El lote óptimo debe ser mayor a 0' })
+  lote_optimo?: number;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El punto de pedido debe ser un número' })
+  @IsInt({ message: 'El punto de pedido debe ser un número entero' })
   @IsPositive({ message: 'El punto de pedido debe ser mayor a 0' })
-  punto_pedido: number;
+  punto_pedido?: number;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El stock de seguridad debe ser un número' })
+  @IsInt({ message: 'El stock de seguridad debe ser un número entero' })
   @IsPositive({ message: 'El stock de seguridad debe ser mayor a 0' })
-  stock_seguridad: number;
+  stock_seguridad?: number;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El lote optimo debe ser un número' })
-  @IsPositive({ message: 'El lote optimo debe ser mayor a 0' })
-  inventario_maximo: number;
+  @IsInt({ message: 'El inventario máximo debe ser un número entero' })
+  @IsPositive({ message: 'El inventario máximo debe ser mayor a 0' })
+  inventario_maximo?: number;
 
   @IsOptional()
-  @IsNumber({}, { message: 'El stock actual debe ser un número' })
-  stock_actual: number;
+  @IsNumber({}, { message: 'El CGI debe ser un número' })
+  @IsPositive({ message: 'El CGI debe ser mayor a 0' })
+  cgi?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'El stock actual debe ser un número entero' })
+  @IsPositive({ message: 'El stock actual debe ser mayor a 0' })
+  stock_actual?: number;
 
   @IsOptional()
   @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
@@ -76,7 +92,6 @@ export class CreateArticuloDto {
   demora_entrega?: number;
 
   @IsOptional()
-  @IsNumber({}, { message: 'Los cargos de pedido debe ser un número' })
   @IsPositive({ message: 'Los cargos de pedido debe ser mayor a 0' })
   cargos_pedido?: number;
 }

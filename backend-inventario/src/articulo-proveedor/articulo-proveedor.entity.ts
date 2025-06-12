@@ -13,17 +13,17 @@ export class ArticuloProveedor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', default: 0 })
   demora_entrega: number;
 
-  @Column({ default: true, type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   precio_unitario: number;
 
-  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cargos_pedido: number;
 
-  @Column({ default: false })
-  es_predeterminado: boolean;
+  @Column({ type: 'boolean', default: true })
+  proveedor_predeterminado: boolean;
 
   @ManyToOne(() => Proveedor, (proveedor) => proveedor.articulo_proveedor)
   @JoinColumn({ name: 'proveedor_id' })

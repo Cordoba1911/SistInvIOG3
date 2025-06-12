@@ -151,20 +151,19 @@ export class ProveedorService {
     }
 
     // Validación: ¿Es proveedor predeterminado de algún artículo?
-    // const proveedorPredeterminado = await this.articuloRepository.count({
-    //   where: {
-    //     proveedor_predeterminado: {
-    //       id: id,
-    //     },
-    //   },
-    // });
+    const relacionesPredeterminadas = await this.articuloProveedorRepository.count({
+      where: {
+        proveedor: { id: id },
+        proveedor_predeterminado: true,
+      },
+    });
 
-    // if (proveedorPredeterminado > 0) {
-    //   throw new HttpException(
-    //     'No se puede dar de baja al proveedor porque es el proveedor predeterminado de algún artículo',
-    //     HttpStatus.BAD_REQUEST,
-    //   );
-    // }
+    if (relacionesPredeterminadas > 0) {
+      throw new HttpException(
+        'No se puede dar de baja al proveedor porque es el proveedor predeterminado de algún artículo',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     // Validación: ¿Tiene órdenes de compra pendientes o en curso?
     const ordenesPendientes = await this.ordenCompraRepository.count({
@@ -207,7 +206,7 @@ export class ProveedorService {
         articulo_id: articulo.id,
         codigo: articulo.codigo,
         descripcion: articulo.descripcion,
-        // esPredeterminado: articulo.proveedor_predeterminado_id === id,
+        esPredeterminado: relacion.proveedor_predeterminado,
       };
     });
 

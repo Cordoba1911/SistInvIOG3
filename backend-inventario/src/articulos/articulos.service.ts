@@ -59,20 +59,7 @@ export class ArticulosService {
 
     const savedArticulo = await this.articuloRepository.save(newArticulo);
 
-    // Cargar el artículo con la relación del proveedor para devolverlo
-    const articuloConProveedor = await this.articuloRepository.findOne({
-      where: { id: savedArticulo.id },
-      relations: ['proveedor_predeterminado'],
-    });
-
-    if (!articuloConProveedor) {
-      throw new HttpException(
-        'Error al recuperar el artículo creado',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    return this.toArticuloResponseDto(articuloConProveedor);
+    return this.toArticuloResponseDto(savedArticulo);
   }
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
@@ -80,7 +67,6 @@ export class ArticulosService {
       where: {
         estado: true, // Solo artículos activos
       },
-      relations: ['proveedor_predeterminado'], // Incluir datos del proveedor
     });
 
     return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
@@ -92,7 +78,6 @@ export class ArticulosService {
         id,
         estado: true, // Solo artículos activos
       },
-      relations: ['proveedor_predeterminado'], // Incluir datos del proveedor
     });
 
     if (!articuloFound) {
@@ -209,25 +194,11 @@ export class ArticulosService {
       }
     }
 
-
     const updateArticulo = Object.assign(articuloFound, articulo);
     const articuloActualizado =
       await this.articuloRepository.save(updateArticulo);
 
-    // Cargar el artículo con la relación del proveedor
-    const articuloConProveedor = await this.articuloRepository.findOne({
-      where: { id: articuloActualizado.id },
-      relations: ['proveedor_predeterminado'],
-    });
-
-    if (!articuloConProveedor) {
-      throw new HttpException(
-        'Error al recuperar el artículo actualizado',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    return this.toArticuloResponseDto(articuloConProveedor);
+    return this.toArticuloResponseDto(articuloActualizado);
   }
 
   /**
@@ -254,6 +225,7 @@ export class ArticulosService {
     return {
       id: articulo.id,
       codigo: articulo.codigo,
+      nombre: articulo.nombre,
       descripcion: articulo.descripcion,
       demanda: articulo.demanda,
       costo_almacenamiento: articulo.costo_almacenamiento,
@@ -282,22 +254,5 @@ export class ArticulosService {
       email: proveedor.email,
       estado: proveedor.estado,
     };
-  }
-
-  /**
-   * Validar que el proveedor existe y está activo
-   */
-  private async validateProveedor(proveedorId: number): Promise<void> {
-    try {
-      await this.proveedorService.getProveedor(proveedorId);
-    } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
-        throw new HttpException(
-          `El proveedor con ID ${proveedorId} no existe o no está activo`,
-          HttpStatus.BAD_REQUEST,
-        );
-      }
-      throw error;
-    }
   }
 }

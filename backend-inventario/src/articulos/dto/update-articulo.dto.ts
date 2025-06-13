@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsInt,
   IsEnum,
+  Min,
 } from 'class-validator';
 import { ModeloInventario } from '../articulo.entity';
 
@@ -81,7 +82,7 @@ export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
 
   @IsOptional()
   @IsInt({ message: 'El stock actual debe ser un número entero' })
-  @IsPositive({ message: 'El stock actual debe ser mayor a 0' })
+  @Min(0, { message: 'El stock actual debe ser mayor o igual a 0' })
   stock_actual?: number;
 
   @IsOptional()

@@ -1,6 +1,17 @@
 import { ProveedorResponseDto } from '../../proveedores/dto/proveedor-response.dto';
 import { ModeloInventario } from '../articulo.entity';
 
+export class ProveedorArticuloResponseDto {
+  proveedor_id: number;
+  nombre: string;
+  telefono?: string;
+  email?: string;
+  precio_unitario: number;
+  demora_entrega?: number;
+  cargos_pedido?: number;
+  proveedor_predeterminado: boolean;
+}
+
 export class ArticuloResponseDto {
   id: number;
   codigo: string;
@@ -20,4 +31,5 @@ export class ArticuloResponseDto {
   stock_actual?: number;
   estado: boolean;
   fecha_baja?: Date;
+  proveedores: ProveedorArticuloResponseDto[];
 }

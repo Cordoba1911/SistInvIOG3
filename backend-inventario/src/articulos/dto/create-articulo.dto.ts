@@ -6,8 +6,39 @@ import {
   IsOptional,
   IsEnum,
   IsInt,
+  Min,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ModeloInventario } from '../articulo.entity';
+
+class ProveedorArticuloDto {
+  @IsNotEmpty({ message: 'El ID del proveedor es obligatorio' })
+  @IsInt({ message: 'El ID del proveedor debe ser un número entero' })
+  @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
+  proveedor_id: number;
+
+  @IsNotEmpty({ message: 'El precio unitario es obligatorio' })
+  @IsNumber({}, { message: 'El precio unitario debe ser un número' })
+  @IsPositive({ message: 'El precio unitario debe ser mayor a 0' })
+  precio_unitario: number;
+
+  @IsOptional()
+  @IsInt({ message: 'La demora de entrega debe ser un número entero' })
+  @Min(0, { message: 'La demora de entrega debe ser mayor o igual a 0' })
+  demora_entrega?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Los cargos de pedido debe ser un número' })
+  @Min(0, { message: 'Los cargos de pedido debe ser mayor o igual a 0' })
+  cargos_pedido?: number;
+
+  @IsOptional()
+  @IsBoolean({ message: 'proveedor_predeterminado debe ser un valor booleano' })
+  proveedor_predeterminado?: boolean;
+}
 
 export class CreateArticuloDto {
   @IsNotEmpty({ message: 'El código es obligatorio' })
@@ -47,7 +78,7 @@ export class CreateArticuloDto {
   @IsPositive({ message: 'El precio de venta debe ser mayor a 0' })
   precio_venta?: number;
 
-  @IsNotEmpty({ message: 'El modelo de inventario es obligatorio' })
+  @IsOptional()
   @IsEnum(ModeloInventario, {
     message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"',
   })
@@ -80,25 +111,13 @@ export class CreateArticuloDto {
 
   @IsOptional()
   @IsInt({ message: 'El stock actual debe ser un número entero' })
-  @IsPositive({ message: 'El stock actual debe ser mayor a 0' })
+  @Min(0, { message: 'El stock actual debe ser mayor o igual a 0' })
   stock_actual?: number;
 
-  // @IsOptional()
-  // @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
-  // @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
-  // proveedor_id?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'El precio unitario debe ser un número' })
-  @IsPositive({ message: 'El precio unitario debe ser mayor a 0' })
-  precio_unitario?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'La demora de entrega debe ser un número' })
-  @IsPositive({ message: 'La demora de entrega debe ser mayor a 0' })
-  demora_entrega?: number;
-
-  @IsOptional()
-  @IsPositive({ message: 'Los cargos de pedido debe ser mayor a 0' })
-  cargos_pedido?: number;
+  // RELACIÓN CON PROVEEDORES - OBLIGATORIA (AL MENOS UNO)
+  @IsNotEmpty({ message: 'Debe proporcionar al menos un proveedor' })
+  @IsArray({ message: 'proveedores debe ser un array' })
+  @ValidateNested({ each: true })
+  @Type(() => ProveedorArticuloDto)
+  proveedores: ProveedorArticuloDto[];
 }

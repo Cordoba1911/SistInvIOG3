@@ -6,16 +6,23 @@ import { Articulo } from './articulo.entity';
 import { Repository } from 'typeorm';
 import { CreateArticuloDto } from './dto/create-articulo.dto';
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
-import { ArticuloResponseDto } from './dto/articulo-response.dto';
+import { ArticuloResponseDto, ProveedorArticuloResponseDto } from './dto/articulo-response.dto';
+import { CalculoLoteFijoDto, ResultadoLoteFijoDto } from './dto/calculo-lote-fijo.dto';
+import { CalculoIntervaloFijoDto, ResultadoIntervaloFijoDto } from './dto/calculo-intervalo-fijo.dto';
 import { OrdenCompraService } from '../orden_compra/orden-compra.service';
 import { ProveedorService } from '../proveedores/proveedor.service';
-import { ProveedorResponseDto } from '../proveedores/dto/proveedor-response.dto';
+import { ArticuloProveedor } from '../articulo-proveedor/articulo-proveedor.entity';
+import { Proveedor } from '../proveedores/proveedor.entity';
 
 @Injectable()
 export class ArticulosService {
   constructor(
     @InjectRepository(Articulo)
     private articuloRepository: Repository<Articulo>,
+    @InjectRepository(ArticuloProveedor)
+    private articuloProveedorRepository: Repository<ArticuloProveedor>,
+    @InjectRepository(Proveedor)
+    private proveedorRepository: Repository<Proveedor>,
     private ordenCompraService: OrdenCompraService,
     private proveedorService: ProveedorService,
   ) {}
@@ -37,27 +44,87 @@ export class ArticulosService {
       );
     }
 
-    // Validar que la descripción no exista
-    const articuloFoundByDescripcion = await this.articuloRepository.findOne({
+    // Validar que el nombre no exista
+    const articuloFoundByNombre = await this.articuloRepository.findOne({
       where: {
-        descripcion: articulo.descripcion,
+        nombre: articulo.nombre,
       },
     });
 
-    if (articuloFoundByDescripcion) {
+    if (articuloFoundByNombre) {
       throw new HttpException(
-        'Ya existe un artículo con esta descripción',
+        'Ya existe un artículo con este nombre',
         HttpStatus.CONFLICT,
       );
     }
 
+    // Validar que todos los proveedores existen y están activos
+    const proveedorIds = articulo.proveedores.map(p => p.proveedor_id);
+    const proveedoresUnicos = [...new Set(proveedorIds)];
+    
+    if (proveedorIds.length !== proveedoresUnicos.length) {
+      throw new HttpException(
+        'No se puede incluir el mismo proveedor más de una vez',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const proveedores = await this.proveedorRepository.find({
+      where: proveedorIds.map(id => ({ id, estado: true })),
+    });
+
+    if (proveedores.length !== proveedorIds.length) {
+      const encontrados = proveedores.map(p => p.id);
+      const noEncontrados = proveedorIds.filter(id => !encontrados.includes(id));
+      throw new HttpException(
+        `Proveedores no encontrados o inactivos: ${noEncontrados.join(', ')}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    // Validar que solo haya un proveedor predeterminado
+    const predeterminados = articulo.proveedores.filter(p => p.proveedor_predeterminado === true);
+    if (predeterminados.length > 1) {
+      throw new HttpException(
+        'Solo puede haber un proveedor predeterminado por artículo',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Si no se especifica ningún predeterminado, el primero será el predeterminado
+    const tieneExplicitoPredeterminado = predeterminados.length === 1;
+    
+    // Crear el artículo (sin los campos del proveedor)
+    const { proveedores: proveedoresData, ...articuloData } = articulo;
+    
     const newArticulo = this.articuloRepository.create({
-      ...articulo,
+      ...articuloData,
       estado: true, // Por defecto, el artículo está activo
-      stock_actual: 0, // Stock inicial en 0
+      stock_actual: articulo.stock_actual || 0, // Stock inicial en 0 si no se proporciona
     });
 
     const savedArticulo = await this.articuloRepository.save(newArticulo);
+
+    // Crear las relaciones con todos los proveedores
+    for (let i = 0; i < proveedoresData.length; i++) {
+      const proveedorData = proveedoresData[i];
+      const proveedor = proveedores.find(p => p.id === proveedorData.proveedor_id);
+      
+      const esPredeterminado = tieneExplicitoPredeterminado 
+        ? proveedorData.proveedor_predeterminado === true
+        : i === 0; // Si no hay explícito, el primero es predeterminado
+
+      const articuloProveedor = this.articuloProveedorRepository.create({
+        articulo: savedArticulo,
+        proveedor: proveedor,
+        precio_unitario: proveedorData.precio_unitario,
+        demora_entrega: proveedorData.demora_entrega || 0,
+        cargos_pedido: proveedorData.cargos_pedido || 0,
+        proveedor_predeterminado: esPredeterminado,
+      });
+
+      await this.articuloProveedorRepository.save(articuloProveedor);
+    }
 
     return this.toArticuloResponseDto(savedArticulo);
   }
@@ -67,6 +134,7 @@ export class ArticulosService {
       where: {
         estado: true, // Solo artículos activos
       },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
     return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
@@ -78,6 +146,7 @@ export class ArticulosService {
         id,
         estado: true, // Solo artículos activos
       },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
     if (!articuloFound) {
@@ -201,27 +270,18 @@ export class ArticulosService {
     return this.toArticuloResponseDto(articuloActualizado);
   }
 
-  /**
-   * Obtener todos los proveedores activos disponibles para selección
-   */
-  async getProveedoresDisponibles(): Promise<ProveedorResponseDto[]> {
-    try {
-      const proveedores = await this.proveedorService.getProveedores();
-      return proveedores.map((proveedor) =>
-        this.toProveedorResponseDto(proveedor),
-      );
-    } catch (error) {
-      throw new HttpException(
-        'Error al obtener proveedores',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
-
-  /**
-   * Convertir entidad Articulo a ArticuloResponseDto
-   */
   private toArticuloResponseDto(articulo: Articulo): ArticuloResponseDto {
+    const proveedores: ProveedorArticuloResponseDto[] = articulo.articulo_proveedor?.map(ap => ({
+      proveedor_id: ap.proveedor.id,
+      nombre: ap.proveedor.nombre,
+      telefono: ap.proveedor.telefono,
+      email: ap.proveedor.email,
+      precio_unitario: ap.precio_unitario,
+      demora_entrega: ap.demora_entrega,
+      cargos_pedido: ap.cargos_pedido,
+      proveedor_predeterminado: ap.proveedor_predeterminado,
+    })) || [];
+
     return {
       id: articulo.id,
       codigo: articulo.codigo,
@@ -241,19 +301,104 @@ export class ArticulosService {
       stock_actual: articulo.stock_actual,
       estado: articulo.estado,
       fecha_baja: articulo.fecha_baja,
+      proveedores: proveedores,
     };
   }
 
   /**
-   * Convertir entidad Proveedor a ProveedorResponseDto
+   * Calcular parámetros del modelo de inventario de Lote Fijo
    */
-  private toProveedorResponseDto(proveedor: any): ProveedorResponseDto {
+  async calcularLoteFijo(datos: CalculoLoteFijoDto): Promise<ResultadoLoteFijoDto> {
+    // TODO: Implementar fórmulas del modelo Lote Fijo
+    // Fórmulas que debes implementar:
+    // - Lote Óptimo (EOQ): √(2 × D × S / H)
+    // - Punto de Pedido: D × L + SS
+    // - Stock de Seguridad: Z × σ × √L
+    // - Costo Total Anual: (D/Q)×S + (Q/2)×H + D×C
+    
+    const lote_optimo = 0; // TODO: Calcular EOQ
+    const punto_pedido = 0; // TODO: Calcular punto de pedido
+    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
+    const costo_total_anual = 0; // TODO: Calcular costo total
+    const tiempo_reposicion = 0; // TODO: Calcular tiempo de reposición
+    
     return {
-      id: proveedor.id,
-      nombre: proveedor.nombre,
-      telefono: proveedor.telefono,
-      email: proveedor.email,
-      estado: proveedor.estado,
+      lote_optimo,
+      punto_pedido,
+      stock_seguridad,
+      costo_total_anual,
+      tiempo_reposicion,
     };
+  }
+
+  /**
+   * Calcular parámetros del modelo de inventario de Intervalo Fijo
+   */
+  async calcularIntervaloFijo(datos: CalculoIntervaloFijoDto): Promise<ResultadoIntervaloFijoDto> {
+    // TODO: Implementar fórmulas del modelo Intervalo Fijo
+    // Fórmulas que debes implementar:
+    // - Stock de Seguridad: Z × σ × √(R + L)
+    // - Inventario Máximo: D × (R + L) + SS
+    // - Cantidad a Ordenar: IM - I + D × R
+    
+    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
+    const inventario_maximo = 0; // TODO: Calcular inventario máximo
+    const cantidad_ordenar = 0; // TODO: Calcular cantidad a ordenar
+    const costo_total_periodo = 0; // TODO: Calcular costo total del período
+    const nivel_inventario_objetivo = 0; // TODO: Calcular nivel objetivo
+    
+    return {
+      stock_seguridad,
+      inventario_maximo,
+      cantidad_ordenar,
+      costo_total_periodo,
+      nivel_inventario_objetivo,
+    };
+  }
+
+  /**
+   * Aplicar resultados de cálculo a un artículo específico
+   */
+  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'intervalo_fijo'): Promise<ArticuloResponseDto> {
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: articuloId, estado: true },
+    });
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido) {
+      throw new HttpException(
+        'El artículo debe tener demanda, costo_almacenamiento y costo_pedido para realizar cálculos',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (modelo === 'lote_fijo') {
+      const resultado = await this.calcularLoteFijo({
+        demanda: articulo.demanda,
+        costo_almacenamiento: articulo.costo_almacenamiento,
+        costo_pedido: articulo.costo_pedido,
+      });
+
+      articulo.modelo_inventario = 'lote_fijo' as any;
+      articulo.lote_optimo = Math.round(resultado.lote_optimo);
+      articulo.punto_pedido = Math.round(resultado.punto_pedido);
+      articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+      
+    } else if (modelo === 'intervalo_fijo') {
+      const resultado = await this.calcularIntervaloFijo({
+        demanda: articulo.demanda,
+        intervalo_revision: 30, // TODO: Este valor podría venir como parámetro
+      });
+
+      articulo.modelo_inventario = 'periodo_fijo' as any;
+      articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+      articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
+    }
+
+    const articuloActualizado = await this.articuloRepository.save(articulo);
+    return this.toArticuloResponseDto(articuloActualizado);
   }
 }

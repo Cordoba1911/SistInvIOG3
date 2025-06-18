@@ -2,7 +2,7 @@
 
 // Inspirado en la librería react-hot-toast
 import * as React from "react"
-import type { ToastActionElement, ToastProps } from "../components/ui/toast"
+import type { ToastProps } from "react-bootstrap"
 
 // Límite máximo de toasts visibles al mismo tiempo
 const TOAST_LIMIT = 1

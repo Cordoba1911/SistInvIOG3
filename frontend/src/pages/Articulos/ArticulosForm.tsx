@@ -34,7 +34,7 @@ const ArticulosForm = ({onAlta}: PropsArticulosForm) =>{
 
   // Hook para redirigir después de guardar
   const navigate = useNavigate();
-
+ 
   // Función para manejar el envío del formulario
   const manejarEnvio = (datos: Record<string, string>) => {
     // Llama a la función onAlta con los datos del formulario

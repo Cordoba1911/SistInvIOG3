@@ -39,7 +39,7 @@ const ArticulosRouter = () => {
     setArticulos((prev) =>
       prev.map((p) => (p.id === id ? { ...p, ...nuevosDatos } : p))
     );
-  };
+  }; 
 
   // Realizar baja lógica de un articulo (marcar como inactivo)
   const bajaLogicaArticulo = (id: string) => {

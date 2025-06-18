@@ -1,13 +1,22 @@
-"use client" // Directiva de Next.js para habilitar el uso del cliente (hooks, eventos, etc.)
+"use client"
 
 import type React from "react"
 import { useState } from "react"
-import { Card, Form, Row, Col, ListGroup } from "react-bootstrap" // Componentes de Bootstrap para la interfaz
-import { useFixedIntervalCalculation } from "../../hooks/use-fixed-interval-calculation" // Hook personalizado para los cálculos del modelo
-import type { FixedIntervalData } from "../../types/inventory" // Tipo de datos esperado para el formulario
+import {
+  Card,
+  Form,
+  Row,
+  Col,
+  ListGroup,
+  Button,
+  Alert,
+  Spinner,
+} from "react-bootstrap"
+import { useFixedIntervalCalculation } from "../../hooks/use-fixed-interval-calculation"
+import type { FixedIntervalData } from "../../types/inventory"
+import { saveFixedIntervalData } from "../../services/fixedIntervalService"
 
 export function FixedIntervalModel() {
-  // Estado local para manejar los datos de entrada del formulario
   const [formData, setFormData] = useState<FixedIntervalData>({
     demandaPromedioDiaria: 40,
     tiempoEntrega: 5,
@@ -16,34 +25,51 @@ export function FixedIntervalModel() {
     desviacionDemanda: 8,
   })
 
-  // Resultados calculados usando el hook personalizado
   const results = useFixedIntervalCalculation(formData)
 
-  // Función para manejar cambios en los campos del formulario
+  const [saving, setSaving] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: Number.parseFloat(value) || 0, // Convierte el valor a número o 0 si es inválido
+      [name]: Number.parseFloat(value) || 0,
     }))
   }
 
+  const handleSave = async () => {
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      await saveFixedIntervalData({ ...formData, ...results })
+      setSuccess("Modelo guardado correctamente.")
+    } catch (e: any) {
+      setError(e.message || "Error inesperado al guardar")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <Card className="mb-4"> {/* Contenedor principal del componente */}
+    <Card className="mb-4">
       <Card.Header>
-        <Card.Title>Modelo de Intervalo Fijo</Card.Title> {/* Título del modelo */}
+        <Card.Title>Modelo de Intervalo Fijo</Card.Title>
         <Card.Subtitle className="text-muted">
-          Calcula el Stock de Seguridad e Inventario Máximo {/* Subtítulo explicativo */}
+          Calcula el Stock de Seguridad e Inventario Máximo
         </Card.Subtitle>
       </Card.Header>
 
       <Card.Body>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
+
         <Row>
-          {/* Columna izquierda: formulario de entrada */}
           <Col md={6}>
             <h5 className="mb-3">Datos de Entrada</h5>
             <Form>
-              {/* Primera fila de inputs */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -70,7 +96,6 @@ export function FixedIntervalModel() {
                 </Col>
               </Row>
 
-              {/* Segunda fila de inputs */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -97,7 +122,6 @@ export function FixedIntervalModel() {
                 </Col>
               </Row>
 
-              {/* Tercera fila: solo un input */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -114,12 +138,10 @@ export function FixedIntervalModel() {
             </Form>
           </Col>
 
-          {/* Columna derecha: resultados calculados */}
           <Col md={6}>
             <h5 className="mb-3">Resultados</h5>
             <Card>
               <ListGroup variant="flush">
-                {/* Resultado: Stock de Seguridad */}
                 <ListGroup.Item>
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="text-muted">Stock de Seguridad</span>
@@ -127,7 +149,6 @@ export function FixedIntervalModel() {
                   </div>
                 </ListGroup.Item>
 
-                {/* Resultado: Inventario Máximo */}
                 <ListGroup.Item>
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="text-muted">Inventario Máximo</span>
@@ -136,6 +157,11 @@ export function FixedIntervalModel() {
                 </ListGroup.Item>
               </ListGroup>
             </Card>
+            <div className="mt-3">
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? <Spinner size="sm" animation="border" /> : "Guardar Modelo"}
+              </Button>
+            </div>
           </Col>
         </Row>
       </Card.Body>

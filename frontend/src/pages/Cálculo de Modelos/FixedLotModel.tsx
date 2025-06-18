@@ -1,13 +1,13 @@
-"use client" // Indica que este componente se renderiza del lado del cliente (Next.js)
+"use client"
 
 import type React from "react"
 import { useState } from "react"
-import { Card, Form, Row, Col, ListGroup } from "react-bootstrap" // Componentes de Bootstrap para UI
-import { useFixedLotCalculation } from "../../hooks/use-fixed-lot-calculation" // Hook personalizado con la lógica de cálculo
-import type { FixedLotData } from "../../types/inventory" // Tipado de los datos del formulario
+import { Card, Form, Row, Col, ListGroup, Button } from "react-bootstrap"
+import { useFixedLotCalculation } from "../../hooks/use-fixed-lot-calculation"
+import type { FixedLotData } from "../../types/inventory"
+import { saveFixedLotData } from "../../services/fixedLotService"
 
 export function FixedLotModel() {
-  // Estado local que guarda los datos del formulario
   const [formData, setFormData] = useState<FixedLotData>({
     demandaAnual: 1000,
     costoOrden: 50,
@@ -19,22 +19,38 @@ export function FixedLotModel() {
     desviacionDemanda: 5,
   })
 
-  // Hook que calcula los resultados del modelo en base a los datos ingresados
   const results = useFixedLotCalculation(formData)
 
-  // Maneja el cambio de cualquier input numérico
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
-      [name]: Number.parseFloat(value) || 0, // Convierte a número o usa 0 si es NaN
+      [name]: Number.parseFloat(value) || 0,
     }))
   }
 
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setSaveError(null)
+    setSaveSuccess(false)
+    try {
+      await saveFixedLotData({ ...formData, ...results })
+      setSaveSuccess(true)
+    } catch (e: any) {
+      setSaveError(e.message || "Error al guardar")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
-    <Card className="mb-4"> {/* Contenedor principal con margen inferior */}
+    <Card className="mb-4">
       <Card.Header>
-        <Card.Title>Modelo de Lote Fijo</Card.Title> {/* Título del componente */}
+        <Card.Title>Modelo de Lote Fijo</Card.Title>
         <Card.Subtitle className="text-muted">
           Calcula el Lote Óptimo, Punto de Pedido y Stock de Seguridad
         </Card.Subtitle>
@@ -42,11 +58,9 @@ export function FixedLotModel() {
 
       <Card.Body>
         <Row>
-          {/* Columna izquierda: Formulario de entrada */}
           <Col md={6}>
             <h5 className="mb-3">Datos de Entrada</h5>
             <Form>
-              {/* Fila 1: Demanda anual y costo de orden */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -73,7 +87,6 @@ export function FixedLotModel() {
                 </Col>
               </Row>
 
-              {/* Fila 2: Costo de mantenimiento y costo unitario */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -100,7 +113,6 @@ export function FixedLotModel() {
                 </Col>
               </Row>
 
-              {/* Fila 3: Tiempo de entrega y días laborables */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -127,7 +139,6 @@ export function FixedLotModel() {
                 </Col>
               </Row>
 
-              {/* Fila 4: Nivel de servicio y desviación estándar */}
               <Row>
                 <Col md={6}>
                   <Form.Group className="mb-3">
@@ -156,12 +167,10 @@ export function FixedLotModel() {
             </Form>
           </Col>
 
-          {/* Columna derecha: Resultados calculados */}
           <Col md={6}>
             <h5 className="mb-3">Resultados</h5>
             <Card>
               <ListGroup variant="flush">
-                {/* Resultado: Lote Óptimo (EOQ) */}
                 <ListGroup.Item>
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="text-muted">Lote Óptimo (EOQ)</span>
@@ -169,7 +178,6 @@ export function FixedLotModel() {
                   </div>
                 </ListGroup.Item>
 
-                {/* Resultado: Punto de Pedido */}
                 <ListGroup.Item>
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="text-muted">Punto de Pedido</span>
@@ -177,7 +185,6 @@ export function FixedLotModel() {
                   </div>
                 </ListGroup.Item>
 
-                {/* Resultado: Stock de Seguridad */}
                 <ListGroup.Item>
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="text-muted">Stock de Seguridad</span>
@@ -186,6 +193,14 @@ export function FixedLotModel() {
                 </ListGroup.Item>
               </ListGroup>
             </Card>
+
+            <div className="mt-3">
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? "Guardando..." : "Guardar Modelo"}
+              </Button>
+              {saveSuccess && <p className="text-success mt-2">Guardado exitoso</p>}
+              {saveError && <p className="text-danger mt-2">{saveError}</p>}
+            </div>
           </Col>
         </Row>
       </Card.Body>

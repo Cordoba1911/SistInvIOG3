@@ -8,7 +8,7 @@ interface PropsArticulosList {
   onModificar: (id: string, nuevosDatos: Partial<Articulo>) => void;
   onBaja: (id: string) => void;
 }
-
+ 
 const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) => {
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null);
 

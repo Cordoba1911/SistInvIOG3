@@ -1,8 +1,4 @@
-// src/services/ordenService.ts
-
-import type { OrdenCompra } from "../models/OrdenCompra";
-
-
+import type { OrdenCompra } from "../routes/OrdenCompraRoutes";
 
 let ordenes: OrdenCompra[] = [];
 

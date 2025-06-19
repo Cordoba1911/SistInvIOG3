@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
 import EntidadList from '../../components/EntityList';
 import type { Articulo } from '../../routes/ArticulosRoutes';
 
@@ -8,7 +8,7 @@ interface PropsArticulosList {
   onModificar: (id: string, nuevosDatos: Partial<Articulo>) => void;
   onBaja: (id: string) => void;
 }
-
+ 
 const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) => {
   const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null);
 

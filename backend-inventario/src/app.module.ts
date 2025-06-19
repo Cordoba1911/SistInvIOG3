@@ -3,27 +3,36 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ArticulosModule } from './articulos/articulos.module';
 import { ProveedorModule } from './proveedores/proveedor.module';
+import { OrdenCompraModule } from './orden_compra/orden-compra.module';
+import { ArticuloProveedorModule } from './articulo-proveedor/articulo-proveedor.module';
+import { VentaModule } from './ventas/venta.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // hace que el módulo esté disponible globalmente
+      isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        username: config.get<string>('DB_USERNAME'),
-        password: config.get<string>('DB_PASSWORD'),
-        database: config.get<string>('DB_NAME'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: false,
-      }),
+      useFactory: (config: ConfigService) => {
+        console.log('USER:', config.get('DB_USERNAME'));
+        return {
+          type: 'mysql',
+          host: config.get<string>('DB_HOST'),
+          port: config.get<number>('DB_PORT'),
+          username: config.get<string>('DB_USERNAME'),
+          password: config.get<string>('DB_PASSWORD'),
+          database: config.get<string>('DB_NAME'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: false,
+        };
+      },
     }),
     ArticulosModule,
     ProveedorModule,
+    OrdenCompraModule,
+    ArticuloProveedorModule,
+    VentaModule,
   ],
 })
 export class AppModule {}

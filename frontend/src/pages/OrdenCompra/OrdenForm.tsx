@@ -1,4 +1,4 @@
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
 import type { OrdenCompra } from '../../routes/OrdenCompraRoutes';
 import { useNavigate } from 'react-router-dom';
 
@@ -54,7 +54,7 @@ const navigate = useNavigate();
     });
 
     // Redirige al usuario a la lista de órdenes después de guardar
-    navigate('/orden-compra/admin-orden-compra'); // Redirige a la lista de órdenes
+    navigate('/ordenes/admin-orden-compra'); // Redirige a la lista de órdenes
   };
 
   return (

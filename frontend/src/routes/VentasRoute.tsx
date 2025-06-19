@@ -9,43 +9,38 @@ export interface Venta {
   articulo: string;
   cantidad: number;
   fecha_venta: string; // Formato YYYY-MM-DD
+  activo?: boolean; // Opcional si usás baja lógica
 }
 
-// Definición del componente VentasRouter
 const VentasRouter = () => {
-  // Estado para manejar la lista de ventas
   const [ventas, setVentas] = useState<Venta[]>([]);
 
-  // Funciones para manejar las operaciones CRUD
   const agregarVenta = (datos: Omit<Venta, "id">) => {
     const nuevaVenta: Venta = {
       id: crypto.randomUUID(),
       ...datos,
+      activo: true,
     };
-    // Agrega la nueva venta al estado
     setVentas((prev) => [...prev, nuevaVenta]);
   };
 
-  // Modificar una venta existente
   const modificarVenta = (id: string, nuevosDatos: Partial<Venta>) => {
     setVentas((prev) =>
       prev.map((v) => (v.id === id ? { ...v, ...nuevosDatos } : v))
     );
   };
 
-  // Realizar baja lógica de una venta (marcar como inactiva)
   const bajaLogicaVenta = (id: string) => {
     setVentas((prev) =>
       prev.map((v) => (v.id === id ? { ...v, activo: false } : v))
     );
   };
 
-  // Renderiza las rutas para agregar y administrar ventas
   return (
     <Routes>
-      <Route path="/ventas" element={<VentasForm onAlta={agregarVenta} />} />
+      {/* Ruta por defecto: al ir a /ventas */}
       <Route
-        path="/admin-ventas"
+        index
         element={
           <VentasList
             ventas={ventas}
@@ -53,6 +48,10 @@ const VentasRouter = () => {
             onBaja={bajaLogicaVenta}
           />
         }
+      />
+      <Route
+        path="nueva"
+        element={<VentasForm onAlta={agregarVenta} />}
       />
     </Routes>
   );

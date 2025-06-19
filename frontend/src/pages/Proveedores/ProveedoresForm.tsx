@@ -1,4 +1,4 @@
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
 import type { Proveedor } from '../../routes/ProveedoresRouter';
 import { useNavigate } from 'react-router-dom';
 
@@ -48,7 +48,7 @@ const ProveedoresForm = ({onAlta}: PropsProveedoresForm ) => {
       titulo="Agregar Proveedor"
       textoBoton="Guardar Proveedor"
     />
-  );
+  ); 
 }
 
 export default ProveedoresForm;

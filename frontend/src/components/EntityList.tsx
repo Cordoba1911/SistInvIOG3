@@ -1,4 +1,3 @@
-// src/components/EntityList.tsx
 import { Table, Button, Badge, Image } from 'react-bootstrap';
 
 interface Columna {
@@ -14,6 +13,9 @@ interface PropsEntidadList<T> {
   onEliminar: (id: string) => void;
   campoId: string;
   campoActivo?: string;
+
+  // NUEVO: acciones personalizadas por fila
+  accionesPersonalizadas?: (item: T) => React.ReactNode;
 }
 
 const EntidadList = <T extends Record<string, any>>({
@@ -24,6 +26,7 @@ const EntidadList = <T extends Record<string, any>>({
   onEliminar,
   campoId,
   campoActivo,
+  accionesPersonalizadas,
 }: PropsEntidadList<T>) => {
   return (
     <div className="mt-5">
@@ -45,7 +48,6 @@ const EntidadList = <T extends Record<string, any>>({
             >
               {columnas.map((col) => {
                 const valor = item[col.campo];
-                
                 return (
                   <td
                     key={col.campo}
@@ -53,7 +55,7 @@ const EntidadList = <T extends Record<string, any>>({
                       wordBreak: 'break-word',
                       maxWidth: col.campo === 'imagen' ? '150px' : '200px',
                       whiteSpace: 'pre-wrap',
-                      textAlign: 'center'
+                      textAlign: 'center',
                     }}
                   >
                     {col.campo === 'imagen' && valor ? (
@@ -74,12 +76,25 @@ const EntidadList = <T extends Record<string, any>>({
                 );
               })}
               <td className="text-center">
-                <Button variant="outline-primary" size="sm" onClick={() => onEditar(item[campoId])} className="me-2">
-                  Editar
-                </Button>
-                <Button variant="outline-danger" size="sm" onClick={() => onEliminar(item[campoId])}>
-                  Eliminar
-                </Button>
+                <div className="d-flex flex-column gap-1 align-items-center">
+                  <div className="d-flex gap-2 mb-1">
+                    <Button
+                      variant="outline-primary"
+                      size="sm"
+                      onClick={() => onEditar(item[campoId])}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => onEliminar(item[campoId])}
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                  {accionesPersonalizadas && accionesPersonalizadas(item)}
+                </div>
               </td>
             </tr>
           ))}
@@ -90,4 +105,3 @@ const EntidadList = <T extends Record<string, any>>({
 };
 
 export default EntidadList;
-

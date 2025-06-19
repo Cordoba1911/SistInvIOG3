@@ -9,6 +9,9 @@ import { UpdateArticuloDto } from './dto/update-articulo.dto';
 import { ArticuloResponseDto, ProveedorArticuloResponseDto } from './dto/articulo-response.dto';
 import { CalculoLoteFijoDto, ResultadoLoteFijoDto } from './dto/calculo-lote-fijo.dto';
 import { CalculoIntervaloFijoDto, ResultadoIntervaloFijoDto } from './dto/calculo-intervalo-fijo.dto';
+import { CalculoCgiDto, ResultadoCgiDto } from './dto/calculo-cgi.dto';
+import { ProductoFaltanteDto } from './dto/productos-faltantes.dto';
+import { AjusteInventarioDto, ResultadoAjusteDto } from './dto/ajuste-inventario.dto';
 import { OrdenCompraService } from '../orden_compra/orden-compra.service';
 import { ProveedorService } from '../proveedores/proveedor.service';
 import { ArticuloProveedor } from '../articulo-proveedor/articulo-proveedor.entity';
@@ -400,5 +403,206 @@ export class ArticulosService {
 
     const articuloActualizado = await this.articuloRepository.save(articulo);
     return this.toArticuloResponseDto(articuloActualizado);
+  }
+
+  /**
+   * Calcular el CGI (Costo de Gestión del Inventario) para un artículo
+   * 
+   * El CGI representa el costo total anual de gestionar el inventario de un artículo,
+   * incluyendo costos de pedido, almacenamiento y compra.
+   * 
+   * Fórmulas utilizadas:
+   * - Lote Óptimo (EOQ): √(2 × D × S / H) si no se proporciona
+   * - Número de Pedidos Anuales: D / Q
+   * - Costo de Pedidos Anuales: (D / Q) × S
+   * - Stock Promedio: Q / 2
+   * - Costo de Almacenamiento Anual: (Q / 2) × H
+   * - Costo de Compra Anual: D × C
+   * - Costo Total Anual: Costo Pedidos + Costo Almacenamiento + Costo Compra
+   * - CGI: Costo Total Anual / Costo Compra Anual
+   */
+  async calcularCgi(datos: CalculoCgiDto): Promise<ResultadoCgiDto> {
+    const { demanda_anual, costo_compra, costo_almacenamiento, costo_pedido } = datos;
+    
+    // Si no se proporciona el lote óptimo, calcularlo usando EOQ
+    let lote_optimo = datos.lote_optimo;
+    if (!lote_optimo) {
+      lote_optimo = Math.sqrt((2 * demanda_anual * costo_pedido) / costo_almacenamiento);
+    }
+
+    // Si no se proporciona stock promedio, calcularlo como Q/2
+    let stock_promedio = datos.stock_promedio;
+    if (!stock_promedio) {
+      stock_promedio = lote_optimo / 2;
+    }
+
+    // Cálculos del CGI
+    const numero_pedidos_anuales = demanda_anual / lote_optimo;
+    const costo_pedidos_anuales = numero_pedidos_anuales * costo_pedido;
+    const costo_almacenamiento_anual = stock_promedio * costo_almacenamiento;
+    const costo_compra_anual = demanda_anual * costo_compra;
+    const costo_total_anual = costo_pedidos_anuales + costo_almacenamiento_anual + costo_compra_anual;
+    
+    // CGI como ratio del costo total sobre el costo de compra
+    const cgi = costo_total_anual / costo_compra_anual;
+    
+    // Frecuencia de pedidos en días (asumiendo 365 días por año)
+    const frecuencia_pedidos_dias = 365 / numero_pedidos_anuales;
+
+    return {
+      costo_total_anual: Math.round(costo_total_anual * 100) / 100,
+      costo_pedidos_anuales: Math.round(costo_pedidos_anuales * 100) / 100,
+      costo_almacenamiento_anual: Math.round(costo_almacenamiento_anual * 100) / 100,
+      costo_compra_anual: Math.round(costo_compra_anual * 100) / 100,
+      cgi: Math.round(cgi * 1000) / 1000, // 3 decimales para mayor precisión
+      stock_promedio: Math.round(stock_promedio * 100) / 100,
+      numero_pedidos_anuales: Math.round(numero_pedidos_anuales * 100) / 100,
+      frecuencia_pedidos_dias: Math.round(frecuencia_pedidos_dias * 10) / 10,
+    };
+  }
+
+  /**
+   * Calcular y actualizar el CGI de un artículo específico
+   */
+  async calcularYActualizarCgi(articuloId: number): Promise<ArticuloResponseDto> {
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: articuloId, estado: true },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Validar que el artículo tiene los datos necesarios para calcular CGI
+    if (!articulo.demanda || !articulo.costo_compra || !articulo.costo_almacenamiento || !articulo.costo_pedido) {
+      throw new HttpException(
+        'El artículo debe tener demanda, costo_compra, costo_almacenamiento y costo_pedido para calcular el CGI',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Calcular CGI
+    const resultadoCgi = await this.calcularCgi({
+      demanda_anual: articulo.demanda,
+      costo_compra: articulo.costo_compra,
+      costo_almacenamiento: articulo.costo_almacenamiento,
+      costo_pedido: articulo.costo_pedido,
+      lote_optimo: articulo.lote_optimo || undefined,
+    });
+
+    // Actualizar el CGI en el artículo
+    articulo.cgi = resultadoCgi.cgi;
+    
+    const articuloActualizado = await this.articuloRepository.save(articulo);
+    return this.toArticuloResponseDto(articuloActualizado);
+  }
+
+  /**
+   * Obtener listado de productos faltantes
+   * Productos que tienen stock actual menor al stock de seguridad definido
+   */
+  async getProductosFaltantes(): Promise<ProductoFaltanteDto[]> {
+    const articulos = await this.articuloRepository
+      .createQueryBuilder('articulo')
+      .leftJoinAndSelect('articulo.articulo_proveedor', 'ap')
+      .leftJoinAndSelect('ap.proveedor', 'proveedor')
+      .where('articulo.estado = :estado', { estado: true })
+      .andWhere('articulo.stock_seguridad IS NOT NULL')
+      .andWhere('articulo.stock_actual < articulo.stock_seguridad')
+      .getMany();
+
+    return articulos.map(articulo => {
+      // Buscar el proveedor predeterminado
+      const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+        ap => ap.proveedor_predeterminado === true
+      );
+
+      return {
+        id: articulo.id,
+        codigo: articulo.codigo,
+        nombre: articulo.nombre,
+        descripcion: articulo.descripcion,
+        stock_actual: articulo.stock_actual,
+        stock_seguridad: articulo.stock_seguridad,
+        diferencia: articulo.stock_seguridad - articulo.stock_actual,
+        punto_pedido: articulo.punto_pedido,
+        proveedor_predeterminado: proveedorPredeterminado ? {
+          id: proveedorPredeterminado.proveedor.id,
+          nombre: proveedorPredeterminado.proveedor.nombre,
+          telefono: proveedorPredeterminado.proveedor.telefono,
+        } : undefined,
+      };
+    });
+  }
+
+  /**
+   * Obtener todos los proveedores asociados a un artículo específico
+   */
+  async getProveedoresPorArticulo(articuloId: number): Promise<ProveedorArticuloResponseDto[]> {
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: articuloId, estado: true },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+         return articulo.articulo_proveedor
+       .filter(ap => ap.proveedor.estado === true) // Solo proveedores activos
+       .map(ap => ({
+         proveedor_id: ap.proveedor.id,
+         nombre: ap.proveedor.nombre,
+         telefono: ap.proveedor.telefono,
+         email: ap.proveedor.email,
+         precio_unitario: ap.precio_unitario,
+         demora_entrega: ap.demora_entrega,
+         cargos_pedido: ap.cargos_pedido,
+         proveedor_predeterminado: ap.proveedor_predeterminado,
+       }));
+  }
+
+  /**
+   * Ajustar inventario de un artículo
+   * Esta función ajusta la cantidad sin generar otras acciones como órdenes de compra
+   */
+  async ajustarInventario(
+    articuloId: number, 
+    ajuste: AjusteInventarioDto
+  ): Promise<ResultadoAjusteDto> {
+    const articulo = await this.articuloRepository.findOne({
+      where: { id: articuloId, estado: true },
+    });
+
+    if (!articulo) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    // Validar que la nueva cantidad no sea negativa
+    if (ajuste.nueva_cantidad < 0) {
+      throw new HttpException(
+        'La nueva cantidad no puede ser negativa',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const stockAnterior = articulo.stock_actual;
+    const diferencia = ajuste.nueva_cantidad - stockAnterior;
+
+    // Actualizar el stock
+    articulo.stock_actual = ajuste.nueva_cantidad;
+    await this.articuloRepository.save(articulo);
+
+    return {
+      articulo_id: articulo.id,
+      codigo: articulo.codigo,
+      nombre: articulo.nombre,
+      stock_anterior: stockAnterior,
+      stock_nuevo: ajuste.nueva_cantidad,
+      diferencia: diferencia,
+      motivo: ajuste.motivo,
+      fecha_ajuste: new Date(),
+    };
   }
 }

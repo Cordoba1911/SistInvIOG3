@@ -17,6 +17,10 @@ import { UpdateArticuloDto } from './dto/update-articulo.dto';
 import { ArticuloResponseDto } from './dto/articulo-response.dto';
 import { CalculoLoteFijoDto, ResultadoLoteFijoDto } from './dto/calculo-lote-fijo.dto';
 import { CalculoIntervaloFijoDto, ResultadoIntervaloFijoDto } from './dto/calculo-intervalo-fijo.dto';
+import { CalculoCgiDto, ResultadoCgiDto } from './dto/calculo-cgi.dto';
+import { ProductoFaltanteDto } from './dto/productos-faltantes.dto';
+import { AjusteInventarioDto, ResultadoAjusteDto } from './dto/ajuste-inventario.dto';
+import { ProveedorArticuloResponseDto } from './dto/articulo-response.dto';
 
 @Controller('articulos')
 export class ArticulosController {
@@ -113,5 +117,62 @@ export class ArticulosController {
     @Param('modelo') modelo: 'lote_fijo' | 'intervalo_fijo',
   ): Promise<ArticuloResponseDto> {
     return this.articulosService.aplicarCalculoAArticulo(id, modelo);
+  }
+
+  /**
+   * Calcular el CGI (Costo de Gestión del Inventario)
+   * Calcula el costo total anual de gestionar inventario incluyendo costos de pedido, almacenamiento y compra
+   */
+  @Post('calcular/cgi')
+  @HttpCode(HttpStatus.OK)
+  async calcularCgi(
+    @Body() datos: CalculoCgiDto,
+  ): Promise<ResultadoCgiDto> {
+    return this.articulosService.calcularCgi(datos);
+  }
+
+  /**
+   * Calcular y actualizar el CGI de un artículo específico
+   * Utiliza los datos del artículo para calcular el CGI y lo actualiza automáticamente
+   */
+  @Post(':id/calcular-cgi')
+  @HttpCode(HttpStatus.OK)
+  async calcularYActualizarCgi(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ArticuloResponseDto> {
+    return this.articulosService.calcularYActualizarCgi(id);
+  }
+
+  /**
+   * Obtener listado de productos faltantes
+   * Devuelve artículos cuyo stock actual está por debajo del stock de seguridad
+   */
+  @Get('faltantes')
+  async getProductosFaltantes(): Promise<ProductoFaltanteDto[]> {
+    return this.articulosService.getProductosFaltantes();
+  }
+
+  /**
+   * Obtener proveedores asociados a un artículo específico
+   * Devuelve todos los proveedores configurados para un artículo
+   */
+  @Get(':id/proveedores')
+  async getProveedoresPorArticulo(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ProveedorArticuloResponseDto[]> {
+    return this.articulosService.getProveedoresPorArticulo(id);
+  }
+
+  /**
+   * Ajustar inventario de un artículo
+   * Permite modificar el stock actual sin generar órdenes de compra u otras acciones
+   */
+  @Patch(':id/ajustar-inventario')
+  @HttpCode(HttpStatus.OK)
+  async ajustarInventario(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() ajuste: AjusteInventarioDto,
+  ): Promise<ResultadoAjusteDto> {
+    return this.articulosService.ajustarInventario(id, ajuste);
   }
 }

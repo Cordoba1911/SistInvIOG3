@@ -2,6 +2,17 @@
 
 ## Endpoints Disponibles
 
+- POST /articulos - Crear artículo  
+- GET /articulos - Obtener todos los artículos
+- GET /articulos/:id - Obtener artículo por ID
+- PATCH /articulos/:id - Actualizar artículo
+- DELETE /articulos/:id - Eliminar artículo (con validaciones)
+- POST /articulos/calcular/lote-fijo - Calcular modelo Lote Fijo
+- POST /articulos/calcular/intervalo-fijo - Calcular modelo Intervalo Fijo
+- POST /articulos/:id/aplicar-calculo/:modelo - Aplicar cálculo a artículo
+- **POST /articulos/calcular/cgi - Calcular CGI (Costo de Gestión del Inventario)**
+- **POST /articulos/:id/calcular-cgi - Calcular y actualizar CGI de un artículo**
+
 ### 1. Crear Artículo (POST /articulos)
 
 **Endpoint:** `POST http://localhost:3000/articulos`
@@ -339,4 +350,360 @@ try {
     showValidationErrors(errors);
   }
 }
-``` 
+```
+
+## 🆕 Cálculo del CGI (Costo de Gestión del Inventario)
+
+### 7. Calcular CGI (POST /articulos/calcular/cgi)
+
+**¿Qué es el CGI?**  
+El CGI (Costo de Gestión del Inventario) es un indicador que representa el costo total anual de gestionar el inventario de un artículo como múltiplo del costo de compra. Un CGI de 1.069 significa que el costo total de gestión es 6.9% más alto que el costo de los productos.
+
+**Endpoint:** `POST http://localhost:3000/articulos/calcular/cgi`
+
+**Body (JSON) - Completo:**
+```json
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00,
+  "lote_optimo": 316,
+  "stock_promedio": 158
+}
+```
+
+**Body (JSON) - Mínimo requerido (se calculan automáticamente lote óptimo y stock promedio):**
+```json
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00
+}
+```
+
+**Respuesta exitosa (200):**
+```json
+{
+  "costo_total_anual": 2458.86,
+  "costo_pedidos_anuales": 79.11,
+  "costo_almacenamiento_anual": 79.06,
+  "costo_compra_anual": 2300.00,
+  "cgi": 1.069,
+  "stock_promedio": 158.11,
+  "numero_pedidos_anuales": 3.16,
+  "frecuencia_pedidos_dias": 115.4
+}
+```
+
+**Explicación del resultado:**
+- **`costo_total_anual`**: Suma de todos los costos anuales (pedidos + almacenamiento + compra)
+- **`costo_pedidos_anuales`**: Costo anual de realizar pedidos (número_pedidos × costo_pedido)
+- **`costo_almacenamiento_anual`**: Costo anual de mantener inventario (stock_promedio × costo_almacenamiento)
+- **`costo_compra_anual`**: Costo anual de compra de productos (demanda × costo_compra)
+- **`cgi`**: Ratio del costo total vs costo de compra (costo_total_anual / costo_compra_anual)
+- **`stock_promedio`**: Inventario promedio mantenido (lote_optimo / 2)
+- **`numero_pedidos_anuales`**: Frecuencia de pedidos por año (demanda / lote_optimo)
+- **`frecuencia_pedidos_dias`**: Cada cuántos días se hace un pedido (365 / numero_pedidos_anuales)
+
+### 8. Calcular y Actualizar CGI de un Artículo (POST /articulos/:id/calcular-cgi)
+
+**Endpoint:** `POST http://localhost:3000/articulos/1/calcular-cgi`
+
+**Descripción:** Calcula el CGI usando los datos del artículo existente (demanda, costos) y actualiza automáticamente el campo `cgi` en la base de datos.
+
+**Respuesta exitosa (200):**
+```json
+{
+  "id": 1,
+  "codigo": "12345",
+  "nombre": "Tornillo",
+  "descripcion": "Tornillo M8x25mm",
+  "demanda": 1000,
+  "costo_almacenamiento": 0.5,
+  "costo_pedido": 25,
+  "costo_compra": 2.3,
+  "precio_venta": 4.50,
+  "modelo_inventario": "lote_fijo",
+  "lote_optimo": 316,
+  "punto_pedido": 83,
+  "stock_seguridad": 50,
+  "inventario_maximo": null,
+  "cgi": 1.069,
+  "stock_actual": 0,
+  "estado": true,
+  "fecha_baja": null,
+  "proveedores": [
+    {
+      "proveedor_id": 3,
+      "nombre": "Proveedor XYZ",
+      "telefono": "123456789",
+      "email": "proveedor@xyz.com",
+      "precio_unitario": 2.30,
+      "demora_entrega": 7,
+      "cargos_pedido": 5.00,
+      "proveedor_predeterminado": true
+    }
+  ]
+}
+```
+
+**Errores comunes (400):**
+
+**Datos insuficientes:**
+```json
+{
+  "statusCode": 400,
+  "message": "El artículo debe tener demanda, costo_compra, costo_almacenamiento y costo_pedido para calcular el CGI",
+  "error": "Bad Request"
+}
+```
+
+**Artículo no encontrado (404):**
+```json
+{
+  "statusCode": 404,
+  "message": "Artículo no encontrado",
+  "error": "Not Found"
+}
+```
+
+## Fórmulas Utilizadas para el Cálculo del CGI
+
+### 1. Lote Óptimo (EOQ) - Si no se proporciona:
+```
+EOQ = √(2 × D × S / H)
+```
+Donde:
+- **D** = Demanda anual
+- **S** = Costo de pedido
+- **H** = Costo de almacenamiento por unidad
+
+### 2. Número de Pedidos Anuales:
+```
+N = D / Q
+```
+Donde:
+- **Q** = Lote óptimo
+
+### 3. Costo de Pedidos Anuales:
+```
+CP = N × S = (D / Q) × S
+```
+
+### 4. Stock Promedio:
+```
+Stock Promedio = Q / 2
+```
+
+### 5. Costo de Almacenamiento Anual:
+```
+CA = Stock Promedio × H = (Q / 2) × H
+```
+
+### 6. Costo de Compra Anual:
+```
+CC = D × C
+```
+Donde:
+- **C** = Costo unitario de compra
+
+### 7. Costo Total Anual:
+```
+CTA = CP + CA + CC
+```
+
+### 8. CGI (Costo de Gestión del Inventario):
+```
+CGI = CTA / CC
+```
+
+### 9. Frecuencia de Pedidos en Días:
+```
+Frecuencia = 365 / N
+```
+
+## Interpretación del CGI
+
+- **CGI = 1.000**: El costo de gestión es igual al costo de los productos
+- **CGI = 1.069**: El costo de gestión es 6.9% mayor al costo de los productos  
+- **CGI = 1.200**: El costo de gestión es 20% mayor al costo de los productos
+- **CGI < 1.100**: Gestión eficiente de inventario
+- **CGI > 1.300**: Gestión costosa, revisar parámetros de inventario
+
+## Casos de Uso del CGI
+
+1. **Comparar eficiencia** entre diferentes artículos
+2. **Identificar artículos costosos** de gestionar
+3. **Optimizar parámetros** de inventario
+4. **Evaluar proveedores** por impacto en costos de gestión
+5. **Tomar decisiones** sobre políticas de inventario
+
+---
+
+# 🆕 Funciones de Gestión de Inventario
+
+## 9. Listado de Productos Faltantes (GET /articulos/faltantes)
+
+**Descripción:** Obtiene el listado de artículos cuyo stock actual está por debajo del stock de seguridad definido.
+
+**Endpoint:** `GET http://localhost:3000/articulos/faltantes`
+
+**Respuesta exitosa (200):**
+```json
+[
+  {
+    "id": 2,
+    "codigo": "MOUSE001",
+    "nombre": "Mouse Logitech M100",
+    "descripcion": "Mouse óptico USB con cable",
+    "stock_actual": 3,
+    "stock_seguridad": 8,
+    "diferencia": 5,
+    "punto_pedido": 12,
+    "proveedor_predeterminado": {
+      "id": 1,
+      "nombre": "TechSupply SA",
+      "telefono": "+54 11 4567-8900"
+    }
+  },
+  {
+    "id": 5,
+    "codigo": "TECLADO001",
+    "nombre": "Teclado Genius KB-125",
+    "descripcion": "Teclado mecánico con cable USB",
+    "stock_actual": 1,
+    "stock_seguridad": 5,
+    "diferencia": 4,
+    "punto_pedido": 8,
+    "proveedor_predeterminado": {
+      "id": 2,
+      "nombre": "Distribuidora Norte",
+      "telefono": "+54 351 123-4567"
+    }
+  }
+]
+```
+
+**Campos de respuesta:**
+- **`diferencia`**: Cantidad faltante para alcanzar el stock de seguridad (stock_seguridad - stock_actual)
+- **`proveedor_predeterminado`**: Datos del proveedor marcado como predeterminado para facilitar la reposición
+
+## 10. Proveedores por Artículo (GET /articulos/:id/proveedores)
+
+**Descripción:** Obtiene todos los proveedores asociados a un artículo específico con sus condiciones comerciales.
+
+**Endpoint:** `GET http://localhost:3000/articulos/1/proveedores`
+
+**Respuesta exitosa (200):**
+```json
+[
+  {
+    "proveedor_id": 1,
+    "nombre": "TechSupply SA",
+    "telefono": "+54 11 4567-8900",
+    "email": "ventas@techsupply.com",
+    "precio_unitario": 800.0,
+    "demora_entrega": 7,
+    "cargos_pedido": 25.0,
+    "proveedor_predeterminado": true
+  },
+  {
+    "proveedor_id": 3,
+    "nombre": "MegaTech Distribuidora",
+    "telefono": "+54 341 987-6543",
+    "email": "compras@megatech.com",
+    "precio_unitario": 820.0,
+    "demora_entrega": 10,
+    "cargos_pedido": 30.0,
+    "proveedor_predeterminado": false
+  }
+]
+```
+
+**Uso típico:** Esta función es útil para:
+- Comparar condiciones entre proveedores
+- Seleccionar el mejor proveedor para una orden de compra
+- Revisar configuraciones de proveedores por artículo
+
+## 11. Ajuste de Inventario (PATCH /articulos/:id/ajustar-inventario)
+
+**Descripción:** Ajusta el stock actual de un artículo sin generar órdenes de compra ni otras acciones automáticas. Ideal para correcciones de inventario físico.
+
+**Endpoint:** `PATCH http://localhost:3000/articulos/1/ajustar-inventario`
+
+**Body (JSON):**
+```json
+{
+  "nueva_cantidad": 25,
+  "motivo": "Inventario físico - diferencia encontrada en depósito A"
+}
+```
+
+**Campos del body:**
+- **`nueva_cantidad`** (obligatorio): Nueva cantidad de stock que tendrá el artículo
+- **`motivo`** (opcional): Descripción del motivo del ajuste
+
+**Respuesta exitosa (200):**
+```json
+{
+  "articulo_id": 1,
+  "codigo": "LAPTOP001",
+  "nombre": "Laptop Dell Inspiron 15",
+  "stock_anterior": 12,
+  "stock_nuevo": 25,
+  "diferencia": 13,
+  "motivo": "Inventario físico - diferencia encontrada en depósito A",
+  "fecha_ajuste": "2024-01-15T10:30:00.000Z"
+}
+```
+
+**Campos de respuesta:**
+- **`diferencia`**: Cambio en el stock (positivo = aumento, negativo = disminución)
+- **`fecha_ajuste`**: Timestamp del momento del ajuste
+
+**Errores comunes:**
+
+**Cantidad negativa (400):**
+```json
+{
+  "message": "La nueva cantidad no puede ser negativa",
+  "error": "Bad Request",
+  "statusCode": 400
+}
+```
+
+**Artículo no encontrado (404):**
+```json
+{
+  "message": "Artículo no encontrado",
+  "error": "Not Found",
+  "statusCode": 404
+}
+```
+
+## Casos de Uso de las Nuevas Funciones
+
+### Productos Faltantes
+- **Monitoreo diario** de artículos que necesitan reposición
+- **Alertas automáticas** para equipos de compras
+- **Priorización** de órdenes de compra según urgencia
+
+### Proveedores por Artículo
+- **Comparación de precios** entre proveedores
+- **Selección de proveedor** para órdenes de compra
+- **Análisis de condiciones** comerciales (demoras, cargos)
+
+### Ajuste de Inventario
+- **Corrección de inventarios físicos** vs sistema
+- **Ajustes por mermas** o productos dañados
+- **Sincronización** después de auditorías
+- **Corrección de errores** de carga manual
+
+## Flujo Recomendado de Gestión
+
+1. **Monitoreo diario** con `/articulos/faltantes`
+2. **Análisis de proveedores** con `/articulos/:id/proveedores` 
+3. **Creación de órdenes** de compra basadas en la información obtenida
+4. **Ajustes de inventario** cuando sea necesario con `/articulos/:id/ajustar-inventario` 

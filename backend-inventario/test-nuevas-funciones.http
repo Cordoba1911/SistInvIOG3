@@ -1,0 +1,85 @@
+### Pruebas de Nuevas Funciones de Gestión de Inventario
+
+###
+# 1. Obtener productos faltantes
+# Artículos cuyo stock actual está por debajo del stock de seguridad
+GET http://localhost:3000/articulos/faltantes
+Content-Type: application/json
+
+###
+# 2. Obtener proveedores de un artículo específico
+# Reemplazar :id con el ID real del artículo
+GET http://localhost:3000/articulos/1/proveedores
+Content-Type: application/json
+
+###
+# 3. Ajustar inventario - Ejemplo 1: Ajuste por inventario físico
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 25,
+  "motivo": "Inventario físico - diferencia encontrada en depósito A"
+}
+
+###
+# 4. Ajustar inventario - Ejemplo 2: Ajuste por merma
+PATCH http://localhost:3000/articulos/2/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 8,
+  "motivo": "Ajuste por productos dañados durante transporte"
+}
+
+###
+# 5. Ajustar inventario - Ejemplo 3: Corrección de error de carga
+PATCH http://localhost:3000/articulos/3/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 150,
+  "motivo": "Corrección de error en carga inicial de stock"
+}
+
+###
+# 6. Ajustar inventario - Sin motivo (opcional)
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 30
+}
+
+###
+# Ejemplo de prueba de error - cantidad negativa (debe fallar)
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": -5,
+  "motivo": "Prueba de validación"
+}
+
+###
+# Flujo completo de gestión:
+# 1. Verificar productos faltantes
+# 2. Revisar proveedores del artículo faltante
+# 3. Realizar ajuste si es necesario
+
+# Paso 1: Ver productos faltantes
+GET http://localhost:3000/articulos/faltantes
+
+###
+# Paso 2: Ver proveedores del artículo ID 2 (suponiendo que está en faltantes)
+GET http://localhost:3000/articulos/2/proveedores
+
+###
+# Paso 3: Si encontramos stock no registrado, hacer ajuste
+PATCH http://localhost:3000/articulos/2/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 12,
+  "motivo": "Stock encontrado en depósito secundario"
+} 

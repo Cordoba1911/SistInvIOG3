@@ -1,57 +1,28 @@
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateArticuloDto } from './create-articulo.dto';
 import {
-  IsNotEmpty,
   IsNumber,
   IsString,
   IsPositive,
   IsOptional,
-  IsEnum,
   IsInt,
+  IsEnum,
   Min,
-  IsArray,
-  ValidateNested,
-  IsBoolean,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ModeloInventario } from '../articulo.entity';
 
-class ProveedorArticuloDto {
-  @IsNotEmpty({ message: 'El ID del proveedor es obligatorio' })
-  @IsInt({ message: 'El ID del proveedor debe ser un número entero' })
-  @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
-  proveedor_id: number;
-
-  @IsNotEmpty({ message: 'El precio unitario es obligatorio' })
-  @IsNumber({}, { message: 'El precio unitario debe ser un número' })
-  @IsPositive({ message: 'El precio unitario debe ser mayor a 0' })
-  precio_unitario: number;
-
+export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   @IsOptional()
-  @IsInt({ message: 'La demora de entrega debe ser un número entero' })
-  @Min(0, { message: 'La demora de entrega debe ser mayor o igual a 0' })
-  demora_entrega?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Los cargos de pedido debe ser un número' })
-  @Min(0, { message: 'Los cargos de pedido debe ser mayor o igual a 0' })
-  cargos_pedido?: number;
-
-  @IsOptional()
-  @IsBoolean({ message: 'proveedor_predeterminado debe ser un valor booleano' })
-  proveedor_predeterminado?: boolean;
-}
-
-export class CreateArticuloDto {
-  @IsNotEmpty({ message: 'El código es obligatorio' })
   @IsString({ message: 'El código debe ser una cadena de texto' })
-  codigo: string;
+  codigo?: string;
 
-  @IsNotEmpty({ message: 'El nombre es obligatorio' })
+  @IsOptional()
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
-  nombre: string;
+  nombre?: string;
 
-  @IsNotEmpty({ message: 'La descripción es obligatoria' })
+  @IsOptional()
   @IsString({ message: 'La descripción debe ser una cadena de texto' })
-  descripcion: string;
+  descripcion?: string;
 
   @IsOptional()
   @IsInt({ message: 'La demanda debe ser un número entero' })
@@ -82,7 +53,7 @@ export class CreateArticuloDto {
   @IsEnum(ModeloInventario, {
     message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"',
   })
-  modelo_inventario: ModeloInventario;
+  modelo_inventario?: ModeloInventario;
 
   @IsOptional()
   @IsInt({ message: 'El lote óptimo debe ser un número entero' })
@@ -114,10 +85,22 @@ export class CreateArticuloDto {
   @Min(0, { message: 'El stock actual debe ser mayor o igual a 0' })
   stock_actual?: number;
 
-  // RELACIÓN CON PROVEEDORES - OBLIGATORIA (AL MENOS UNO)
-  @IsNotEmpty({ message: 'Debe proporcionar al menos un proveedor' })
-  @IsArray({ message: 'proveedores debe ser un array' })
-  @ValidateNested({ each: true })
-  @Type(() => ProveedorArticuloDto)
-  proveedores: ProveedorArticuloDto[];
+  @IsOptional()
+  @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
+  @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
+  proveedor_id?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El precio unitario debe ser un número' })
+  @IsPositive({ message: 'El precio unitario debe ser mayor a 0' })
+  precio_unitario?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'La demora de entrega debe ser un número' })
+  @IsPositive({ message: 'La demora de entrega debe ser mayor a 0' })
+  demora_entrega?: number;
+
+  @IsOptional()
+  @IsPositive({ message: 'Los cargos de pedido debe ser mayor a 0' })
+  cargos_pedido?: number;
 }

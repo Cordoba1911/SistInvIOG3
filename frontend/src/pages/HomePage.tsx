@@ -1,21 +1,61 @@
-export default function HomePage() {
-  return (
-    <div>
-      <h1 className="mb-4">Dashboard</h1>
-      <p>Esta es la página principal. Aquí podés mostrar resúmenes, estadísticas o lo que quieras.</p>
+import { useNavigate } from "react-router-dom";
+import { Card } from "react-bootstrap";
 
-      <div className="d-flex gap-3 flex-wrap">
-        <div className="card text-white bg-primary p-3" style={{ minWidth: 200 }}>
-          <h5>Total Productos</h5>
-          <p className="fs-3">120</p>
+export default function HomePage() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="container-fluid px-4 py-4">
+      <h5 className="mb-4">Resumen general 2025</h5>
+
+      <div className="row gy-4">
+        {/* INVENTARIO */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <Card className="bg-purple text-white p-3 shadow"
+            role="button"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/modelos")}>
+            <h6>INVENTARIO NETO</h6>
+            <h4 className="fw-bold">227,627.00</h4>
+            <small>Productos en stock: 3</small>
+          </Card>
         </div>
-        <div className="card text-white bg-success p-3" style={{ minWidth: 200 }}>
-          <h5>Ventas del mes</h5>
-          <p className="fs-3">$15,000</p>
+
+        {/* VENTAS */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <Card
+            className="bg-success text-white p-3 shadow"
+            role="button"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/ventas")}
+          >
+            <h6>VENTAS</h6>
+            <h4 className="fw-bold">6,280,337.90</h4>
+            <small>Facturas emitidas: 154</small>
+          </Card>
         </div>
-        <div className="card text-white bg-warning p-3" style={{ minWidth: 200 }}>
-          <h5>Clientes activos</h5>
-          <p className="fs-3">75</p>
+
+        {/* COMPRAS */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <Card
+            className="bg-warning text-white p-3 shadow"
+            role="button"
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate("/ordenes/admin-orden-compra")}
+          >
+            <h6>COMPRAS</h6>
+            <h4 className="fw-bold">292,288.40</h4>
+            <small>Compras realizadas: 44</small>
+          </Card>
+        </div>
+
+        {/* CLIENTES */}
+        <div className="col-12 col-md-6 col-lg-3">
+          <Card className="bg-info text-white p-3 shadow">
+            <h6>CLIENTES</h6>
+            <h4 className="fw-bold">7,880</h4>
+            <small>Clientes nuevos: 4</small>
+          </Card>
         </div>
       </div>
     </div>

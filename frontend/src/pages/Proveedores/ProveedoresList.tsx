@@ -1,7 +1,9 @@
 // src/pages/Proveedores/ProveedoresList.tsx
 import { useState } from 'react';
-import Form from '../../components/Form';
+import Form from '../../components/Formularios/Form';
+import EntidadList from '../../components/EntityList';
 import type { Proveedor } from '../../routes/ProveedoresRouter'; // Asegurate de exportar Proveedor correctamente
+
 
 // Definición de las propiedades del componente ProveedoresList
 interface PropsProveedoresList {
@@ -19,6 +21,15 @@ const ProveedoresList = ({ proveedores, onModificar, onBaja }: PropsProveedoresL
     { nombre: 'nombre', etiqueta: 'Nombre', requerido: true },
     { nombre: 'email', etiqueta: 'Email', tipo: 'email' },
     { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel' },
+  ];
+
+  // Si hay un proveedor seleccionado, se carga su información en el formulario
+  // Las columnas para la lista de proveedores
+    const columnas = [
+    { campo: 'nombre', etiqueta: 'Nombre' },
+    { campo: 'email', etiqueta: 'Email' },
+    { campo: 'telefono', etiqueta: 'Teléfono' },
+    { campo: 'estado', etiqueta: 'Estado' }, // Esta es "falsa", la generaremos
   ];
 
   // Valores iniciales del formulario, si hay un proveedor seleccionado, se carga su nombre
@@ -40,33 +51,33 @@ const ProveedoresList = ({ proveedores, onModificar, onBaja }: PropsProveedoresL
     if (proveedor) setProveedorSeleccionado(proveedor);
   };
 
-  // Renderiza el formulario y la lista de proveedores
-  return (
-    <div className="container mt-4">
-      <Form
-        campos={campos}
-        valoresIniciales={valoresIniciales}
-        onSubmit={manejarEnvio}
-        titulo={proveedorSeleccionado ? "Editar Proveedor" : "Editar Nombre" }
-        textoBoton="Guardar"
-      />
+  const proveedoresAdaptados = proveedores.map((p) => ({
+    ...p,
+    estado: p.activo ? 'Activo' : 'Inactivo',
+  }));
 
-      <h3 className="mt-5">Lista de Proveedores</h3>
-      <ul className="list-group">
-        {proveedores.map((p) => (
-          <li key={p.id} className="list-group-item d-flex justify-content-between align-items-center">
-            <span style={{ textDecoration: p.activo ? 'none' : 'line-through' }}>
-              {p.nombre}
-            </span>
-            <div>
-              <button className="btn btn-sm btn-outline-primary me-2" onClick={() => manejarEditar(p.id)}>Editar</button>
-              <button className="btn btn-sm btn-outline-danger" onClick={() => onBaja(p.id)}>Eliminar</button>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
+  // Renderiza el formulario y la lista de proveedores
+return (
+  <div className="container mt-4">
+    <Form
+      campos={campos}
+      valoresIniciales={valoresIniciales}
+      onSubmit={manejarEnvio}
+      titulo={proveedorSeleccionado ? "Editar Proveedor" : "Nuevo Proveedor"}
+      textoBoton="Guardar"
+    />
+
+    <EntidadList
+      titulo="Proveedores"
+      datos={proveedoresAdaptados}
+      columnas={columnas}
+      onEditar={manejarEditar}
+      onEliminar={onBaja}
+      campoId="id"
+      campoActivo="activo"
+    />
+  </div>
+);
 };
 
 export default ProveedoresList;

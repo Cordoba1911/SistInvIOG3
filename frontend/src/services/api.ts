@@ -1,4 +1,11 @@
-const BASE_URL = import.meta.env.VITE_API_URL;
+// const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = "http://localhost:3000/api"; // URL temporal para desarrollo
+
+if (!BASE_URL) {
+  throw new Error(
+    "La variable de entorno VITE_API_URL no está definida. Revisa tu archivo .env en la raíz del proyecto frontend."
+  );
+}
 
 const request = async <T>(
   endpoint: string,
@@ -8,7 +15,7 @@ const request = async <T>(
     headers: {
       ...(options.body instanceof FormData
         ? {} // no poner headers, el navegador los agrega automáticamente
-        : { 'Content-Type': 'application/json' }),
+        : { "Content-Type": "application/json" }),
       ...options.headers,
     },
     ...options,
@@ -16,6 +23,9 @@ const request = async <T>(
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(
+      `Error en la petición a ${endpoint}: ${response.status} - ${errorText}`
+    );
     throw new Error(`Error en ${endpoint}: ${response.status} - ${errorText}`);
   }
 

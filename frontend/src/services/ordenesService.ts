@@ -1,20 +1,53 @@
-import type { OrdenCompra } from "../routes/OrdenCompraRoutes";
+import request from "./api";
+import type { OrdenCompra, CreateOrdenCompraDto } from "../types/ordenCompra";
 
-let ordenes: OrdenCompra[] = [];
+const ORDENES_BASE_URL = "/ordenes_compra";
 
-export const obtenerOrdenes = (): OrdenCompra[] => ordenes;
+export const ordenesService = {
+  // Obtener todas las órdenes de compra
+  async getAll(): Promise<OrdenCompra[]> {
+    return request<OrdenCompra[]>(ORDENES_BASE_URL);
+  },
 
-export const agregarOrden = (orden: OrdenCompra) => {
-  ordenes.push(orden);
-};
+  // Obtener orden de compra por ID
+  async getById(id: number): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}`);
+  },
 
-export const modificarOrden = (id: string, nuevosDatos: Partial<OrdenCompra>) => {
-  const index = ordenes.findIndex((o) => o.id === id);
-  if (index !== -1) {
-    ordenes[index] = { ...ordenes[index], ...nuevosDatos };
-  }
-};
+  // Crear nueva orden de compra
+  async create(orden: CreateOrdenCompraDto): Promise<OrdenCompra> {
+    return request<OrdenCompra>(ORDENES_BASE_URL, {
+      method: "POST",
+      body: JSON.stringify(orden),
+    });
+  },
 
-export const eliminarOrden = (id: string) => {
-  ordenes = ordenes.filter((o) => o.id !== id);
+  // Actualizar orden de compra
+  async update(
+    id: number,
+    orden: Partial<CreateOrdenCompraDto>
+  ): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(orden),
+    });
+  },
+
+  // Eliminar orden de compra
+  async delete(id: number): Promise<{ message: string; orden: OrdenCompra }> {
+    return request<{ message: string; orden: OrdenCompra }>(
+      `${ORDENES_BASE_URL}/${id}`,
+      {
+        method: "DELETE",
+      }
+    );
+  },
+
+  // Cambiar estado de la orden
+  async cambiarEstado(id: number, estado: string): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}/estado`, {
+      method: "PATCH",
+      body: JSON.stringify({ estado }),
+    });
+  },
 };

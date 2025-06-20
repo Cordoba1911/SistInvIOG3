@@ -19,4 +19,4 @@ export class ResultadoAjusteDto {
   diferencia: number;
   motivo?: string;
   fecha_ajuste: Date;
-} 
+}

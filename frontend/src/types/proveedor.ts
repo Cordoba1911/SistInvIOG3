@@ -1,11 +1,37 @@
 // This file defines the TypeScript types for a Proveedor (Provider) entity.
 // It includes the full Proveedor interface and a type for creating new providers without an ID or active status.
+import type { Articulo } from "./articulo";
+
 export interface Proveedor {
-  id: string;
+  id: number;
   nombre: string;
-  email: string;
-  telefono: string;
-  activo: boolean;
+  telefono?: string;
+  email?: string;
+  estado: boolean;
+  fecha_baja?: Date;
+  articulos?: ArticuloProveedor[];
 }
 
-export type ProveedorSinID = Omit<Proveedor, 'id' | 'activo'>;
+export interface ArticuloProveedor {
+  articulo_id: number;
+  demora_entrega?: number;
+  precio_unitario: number;
+  cargos_pedido?: number;
+}
+
+export interface CreateProveedorDto {
+  nombre: string;
+  telefono?: string;
+  email?: string;
+  articulos?: ArticuloProveedor[];
+}
+
+export type ProveedorSinID = Omit<Proveedor, "id" | "activo">;
+
+// NUEVA INTERFAZ: para el detalle de artículos de un proveedor
+export interface ArticuloProveedorDetalle {
+  articulo: Articulo;
+  precio_unitario: number;
+  demora_entrega?: number;
+  cargos_pedido?: number;
+}

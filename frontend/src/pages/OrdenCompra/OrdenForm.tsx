@@ -1,71 +1,150 @@
-import Form from '../../components/Formularios/Form';
-import type { OrdenCompra } from '../../routes/OrdenCompraRoutes';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import Form, { type CampoFormulario } from "../../components/Formularios/Form";
+import type {
+  CreateOrdenCompraDto,
+  OrdenCompraDetalle,
+  UpdateOrdenCompraDto,
+} from "../../types/ordenCompra";
+import { ordenesService } from "../../services/ordenesService";
+import { articulosService } from "../../services/articulosService";
+import { proveedoresService } from "../../services/proveedoresService";
+import { useNavigate } from "react-router-dom";
+import ErrorModal from "../../components/common/ErrorModal";
 
 interface PropsOrdenForm {
-  // Definición de las propiedades del componente OrdenForm
-  onAlta: (datos: OrdenCompra) => void;
+  onAlta?: (datos: CreateOrdenCompraDto) => void;
+  ordenAEditar?: OrdenCompraDetalle | null;
+  onUpdate?: (id: number, datos: UpdateOrdenCompraDto) => void;
 }
 
-const OrdenForm = ({onAlta}: PropsOrdenForm) => {
+const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
+  const [articulos, setArticulos] = useState<any[]>([]);
+  const [proveedores, setProveedores] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const enModoEdicion = !!ordenAEditar;
 
-    // Estado inicial del Formulario
-    const campos = [ 
-    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true },
-    { nombre: 'proveedor', etiqueta: 'Proveedor', requerido: true},
-    { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'number', requerido: true },
-    { nombre: 'estado', etiqueta: 'Estado', tipo: 'select', opciones: ['Pendiente', 'Enviada', 'Finalizada', 'Cancelada'] },
-    { nombre: 'fecha_creacion', etiqueta: 'Fecha de Creación', tipo: 'date' },
-    { nombre: 'fecha_envio', etiqueta: 'Fecha de Envio', tipo: 'date' },
-    { nombre: 'fecha_finalizacion', etiqueta: 'Fecha de Finalizacion', tipo: 'date' },
-    ];
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        const [articulosData, proveedoresData] = await Promise.all([
+          articulosService.getAll(),
+          proveedoresService.getAll(),
+        ]);
+        setArticulos(articulosData);
+        setProveedores(proveedoresData);
+      } catch (error) {
+        console.error("Error al cargar datos:", error);
+        setError("No se pudieron cargar los artículos o proveedores.");
+      }
+    };
+    cargarDatos();
+  }, []);
 
-    // 📆 Función para obtener fecha actual en formato YYYY-MM-DD
-  const obtenerFechaActual = (): string => {
-    return new Date().toISOString().split('T')[0];
-};
+  const campos: CampoFormulario[] = [
+    {
+      nombre: "articulo_id",
+      etiqueta: "Artículo",
+      tipo: "select",
+      requerido: true,
+      deshabilitado: enModoEdicion, // Deshabilitado en modo edición
+      opciones: articulos.map((a) => ({
+        value: a.id,
+        label: `${a.nombre} (${a.codigo})`,
+      })),
+    },
+    {
+      nombre: "proveedor_id",
+      etiqueta: "Proveedor",
+      tipo: "select",
+      opciones: proveedores.map((p) => ({ value: p.id, label: p.nombre })),
+    },
+    {
+      nombre: "cantidad",
+      etiqueta: "Cantidad",
+      tipo: "number",
+      min: 1,
+      step: 1,
+      placeholder: "Cantidad a ordenar",
+    },
+  ];
 
-  const valoresIniciales = {
-    nombre: '',
-    proveedor: '',
-    cantidad: '',
-    estado: 'Pendiente',
-    fecha_creacion: obtenerFechaActual(),
-    fecha_envio: '',
-    fecha_finalizacion: '',
-  };
+  const valoresIniciales = enModoEdicion
+    ? {
+        articulo_id: ordenAEditar.articulo_id.toString(),
+        proveedor_id: ordenAEditar.proveedor_id.toString(),
+        cantidad: ordenAEditar.cantidad,
+      }
+    : {
+        articulo_id: "",
+        proveedor_id: "",
+        cantidad: undefined,
+      };
 
-const navigate = useNavigate();
+  const manejarEnvio = async (datos: Record<string, any>) => {
+    try {
+      if (enModoEdicion && onUpdate && ordenAEditar) {
+        // Modo Edición
+        const ordenData: UpdateOrdenCompraDto = {
+          proveedor_id: datos.proveedor_id
+            ? parseInt(datos.proveedor_id)
+            : undefined,
+          cantidad: datos.cantidad ? parseInt(datos.cantidad) : undefined,
+        };
+        onUpdate(ordenAEditar.id, ordenData);
+      } else if (!enModoEdicion && onAlta) {
+        // Modo Creación
+        const ordenData: CreateOrdenCompraDto = {
+          articulo_id: parseInt(datos.articulo_id),
+          proveedor_id: datos.proveedor_id
+            ? parseInt(datos.proveedor_id)
+            : undefined,
+          cantidad: datos.cantidad ? parseInt(datos.cantidad) : undefined,
+        };
 
-  // Función para manejar el envío del formulario
-  const manejarEnvio = (datos: Record<string, string>) => {
-    // Llama a la función onAlta con los datos del formulario
-    // Asegúrate de que los datos coincidan con OrdenCompraSinID
-    onAlta({
-      id: '', // Valor temporal, el backend debería asignar el id real
-      nombre: datos.nombre,
-      proveedor: datos.proveedor,
-      cantidad: parseInt(datos.cantidad, 10) || 0, // Asegura que sea un número
-      estado: datos.estado as 'Pendiente' | 'Enviada' | 'Finalizada' | 'Cancelada',
-      fecha_creacion: datos.fecha_creacion,
-      fecha_envio: datos.fecha_envio || undefined,
-      fecha_finalizacion: datos.fecha_finalizacion || undefined,
-      activo: true // O el valor por defecto que corresponda
-    });
-
-    // Redirige al usuario a la lista de órdenes después de guardar
-    navigate('/ordenes/admin-orden-compra'); // Redirige a la lista de órdenes
+        await ordenesService.create(ordenData);
+        onAlta(ordenData);
+        navigate("/ordenes/admin-orden-compra");
+      }
+    } catch (err) {
+      console.error("Error al procesar la orden:", err);
+      if (err instanceof Error) {
+        const errorMessage = err.message;
+        const jsonStart = errorMessage.indexOf("{");
+        if (jsonStart !== -1) {
+          try {
+            const jsonString = errorMessage.substring(jsonStart);
+            const errorObj = JSON.parse(jsonString);
+            setError(errorObj.message || "Error desconocido en la respuesta.");
+          } catch (e) {
+            setError(errorMessage);
+          }
+        } else {
+          setError(errorMessage);
+        }
+      } else {
+        setError("Ocurrió un error inesperado.");
+      }
+    }
   };
 
   return (
-    <Form
-      campos={campos}
-      valoresIniciales={valoresIniciales}
-      onSubmit={manejarEnvio}
-      titulo="Agregar Compra"
-      textoBoton="Guardar Compra"
-    />
+    <>
+      <Form
+        campos={campos}
+        valoresIniciales={valoresIniciales}
+        onSubmit={manejarEnvio}
+        titulo={enModoEdicion ? null : "Crear Orden de Compra"}
+        textoBoton={enModoEdicion ? "Guardar Cambios" : "Crear Orden"}
+      />
+      <ErrorModal
+        show={!!error}
+        onHide={() => setError(null)}
+        title={enModoEdicion ? "Error al Editar Orden" : "Error al Crear Orden"}
+        message={error}
+      />
+    </>
   );
-}
+};
 
 export default OrdenForm;

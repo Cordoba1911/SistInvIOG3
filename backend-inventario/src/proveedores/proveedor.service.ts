@@ -196,12 +196,15 @@ export class ProveedorService {
     });
 
     const resultado = articulosProveedor.map((relacion) => {
-      const articulo = relacion.articulo;
       return {
-        articulo_id: articulo.id,
-        codigo: articulo.codigo,
-        descripcion: articulo.descripcion,
-        esPredeterminado: relacion.proveedor_predeterminado,
+        articulo: relacion.articulo,
+        precio_unitario: relacion.precio_unitario
+          ? parseFloat(relacion.precio_unitario as any)
+          : null,
+        demora_entrega: relacion.demora_entrega,
+        cargos_pedido: relacion.cargos_pedido
+          ? parseFloat(relacion.cargos_pedido as any)
+          : null,
       };
     });
 

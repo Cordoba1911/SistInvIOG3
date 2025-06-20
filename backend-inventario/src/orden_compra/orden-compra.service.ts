@@ -126,7 +126,9 @@ export class OrdenCompraService {
 
   // Obtener todas las órdenes de compra
   getOrdenesCompra() {
-    return this.ordenCompraRepository.find();
+    return this.ordenCompraRepository.find({
+      relations: ["articulo", "proveedor"],
+    });
   }
 
   // Obtener una orden por ID

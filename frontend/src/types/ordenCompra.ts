@@ -1,3 +1,6 @@
+import type { Articulo } from "./articulo";
+import type { Proveedor } from "./proveedor";
+
 export interface OrdenCompra {
   id: number;
   articulo_id: number;
@@ -13,6 +16,11 @@ export interface OrdenCompra {
 
 export interface CreateOrdenCompraDto {
   articulo_id: number;
+  proveedor_id?: number;
+  cantidad?: number;
+}
+
+export interface UpdateOrdenCompraDto {
   proveedor_id?: number;
   cantidad?: number;
 }

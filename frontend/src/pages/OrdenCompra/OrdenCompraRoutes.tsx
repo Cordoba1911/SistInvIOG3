@@ -4,16 +4,16 @@ import OrdenCompraList from "./OrdenCompraList";
 import { useState, useEffect } from "react";
 import { ordenesService } from "../../services/ordenesService";
 import type {
-  OrdenCompraDetalle,
+  OrdenCompra,
   UpdateOrdenCompraDto,
 } from "../../types/ordenCompra";
 import { Button, Card } from "react-bootstrap";
 import { FaTimes } from "react-icons/fa";
 
 const OrdenCompraRoutes = () => {
-  const [ordenes, setOrdenes] = useState<OrdenCompraDetalle[]>([]);
+  const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
   const [ordenAEditar, setOrdenAEditar] =
-    useState<OrdenCompraDetalle | null>(null);
+    useState<OrdenCompra | null>(null);
 
   const cargarOrdenes = async () => {
     const data = await ordenesService.getAll();
@@ -24,9 +24,7 @@ const OrdenCompraRoutes = () => {
     cargarOrdenes();
   }, []);
 
-  // Esta es la función que se debe ejecutar al hacer clic
-  const handleEditar = (orden: OrdenCompraDetalle) => {
-    console.log("INTENTO FINAL - Editando orden:", orden); // Console.log de depuración
+  const handleEditar = (orden: OrdenCompra) => {
     setOrdenAEditar(orden);
   };
 
@@ -37,7 +35,7 @@ const OrdenCompraRoutes = () => {
   const handleUpdate = async (id: number, datos: UpdateOrdenCompraDto) => {
     await ordenesService.update(id, datos);
     setOrdenAEditar(null);
-    cargarOrdenes(); // Recargar la lista
+    cargarOrdenes(); 
   };
 
   return (
@@ -46,9 +44,14 @@ const OrdenCompraRoutes = () => {
         path="/admin-orden-compra"
         element={
           <>
-            <OrdenCompraList ordenes={ordenes} onEditar={handleEditar} />
-            
-            {/* Este bloque debería aparecer cuando ordenAEditar no sea null */}
+            {/* Lista de Órdenes */}
+            <Card>
+              <Card.Body>
+                <OrdenCompraList ordenes={ordenes} onEditar={handleEditar} />
+              </Card.Body>
+            </Card>
+
+            {/* Formulario de EDICIÓN (aparece al hacer clic en Editar) */}
             {ordenAEditar && (
               <Card className="mt-4">
                 <Card.Header>
@@ -78,8 +81,14 @@ const OrdenCompraRoutes = () => {
         }
       />
       <Route
-        path="/crear-orden-compra"
-        element={<OrdenForm onAlta={cargarOrdenes} />}
+        path="/orden-compra"
+        element={
+          <Card>
+            <Card.Body>
+              <OrdenForm onAlta={cargarOrdenes} />
+            </Card.Body>
+          </Card>
+        }
       />
     </Routes>
   );

@@ -10,10 +10,11 @@ interface Props {
 
 const OrdenCompraList: React.FC<Props> = ({ ordenes, onEditar }) => {
   const getBadgeVariant = (estado: string) => {
-    if (estado === "Pendiente") return "primary";
-    if (estado === "En Proceso") return "warning";
-    if (estado === "Finalizada") return "success";
-    if (estado === "Cancelada") return "danger";
+    const estadoNormalizado = estado.toLowerCase();
+    if (estadoNormalizado === "pendiente") return "primary";
+    if (estadoNormalizado === "en proceso") return "warning";
+    if (estadoNormalizado === "finalizada") return "success";
+    if (estadoNormalizado === "cancelada") return "danger";
     return "secondary";
   };
 
@@ -21,9 +22,6 @@ const OrdenCompraList: React.FC<Props> = ({ ordenes, onEditar }) => {
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h2>Órdenes de Compra</h2>
-        <Link to="/ordenes/crear-orden-compra" className="btn btn-primary">
-          Crear Orden de Compra
-        </Link>
       </div>
       <Table striped bordered hover responsive>
         <thead>
@@ -51,7 +49,7 @@ const OrdenCompraList: React.FC<Props> = ({ ordenes, onEditar }) => {
               </td>
               <td>{new Date(orden.fecha_creacion).toLocaleDateString()}</td>
               <td>
-                {orden.estado === 'Pendiente' && (
+                {orden.estado.toLowerCase() === 'pendiente' && (
                   <Button
                     variant="outline-primary"
                     size="sm"

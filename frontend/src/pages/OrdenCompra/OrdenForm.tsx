@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import type {
   CreateOrdenCompraDto,
-  OrdenCompraDetalle,
+  OrdenCompra,
   UpdateOrdenCompraDto,
 } from "../../types/ordenCompra";
 import { ordenesService } from "../../services/ordenesService";
@@ -13,7 +13,7 @@ import ErrorModal from "../../components/common/ErrorModal";
 
 interface PropsOrdenForm {
   onAlta?: (datos: CreateOrdenCompraDto) => void;
-  ordenAEditar?: OrdenCompraDetalle | null;
+  ordenAEditar?: OrdenCompra | null;
   onUpdate?: (id: number, datos: UpdateOrdenCompraDto) => void;
 }
 
@@ -47,7 +47,6 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
       etiqueta: "Artículo",
       tipo: "select",
       requerido: true,
-      deshabilitado: enModoEdicion, // Deshabilitado en modo edición
       opciones: articulos.map((a) => ({
         value: a.id,
         label: `${a.nombre} (${a.codigo})`,
@@ -72,7 +71,7 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
   const valoresIniciales = enModoEdicion
     ? {
         articulo_id: ordenAEditar.articulo_id.toString(),
-        proveedor_id: ordenAEditar.proveedor_id.toString(),
+        proveedor_id: ordenAEditar.proveedor_id?.toString() || "",
         cantidad: ordenAEditar.cantidad,
       }
     : {
@@ -141,7 +140,7 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
         show={!!error}
         onHide={() => setError(null)}
         title={enModoEdicion ? "Error al Editar Orden" : "Error al Crear Orden"}
-        message={error}
+        message={error as string | null}
       />
     </>
   );

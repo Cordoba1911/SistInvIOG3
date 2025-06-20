@@ -38,6 +38,21 @@ const OrdenCompraRoutes = () => {
     cargarOrdenes(); 
   };
 
+  const handleCancelar = async (id: number) => {
+    await ordenesService.cancelar(id);
+    cargarOrdenes();
+  };
+
+  const handleEnviar = async (id: number) => {
+    await ordenesService.enviar(id);
+    cargarOrdenes();
+  };
+
+  const handleFinalizar = async (id: number) => {
+    await ordenesService.finalizar(id);
+    cargarOrdenes();
+  };
+
   return (
     <Routes>
       <Route
@@ -47,7 +62,13 @@ const OrdenCompraRoutes = () => {
             {/* Lista de Órdenes */}
             <Card>
               <Card.Body>
-                <OrdenCompraList ordenes={ordenes} onEditar={handleEditar} />
+                <OrdenCompraList
+                  ordenes={ordenes}
+                  onEditar={handleEditar}
+                  onCancelar={handleCancelar}
+                  onEnviar={handleEnviar}
+                  onFinalizar={handleFinalizar}
+                />
               </Card.Body>
             </Card>
 
@@ -94,4 +115,4 @@ const OrdenCompraRoutes = () => {
   );
 };
 
-export default OrdenCompraRoutes; 
+export { OrdenCompraRoutes }; 

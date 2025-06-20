@@ -50,4 +50,22 @@ export const ordenesService = {
       body: JSON.stringify({ estado }),
     });
   },
+
+  async cancelar(id: number): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}/cancelar`, {
+      method: "PATCH",
+    });
+  },
+
+  async enviar(id: number): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}/enviar`, {
+      method: "PATCH",
+    });
+  },
+
+  async finalizar(id: number): Promise<OrdenCompra> {
+    return request<OrdenCompra>(`${ORDENES_BASE_URL}/${id}/finalizar`, {
+      method: "PATCH",
+    });
+  },
 };

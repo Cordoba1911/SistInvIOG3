@@ -1,94 +1,90 @@
-import { useState } from 'react';
-import EntidadList from '../../components/EntityList';
-import type { Articulo } from '../../routes/ArticulosRoutes';
+import { Button, Table, Badge } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import type { Articulo } from "../../types/articulo";
 
 interface PropsArticulosList {
-  articulo: Articulo[];
-  onModificar: (id: string, nuevosDatos: Partial<Articulo>) => void;
-  onBaja: (id: string) => void;
+  articulos: Articulo[];
+  onEditar: (articulo: Articulo) => void;
+  onBaja: (id: number) => void;
 }
- 
-const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) => {
-  const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null);
 
-  // Aquí puedes definir los campos que quieres mostrar en la lista de artículos
-  const campos = [
-    { nombre: 'nombre', etiqueta: 'Nombre' },
-    { nombre: 'precio', etiqueta: 'Precio' },
-    { nombre: 'cantidad', etiqueta: 'Cantidad' },
-    { nombre: 'descripcion', etiqueta: 'Descripción' },
-    { nombre: 'categoria', etiqueta: 'Categoría' },
-    { nombre: 'proveedor', etiqueta: 'Proveedor' },
-    { nombre: 'imagen', etiqueta: 'Imagen', tipo: 'file' },
-  ];
+const ArticulosList = ({ articulos, onEditar, onBaja }: PropsArticulosList) => {
+  const formatValue = (value: number | string | undefined | null, prefix = "$") => {
+    if (value === null || typeof value === "undefined" || value === "") return "N/A";
+    
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    
+    if (isNaN(numValue)) return "N/A";
 
-  // Las columnas para la lista de artículos
-  const columnas = [
-    { campo: 'nombre', etiqueta: 'Nombre' },
-    { campo: 'precio', etiqueta: 'Precio' },
-    { campo: 'cantidad', etiqueta: 'Cantidad' },
-    { campo: 'descripcion', etiqueta: 'Descripción' },
-    { campo: 'categoria', etiqueta: 'Categoría' },
-    { campo: 'proveedor', etiqueta: 'Proveedor' },
-    { campo: 'imagen', etiqueta: 'Imagen' }, // Aquí podrías mostrar una miniatura de la imagen
-  ];
-
-// Aquí puedes definir los valores iniciales o el estado de los artículos
-const valoresIniciales = articuloSeleccionado
-  ? { nombre: articuloSeleccionado.nombre,
-    precio: articuloSeleccionado.precio.toString(),
-    cantidad: articuloSeleccionado.cantidad.toString(),
-    descripcion: articuloSeleccionado.descripcion,
-    categoria: articuloSeleccionado.categoria,
-    proveedor: articuloSeleccionado.proveedor,
-    imagen: articuloSeleccionado.imagen || '' }
-  : { nombre: '', precio: '', cantidad: '', descripcion: '', categoria: '', proveedor: '', imagen: '' };
-
-// Función para manejar el envío del formulario
-const manejarEnvio = (datos: Record<string, string>) => {
-    // Si hay un artículo seleccionado, lo modificamos
-    // Si no, podrías manejar la creación de un nuevo artículo
-    if (articuloSeleccionado) {
-      onModificar(articuloSeleccionado.id, {
-        nombre: datos.nombre,
-        precio: parseFloat(datos.precio),
-        cantidad: parseInt(datos.cantidad, 10) || 0,
-        descripcion: datos.descripcion,
-        categoria: datos.categoria,
-        proveedor: datos.proveedor,
-        imagen: datos.imagen, // Aquí deberías manejar la subida de archivos
-      });
-    }
-    // Limpia el formulario después de guardar
-    setArticuloSeleccionado(null); 
-};
-
-// Función para manejar la edición de un artículo
-const manejarEditar = (id: string) => {
-    const articuloEncontrado = articulo.find((a) => a.id === id);
-    // Si encontramos el artículo, lo establecemos como seleccionado
-    // Esto permitirá que el formulario se llene con los datos del artículo seleccionado
-    if (articuloEncontrado) setArticuloSeleccionado(articuloEncontrado);
-};
-
-// Renderiza el formulario y la lista de artículos
+    return `${prefix}${numValue.toFixed(2)}`;
+  };
+  
   return (
-    <div className="container mt-4">
-      <Form
-        campos={campos}
-        valoresIniciales={valoresIniciales}
-        onSubmit={manejarEnvio}
-        titulo={articuloSeleccionado ? "Editar Articulo" : "Editar Nombre" }
-        textoBoton="Guardar"
-      />
-      <EntidadList
-        titulo="Artículos"
-        datos={articulo}
-        columnas={columnas}
-        onEditar={manejarEditar}
-        onEliminar={onBaja}
-        campoId="id"
-      />
+    <div className="mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        <h3>Lista de Artículos</h3>
+        <Link to="/articulos/articulos" className="btn btn-primary">
+          Crear Artículo
+        </Link>
+      </div>
+      <Table striped bordered hover responsive size="sm">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Modelo</th>
+            <th>Costo Compra</th>
+            <th>Costo Pedido</th>
+            <th>Costo Almacen.</th>
+            <th>Punto Pedido</th>
+            <th>Lote Óptimo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {articulos.map((articulo) => (
+            <tr key={articulo.id}>
+              <td>{articulo.id}</td>
+              <td>{articulo.codigo}</td>
+              <td>{articulo.nombre}</td>
+              <td>{articulo.descripcion}</td>
+              <td>{articulo.stock_actual ?? "N/A"}</td>
+              <td>{articulo.modelo_inventario ?? "N/A"}</td>
+              <td>{formatValue(articulo.costo_compra)}</td>
+              <td>{formatValue(articulo.costo_pedido)}</td>
+              <td>{formatValue(articulo.costo_almacenamiento)}</td>
+              <td>{articulo.punto_pedido ?? "N/A"}</td>
+              <td>{articulo.lote_optimo ?? "N/A"}</td>
+              <td>
+                <Badge bg={articulo.estado ? "success" : "danger"}>
+                  {articulo.estado ? "Activo" : "Inactivo"}
+                </Badge>
+              </td>
+              <td>
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  onClick={() => onEditar(articulo)}
+                  className="me-2"
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant={articulo.estado ? "outline-danger" : "outline-success"}
+                  size="sm"
+                  onClick={() => onBaja(articulo.id)}
+                >
+                  {articulo.estado ? "Dar de Baja" : "Activar"}
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
     </div>
   );
 };

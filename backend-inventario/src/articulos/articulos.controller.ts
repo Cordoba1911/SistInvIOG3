@@ -83,6 +83,17 @@ export class ArticulosController {
   }
 
   /**
+   * Reactivar un artículo (soft delete toggle)
+   */
+  @Patch(':id/reactivar')
+  @HttpCode(HttpStatus.OK)
+  async reactivarArticulo(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<{ message: string; articulo: ArticuloResponseDto }> {
+    return this.articulosService.reactivarArticulo(id);
+  }
+
+  /**
    * Calcular parámetros del modelo de inventario Lote Fijo
    * Calcula: Lote Óptimo, Punto de Pedido, Stock de Seguridad
    */

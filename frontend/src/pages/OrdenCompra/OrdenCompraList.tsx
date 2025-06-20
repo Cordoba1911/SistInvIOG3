@@ -1,21 +1,64 @@
 import React from "react";
-import { Table, Button, Badge } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Table, Button, Badge, ButtonGroup } from "react-bootstrap";
 import type { OrdenCompra } from "../../types/ordenCompra";
 
 interface Props {
   ordenes: OrdenCompra[];
   onEditar: (orden: OrdenCompra) => void;
+  onCancelar: (id: number) => void;
+  onEnviar: (id: number) => void;
+  onFinalizar: (id: number) => void;
 }
 
-const OrdenCompraList: React.FC<Props> = ({ ordenes, onEditar }) => {
+const OrdenCompraList: React.FC<Props> = ({
+  ordenes,
+  onEditar,
+  onCancelar,
+  onEnviar,
+  onFinalizar,
+}) => {
   const getBadgeVariant = (estado: string) => {
     const estadoNormalizado = estado.toLowerCase();
     if (estadoNormalizado === "pendiente") return "primary";
-    if (estadoNormalizado === "en proceso") return "warning";
+    if (estadoNormalizado === "en proceso" || estadoNormalizado === "enviada")
+      return "warning";
     if (estadoNormalizado === "finalizada") return "success";
     if (estadoNormalizado === "cancelada") return "danger";
     return "secondary";
+  };
+
+  const renderizarAcciones = (orden: OrdenCompra) => {
+    const estado = orden.estado.toLowerCase();
+
+    if (estado === "pendiente") {
+      return (
+        <ButtonGroup size="sm">
+          <Button variant="outline-primary" onClick={() => onEditar(orden)}>
+            Editar
+          </Button>
+          <Button variant="outline-success" onClick={() => onEnviar(orden.id)}>
+            Enviar
+          </Button>
+          <Button variant="outline-danger" onClick={() => onCancelar(orden.id)}>
+            Cancelar
+          </Button>
+        </ButtonGroup>
+      );
+    }
+
+    if (estado === "enviada" || estado === "en proceso") {
+      return (
+        <Button
+          variant="outline-success"
+          size="sm"
+          onClick={() => onFinalizar(orden.id)}
+        >
+          Finalizar
+        </Button>
+      );
+    }
+
+    return null; // Sin acciones para estados finalizados o cancelados
   };
 
   return (
@@ -48,17 +91,7 @@ const OrdenCompraList: React.FC<Props> = ({ ordenes, onEditar }) => {
                 </Badge>
               </td>
               <td>{new Date(orden.fecha_creacion).toLocaleDateString()}</td>
-              <td>
-                {orden.estado.toLowerCase() === 'pendiente' && (
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    onClick={() => onEditar(orden)}
-                  >
-                    Editar
-                  </Button>
-                )}
-              </td>
+              <td>{renderizarAcciones(orden)}</td>
             </tr>
           ))}
         </tbody>

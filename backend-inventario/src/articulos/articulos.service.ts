@@ -134,9 +134,6 @@ export class ArticulosService {
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
     const articulos = await this.articuloRepository.find({
-      where: {
-        estado: true, // Solo artículos activos
-      },
       relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
@@ -213,6 +210,36 @@ export class ArticulosService {
     return {
       message: 'Artículo dado de baja exitosamente',
       articulo: this.toArticuloResponseDto(articuloDadoDeBaja),
+    };
+  }
+
+  async reactivarArticulo(
+    id: number,
+  ): Promise<{ message: string; articulo: ArticuloResponseDto }> {
+    const articuloFound = await this.articuloRepository.findOne({
+      where: { id },
+    });
+
+    if (!articuloFound) {
+      throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    if (articuloFound.estado) {
+      throw new HttpException(
+        'El artículo ya está activo',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    articuloFound.estado = true;
+    articuloFound.fecha_baja = null; // Opcional: limpiar la fecha de baja
+
+    const articuloReactivado =
+      await this.articuloRepository.save(articuloFound);
+
+    return {
+      message: 'Artículo reactivado exitosamente',
+      articulo: this.toArticuloResponseDto(articuloReactivado),
     };
   }
 

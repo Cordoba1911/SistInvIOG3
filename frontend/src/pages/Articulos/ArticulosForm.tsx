@@ -1,24 +1,27 @@
 import { useState, useEffect } from "react";
+import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
-import type { CreateArticuloDto } from "../../types/articulo";
+import type { Articulo, CreateArticuloDto, UpdateArticuloDto } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
 import { useNavigate } from "react-router-dom";
 
 interface PropsArticulosForm {
-  onAlta?: (datos: CreateArticuloDto) => void;
+  onAlta?: () => void;
+  articuloAEditar?: Articulo | null;
+  onUpdate?: (id: number, data: UpdateArticuloDto) => void;
+  onCancel?: () => void;
 }
 
-const ArticulosForm = ({ onAlta }: PropsArticulosForm) => {
+const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArticulosForm) => {
   const [proveedores, setProveedores] = useState<any[]>([]);
   const navigate = useNavigate();
+  const enModoEdicion = !!articuloAEditar;
 
   useEffect(() => {
-    // Cargar proveedores disponibles
     const cargarProveedores = async () => {
       try {
-        const proveedoresData =
-          await articulosService.getProveedoresDisponibles();
+        const proveedoresData = await proveedoresService.getAll();
         setProveedores(proveedoresData);
       } catch (error) {
         console.error("Error al cargar proveedores:", error);
@@ -110,8 +113,8 @@ const ArticulosForm = ({ onAlta }: PropsArticulosForm) => {
       nombre: "proveedores",
       etiqueta: "Proveedores",
       tipo: "array",
-      requerido: true,
-      arrayConfig: {
+      requerido: !enModoEdicion,
+      arrayConfig: enModoEdicion ? undefined : {
         campos: [
           {
             nombre: "proveedor_id",
@@ -162,72 +165,77 @@ const ArticulosForm = ({ onAlta }: PropsArticulosForm) => {
     },
   ];
 
-  const valoresIniciales = {
-    codigo: "",
-    nombre: "",
-    descripcion: "",
-    demanda: undefined,
-    costo_almacenamiento: undefined,
-    costo_pedido: undefined,
-    costo_compra: undefined,
-    precio_venta: undefined,
-    modelo_inventario: undefined,
-    stock_actual: 0,
-    proveedores: [],
-  };
+  const valoresIniciales = enModoEdicion
+    ? {
+        codigo: articuloAEditar.codigo,
+        nombre: articuloAEditar.nombre,
+        descripcion: articuloAEditar.descripcion,
+        demanda: articuloAEditar.demanda,
+        costo_almacenamiento: articuloAEditar.costo_almacenamiento,
+        costo_pedido: articuloAEditar.costo_pedido,
+        costo_compra: articuloAEditar.costo_compra,
+        precio_venta: articuloAEditar.precio_venta,
+        modelo_inventario: articuloAEditar.modelo_inventario,
+        stock_actual: articuloAEditar.stock_actual,
+        proveedores: [], // La edición de proveedores se hará en otra vista
+      }
+    : {
+        codigo: "",
+        nombre: "",
+        descripcion: "",
+        demanda: undefined,
+        costo_almacenamiento: undefined,
+        costo_pedido: undefined,
+        costo_compra: undefined,
+        precio_venta: undefined,
+        modelo_inventario: "lote_fijo",
+        stock_actual: 0,
+        proveedores: [],
+      };
 
   const manejarEnvio = async (datos: Record<string, any>) => {
     try {
-      // Transformar los datos para que coincidan con el DTO del backend
-      const articuloData: CreateArticuloDto = {
-        codigo: datos.codigo,
-        nombre: datos.nombre,
-        descripcion: datos.descripcion,
-        demanda: datos.demanda ? parseInt(datos.demanda) : undefined,
-        costo_almacenamiento: datos.costo_almacenamiento
-          ? parseFloat(datos.costo_almacenamiento)
-          : undefined,
-        costo_pedido: datos.costo_pedido
-          ? parseFloat(datos.costo_pedido)
-          : undefined,
-        costo_compra: datos.costo_compra
-          ? parseFloat(datos.costo_compra)
-          : undefined,
-        precio_venta: datos.precio_venta
-          ? parseFloat(datos.precio_venta)
-          : undefined,
-        modelo_inventario: datos.modelo_inventario,
-        lote_optimo: undefined,
-        punto_pedido: undefined,
-        stock_seguridad: undefined,
-        inventario_maximo: undefined,
-        cgi: undefined,
-        stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
-        proveedores: datos.proveedores.map((prov: any) => ({
-          proveedor_id: parseInt(prov.proveedor_id),
-          precio_unitario: parseFloat(prov.precio_unitario),
-          demora_entrega: prov.demora_entrega
-            ? parseInt(prov.demora_entrega)
-            : undefined,
-          cargos_pedido: prov.cargos_pedido
-            ? parseFloat(prov.cargos_pedido)
-            : undefined,
-          proveedor_predeterminado: prov.proveedor_predeterminado === "true",
-        })),
-      };
+      if (enModoEdicion && onUpdate && articuloAEditar) {
+        const articuloData: UpdateArticuloDto = {
+          codigo: datos.codigo,
+          nombre: datos.nombre,
+          descripcion: datos.descripcion,
+          demanda: datos.demanda ? parseInt(datos.demanda) : undefined,
+          costo_almacenamiento: datos.costo_almacenamiento ? parseFloat(datos.costo_almacenamiento) : undefined,
+          costo_pedido: datos.costo_pedido ? parseFloat(datos.costo_pedido) : undefined,
+          costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
+          precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
+          modelo_inventario: datos.modelo_inventario,
+          stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
+        };
+        onUpdate(articuloAEditar.id, articuloData);
 
-      // Llamar al servicio para crear el artículo
-      const nuevoArticulo = await articulosService.create(articuloData);
-
-      if (onAlta) {
-        onAlta(articuloData);
+      } else if (!enModoEdicion && onAlta) {
+        const articuloData: CreateArticuloDto = {
+          codigo: datos.codigo,
+          nombre: datos.nombre,
+          descripcion: datos.descripcion,
+          demanda: datos.demanda ? parseInt(datos.demanda) : undefined,
+          costo_almacenamiento: datos.costo_almacenamiento ? parseFloat(datos.costo_almacenamiento) : undefined,
+          costo_pedido: datos.costo_pedido ? parseFloat(datos.costo_pedido) : undefined,
+          costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
+          precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
+          modelo_inventario: datos.modelo_inventario,
+          stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
+          proveedores: datos.proveedores.map((prov: any) => ({
+            proveedor_id: parseInt(prov.proveedor_id),
+            precio_unitario: parseFloat(prov.precio_unitario),
+            demora_entrega: prov.demora_entrega ? parseInt(prov.demora_entrega) : undefined,
+            cargos_pedido: prov.cargos_pedido ? parseFloat(prov.cargos_pedido) : undefined,
+            proveedor_predeterminado: prov.proveedor_predeterminado === "true",
+          })),
+        };
+        await articulosService.create(articuloData);
+        onAlta();
       }
-
-      // Redirigir a la lista de artículos
-      navigate("/articulos/admin-articulos");
     } catch (error) {
-      console.error("Error al crear artículo:", error);
-      alert("Error al crear el artículo. Por favor, intente nuevamente.");
+      console.error("Error al procesar artículo:", error);
+      alert("Error al procesar el artículo. Por favor, intente nuevamente.");
     }
   };
 
@@ -236,9 +244,15 @@ const ArticulosForm = ({ onAlta }: PropsArticulosForm) => {
       campos={campos}
       valoresIniciales={valoresIniciales}
       onSubmit={manejarEnvio}
-      titulo="Agregar Artículo"
-      textoBoton="Guardar Artículo"
-    />
+      titulo={enModoEdicion ? `Editar Artículo: ${articuloAEditar.nombre}` : "Agregar Artículo"}
+      textoBoton={enModoEdicion ? "Guardar Cambios" : "Guardar Artículo"}
+    >
+      {enModoEdicion && onCancel && (
+        <Button variant="secondary" onClick={onCancel} className="ms-2">
+          Cancelar
+        </Button>
+      )}
+    </Form>
   );
 };
 

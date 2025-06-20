@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import ArticulosForm from '../pages/Articulos/ArticulosForm';
-import ArticulosList from '../pages/Articulos/ArticulosList';
+import { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { Card, Button } from "react-bootstrap";
+import ArticulosForm from "../pages/Articulos/ArticulosForm";
+import ArticulosList from "../pages/Articulos/ArticulosList";
+import { articulosService } from "../services/articulosService";
+import type { Articulo, CreateArticuloDto, UpdateArticuloDto } from "../types/articulo";
 
 // Definición de la interfaz Articulo
 export interface Articulo {
@@ -18,51 +21,103 @@ export interface Articulo {
 
 // Definición del componente ArticulosRouter
 const ArticulosRouter = () => {
-
-  // Estado para manejar la lista de artículos
-  // Inicialmente, la lista de artículos está vacía
   const [articulos, setArticulos] = useState<Articulo[]>([]);
+  const [articuloAEditar, setArticuloAEditar] = useState<Articulo | null>(null);
+  const navigate = useNavigate();
 
-  // Funciones para manejar las operaciones CRUD
-  const agregarArticulo = (datos: Omit<Articulo, 'id' | 'activo'>) => {
-    const nuevo: Articulo = {
-      id: crypto.randomUUID(),
-      ...datos,
-      activo: true,
-    };
-    // Agrega el nuevo articulo al estado
-    setArticulos((prev) => [...prev, nuevo]);
+  const cargarArticulos = async () => {
+    try {
+      const data = await articulosService.getAll();
+      setArticulos(data);
+    } catch (error) {
+      console.error("Error al cargar artículos:", error);
+    }
   };
 
-  // Modificar un proveedor existente
-  const modificarArticulo = (id: string, nuevosDatos: Partial<Articulo>) => {
-    setArticulos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, ...nuevosDatos } : p))
-    );
-  }; 
+  useEffect(() => {
+    cargarArticulos();
+  }, []);
 
-  // Realizar baja lógica de un articulo (marcar como inactivo)
-  const bajaLogicaArticulo = (id: string) => {
-    setArticulos((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, activo: false } : p))
-    );
+  const handleAlta = async () => {
+    await cargarArticulos();
+    navigate("/articulos/admin-articulos");
+  };
+  
+  const handleEditar = (articulo: Articulo) => {
+    setArticuloAEditar(articulo);
+  };
+  
+  const handleCancelarEdicion = () => {
+    setArticuloAEditar(null);
   };
 
-  // Renderiza las rutas para agregar y administrar artículos
-  // Utiliza el componente Routes de react-router-dom para definir las rutas
+  const handleUpdate = async (id: number, data: UpdateArticuloDto) => {
+    await articulosService.update(id, data);
+    setArticuloAEditar(null);
+    await cargarArticulos();
+  };
+
+  const handleBaja = async (id: number) => {
+    const articulo = articulos.find(a => a.id === id);
+    if (!articulo) return;
+
+    if (articulo.estado) {
+      await articulosService.delete(id);
+    } else {
+      await articulosService.reactivar(id);
+    }
+    
+    await cargarArticulos();
+  };
+
   return (
     <Routes>
-      <Route path="/articulos" element={<ArticulosForm onAlta={agregarArticulo} />} />
       <Route
         path="/admin-articulos"
         element={
-          // Componente que lista y permite editar y dar de baja artículos
-          // Se pasa la lista de artículos y las funciones para modificar y dar de baja
-          <ArticulosList
-            articulo={articulos}
-            onModificar={modificarArticulo}
-            onBaja={bajaLogicaArticulo}
-          />
+          <>
+            <Card>
+              <Card.Body>
+                <ArticulosList
+                  articulos={articulos}
+                  onEditar={handleEditar}
+                  onBaja={handleBaja}
+                />
+              </Card.Body>
+            </Card>
+
+            {articuloAEditar && (
+              <Card className="mt-4">
+                 <Card.Header>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h5 className="mb-0">
+                      Editar Artículo: {articuloAEditar.nombre}
+                    </h5>
+                    <Button variant="link" className="p-0" onClick={handleCancelarEdicion} style={{ color: "red" }}>
+                      <i className="fas fa-times"></i>
+                    </Button>
+                  </div>
+                </Card.Header>
+                <Card.Body>
+                  <ArticulosForm
+                    articuloAEditar={articuloAEditar}
+                    onUpdate={handleUpdate}
+                    onCancel={handleCancelarEdicion}
+                  />
+                </Card.Body>
+              </Card>
+            )}
+          </>
+        }
+      />
+       <Route
+        path="/articulos"
+        element={
+          <Card>
+            <Card.Body>
+              <ArticulosForm onAlta={handleAlta} />
+            </Card.Body>
+          </Card>
         }
       />
     </Routes>

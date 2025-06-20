@@ -81,4 +81,10 @@ export const articulosService = {
       }
     );
   },
+
+  async reactivar(id: number): Promise<any> {
+    return request(`${ARTICULOS_BASE_URL}/${id}/reactivar`, {
+      method: "PATCH",
+    });
+  },
 };

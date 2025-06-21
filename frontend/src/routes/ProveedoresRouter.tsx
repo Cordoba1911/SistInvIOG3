@@ -269,16 +269,11 @@ const ProveedoresRouter = () => {
         <Route
           path="/proveedores"
           element={
-            <div className="container mt-4">
-              <Card>
-                <Card.Body>
-                  <ProveedoresForm 
-                    onSubmit={handleFormSubmit} 
-                    onError={(error) => procesarError(error, "crear_proveedor")}
-                  />
-                </Card.Body>
-              </Card>
-            </div>
+            <Card>
+              <Card.Body>
+                <ProveedoresForm onSubmit={handleFormSubmit} />
+              </Card.Body>
+            </Card>
           }
         />
         <Route
@@ -296,7 +291,7 @@ const ProveedoresRouter = () => {
                       onBaja={bajaLogicaProveedor}
                       onActivar={handleActivarProveedor}
                       botonCrear={
-                        <Link to="/proveedores/crear-proveedor" className="btn btn-primary">
+                        <Link to="/proveedores/proveedores" className="btn btn-primary">
                           Crear Proveedor
                         </Link>
                       }
@@ -330,29 +325,18 @@ const ProveedoresRouter = () => {
               {/* Formulario de EDICIÓN (aparece al hacer clic en Editar) */}
               {proveedorAEditar && (
                 <Card className="mt-4">
-                  <Card.Header>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h5 className="mb-0">Editar Proveedor</h5>
-                      <Button
-                        variant="link"
-                        className="p-0"
-                        onClick={() => setProveedorAEditar(null)}
-                        style={{ color: "red" }}
-                      >
-                        <FaTimes size={20} />
-                      </Button>
-                    </div>
-                  </Card.Header>
                   <Card.Body>
                     <ProveedoresForm
-                      onSubmit={handleFormSubmit}
                       proveedorExistente={proveedorAEditar}
+                      onSubmit={(data) =>
+                        handleFormSubmit(data, proveedorAEditar.id)
+                      }
                       onCancel={() => setProveedorAEditar(null)}
-                      onError={(error) => procesarError(error, "actualizar_proveedor")}
                     />
                   </Card.Body>
                 </Card>
               )}
+
               {loadingArticulos && (
                 <div className="mt-4 text-center">Cargando artículos...</div>
               )}

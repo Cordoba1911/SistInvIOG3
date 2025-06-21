@@ -93,18 +93,17 @@ const EntidadList = <T extends Record<string, any>>({
                         wordBreak: "break-word",
                         maxWidth: "200px",
                         whiteSpace: "pre-wrap",
-                        textAlign: "center",
                       }}
                     >
                       {renderizado ?? valor ?? "-"}
                     </td>
                   );
                 })}
-                <td className="text-center">
+                <td className="">
                   {renderAcciones ? (
                     renderAcciones(item)
                   ) : (
-                    <div className="d-flex justify-content-center align-items-center gap-2">
+                    <div className="d-flex align-items-center gap-2">
                       <Button
                         variant="outline-primary"
                         size="sm"

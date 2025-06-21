@@ -1,26 +1,25 @@
 import { useState, useEffect } from "react";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import type { CreateVentaDto } from "../../types/venta";
-import { ventasService } from "../../services/ventasService";
 import { articulosService } from "../../services/articulosService";
-import { useNavigate } from "react-router-dom";
 
-interface PropsVentasForm {
-  onAlta?: (datos: CreateVentaDto) => void;
+interface VentasFormProps {
+  onSubmit: (datos: CreateVentaDto) => Promise<void>;
 }
 
-const VentasForm = ({ onAlta }: PropsVentasForm) => {
+const VentasForm = ({ onSubmit }: VentasFormProps) => {
   const [articulos, setArticulos] = useState<any[]>([]);
-  const navigate = useNavigate();
+  // El error se manejará en el router
+  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Cargar artículos disponibles
     const cargarArticulos = async () => {
       try {
         const articulosData = await articulosService.getAll();
         setArticulos(articulosData);
       } catch (error) {
         console.error("Error al cargar artículos:", error);
+        // Opcional: podrías querer pasar este error al padre
       }
     };
     cargarArticulos();
@@ -65,28 +64,16 @@ const VentasForm = ({ onAlta }: PropsVentasForm) => {
   };
 
   const manejarEnvio = async (datos: Record<string, any>) => {
-    try {
-      // Transformar los datos para que coincidan con el DTO del backend
-      const ventaData: CreateVentaDto = {
-        detalles: datos.detalles.map((detalle: any) => ({
-          articulo_id: parseInt(detalle.articulo_id),
-          cantidad: parseInt(detalle.cantidad),
-        })),
-      };
+    // No se necesita try-catch aquí, el router lo manejará.
+    const ventaData: CreateVentaDto = {
+      detalles: datos.detalles.map((detalle: any) => ({
+        articulo_id: parseInt(detalle.articulo_id),
+        cantidad: parseInt(detalle.cantidad),
+      })),
+    };
 
-      // Llamar al servicio para crear la venta
-      const nuevaVenta = await ventasService.create(ventaData);
-
-      if (onAlta) {
-        onAlta(ventaData);
-      }
-
-      // Redirigir a la lista de ventas
-      navigate("/ventas/admin-ventas");
-    } catch (error) {
-      console.error("Error al crear venta:", error);
-      alert("Error al crear la venta. Por favor, intente nuevamente.");
-    }
+    // La lógica de creación y navegación se maneja en el componente padre.
+    await onSubmit(ventaData);
   };
 
   return (

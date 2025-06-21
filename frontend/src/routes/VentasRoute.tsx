@@ -1,59 +1,74 @@
-import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
+import { Card } from "react-bootstrap";
 import VentasForm from "../pages/Ventas/VentasForm";
 import VentasList from "../pages/Ventas/VentasList";
-
-// Definición de la interfaz Venta
-export interface Venta {
-  id: string;
-  articulo: string;
-  cantidad: number;
-  fecha_venta: string; // Formato YYYY-MM-DD
-  activo?: boolean; // Opcional si usás baja lógica
-}
+import { ventasService } from "../services/ventasService";
+import type { Venta, CreateVentaDto } from "../types/venta";
+import ErrorModal from "../components/common/ErrorModal";
 
 const VentasRouter = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const agregarVenta = (datos: Omit<Venta, "id">) => {
-    const nuevaVenta: Venta = {
-      id: crypto.randomUUID(),
-      ...datos,
-      activo: true,
-    };
-    setVentas((prev) => [...prev, nuevaVenta]);
-  };
+  const cargarVentas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await ventasService.getAll();
+      setVentas(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar las ventas");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const modificarVenta = (id: string, nuevosDatos: Partial<Venta>) => {
-    setVentas((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, ...nuevosDatos } : v))
-    );
-  };
+  useEffect(() => {
+    cargarVentas();
+  }, [cargarVentas]);
 
-  const bajaLogicaVenta = (id: string) => {
-    setVentas((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, activo: false } : v))
-    );
+  const handleCrearVenta = async (ventaDto: CreateVentaDto) => {
+    try {
+      await ventasService.create(ventaDto);
+      navigate("/ventas"); // Volver a la lista
+      await cargarVentas(); // Recargar para ver la nueva venta
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear la venta");
+    }
   };
 
   return (
-    <Routes>
-      {/* Ruta por defecto: al ir a /ventas */}
-      <Route
-        index
-        element={
-          <VentasList
-            ventas={ventas}
-            onModificar={modificarVenta}
-            onBaja={bajaLogicaVenta}
-          />
-        }
+    <>
+      <Routes>
+        <Route
+          index
+          element={
+            loading ? <p>Cargando ventas...</p> : <VentasList ventas={ventas} />
+          }
+        />
+        <Route
+          path="nueva"
+          element={
+            <Card>
+              <Card.Header>
+                <h4>Registrar Nueva Venta</h4>
+              </Card.Header>
+              <Card.Body>
+                <VentasForm onSubmit={handleCrearVenta} />
+              </Card.Body>
+            </Card>
+          }
+        />
+      </Routes>
+      <ErrorModal
+        show={!!error}
+        onHide={() => setError(null)}
+        title="Error en Ventas"
+        message={error}
       />
-      <Route
-        path="nueva"
-        element={<VentasForm onAlta={agregarVenta} />}
-      />
-    </Routes>
+    </>
   );
 };
 

@@ -80,6 +80,13 @@ export class ProveedorService {
     return this.proveedorRepository.find();
   }
 
+  //Obtener solo proveedores activos
+  getProveedoresActivos() {
+    return this.proveedorRepository.find({
+      where: { estado: true }
+    });
+  }
+
   //Obtener un proveedor por ID
   async getProveedor(id: number) {
     const proveedorFound = await this.proveedorRepository.findOne({

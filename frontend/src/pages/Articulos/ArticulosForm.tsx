@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
-import type { Articulo, CreateArticuloDto, UpdateArticuloDto } from "../../types/articulo";
+import AlertModal from "../../components/common/AlertModal";
+import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
 import { useNavigate } from "react-router-dom";
@@ -9,19 +10,33 @@ import { useNavigate } from "react-router-dom";
 interface PropsArticulosForm {
   onAlta?: () => void;
   articuloAEditar?: Articulo | null;
-  onUpdate?: (id: number, data: UpdateArticuloDto) => void;
+  onUpdate?: (id: number, data: UpdateArticuloInput) => void;
   onCancel?: () => void;
 }
 
 const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArticulosForm) => {
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [alertModal, setAlertModal] = useState({
+    show: false,
+    title: '',
+    message: '',
+    variant: 'danger' as 'danger' | 'warning' | 'success' | 'info'
+  });
   const navigate = useNavigate();
   const enModoEdicion = !!articuloAEditar;
+
+  const showAlert = (title: string, message: string, variant: 'danger' | 'warning' | 'success' | 'info' = 'danger') => {
+    setAlertModal({ show: true, title, message, variant });
+  };
+
+  const hideAlert = () => {
+    setAlertModal(prev => ({ ...prev, show: false }));
+  };
 
   useEffect(() => {
     const cargarProveedores = async () => {
       try {
-        const proveedoresData = await proveedoresService.getAll();
+        const proveedoresData = await proveedoresService.getActivos();
         setProveedores(proveedoresData);
       } catch (error) {
         console.error("Error al cargar proveedores:", error);
@@ -114,7 +129,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       etiqueta: "Proveedores",
       tipo: "array",
       requerido: !enModoEdicion,
-      arrayConfig: enModoEdicion ? undefined : {
+      arrayConfig: {
         campos: [
           {
             nombre: "proveedor_id",
@@ -177,7 +192,13 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         precio_venta: articuloAEditar.precio_venta,
         modelo_inventario: articuloAEditar.modelo_inventario,
         stock_actual: articuloAEditar.stock_actual,
-        proveedores: [], // La edición de proveedores se hará en otra vista
+        proveedores: articuloAEditar.proveedores?.map(p => ({
+          proveedor_id: p.proveedor_id,
+          precio_unitario: p.precio_unitario,
+          demora_entrega: p.demora_entrega,
+          cargos_pedido: p.cargos_pedido,
+          proveedor_predeterminado: p.proveedor_predeterminado ? "true" : "false"
+        })) || []
       }
     : {
         codigo: "",
@@ -195,8 +216,37 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
 
   const manejarEnvio = async (datos: Record<string, any>) => {
     try {
+      // Validar proveedores predeterminados si hay proveedores
+      if (datos.proveedores && datos.proveedores.length > 0) {
+        const proveedoresPredeterminados = datos.proveedores.filter(
+          (prov: any) => prov.proveedor_predeterminado === "true"
+        );
+        
+        if (proveedoresPredeterminados.length > 1) {
+          showAlert(
+            "Proveedor Predeterminado Duplicado",
+            "Solo puede haber un proveedor predeterminado por artículo. Por favor, seleccione únicamente un proveedor como predeterminado.",
+            "warning"
+          );
+          return;
+        }
+
+        // Validar que no haya proveedores duplicados
+        const proveedorIds = datos.proveedores.map((prov: any) => prov.proveedor_id);
+        const proveedoresUnicos = [...new Set(proveedorIds)];
+        
+        if (proveedorIds.length !== proveedoresUnicos.length) {
+          showAlert(
+            "Proveedores Duplicados",
+            "No se puede incluir el mismo proveedor más de una vez. Por favor, elimine los proveedores duplicados.",
+            "warning"
+          );
+          return;
+        }
+      }
+
       if (enModoEdicion && onUpdate && articuloAEditar) {
-        const articuloData: UpdateArticuloDto = {
+        const articuloData: UpdateArticuloInput = {
           codigo: datos.codigo,
           nombre: datos.nombre,
           descripcion: datos.descripcion,
@@ -207,6 +257,13 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
           modelo_inventario: datos.modelo_inventario,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
+          proveedores: datos.proveedores?.map((prov: any) => ({
+            proveedor_id: parseInt(prov.proveedor_id),
+            precio_unitario: parseFloat(prov.precio_unitario),
+            demora_entrega: prov.demora_entrega ? parseInt(prov.demora_entrega) : undefined,
+            cargos_pedido: prov.cargos_pedido ? parseFloat(prov.cargos_pedido) : undefined,
+            proveedor_predeterminado: prov.proveedor_predeterminado === "true",
+          })),
         };
         onUpdate(articuloAEditar.id, articuloData);
 
@@ -235,24 +292,38 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       }
     } catch (error) {
       console.error("Error al procesar artículo:", error);
-      alert("Error al procesar el artículo. Por favor, intente nuevamente.");
+      showAlert(
+        "Error al Procesar Artículo",
+        "Error al procesar el artículo. Por favor, intente nuevamente.",
+        "danger"
+      );
     }
   };
 
   return (
-    <Form
-      campos={campos}
-      valoresIniciales={valoresIniciales}
-      onSubmit={manejarEnvio}
-      titulo={enModoEdicion ? `Editar Artículo: ${articuloAEditar.nombre}` : "Agregar Artículo"}
-      textoBoton={enModoEdicion ? "Guardar Cambios" : "Guardar Artículo"}
-    >
-      {enModoEdicion && onCancel && (
-        <Button variant="secondary" onClick={onCancel} className="ms-2">
-          Cancelar
-        </Button>
-      )}
-    </Form>
+    <>
+      <Form
+        campos={campos}
+        valoresIniciales={valoresIniciales}
+        onSubmit={manejarEnvio}
+        titulo={enModoEdicion ? `Editar Artículo: ${articuloAEditar.nombre}` : "Agregar Artículo"}
+        textoBoton={enModoEdicion ? "Guardar Cambios" : "Guardar Artículo"}
+      >
+        {enModoEdicion && onCancel && (
+          <Button variant="secondary" onClick={onCancel} className="ms-2">
+            Cancelar
+          </Button>
+        )}
+      </Form>
+
+      <AlertModal
+        show={alertModal.show}
+        onHide={hideAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+      />
+    </>
   );
 };
 

@@ -29,7 +29,7 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
       try {
         const [articulosData, proveedoresData] = await Promise.all([
           articulosService.getAll(),
-          proveedoresService.getAll(),
+          proveedoresService.getActivos(),
         ]);
         setArticulos(articulosData);
         setProveedores(proveedoresData);
@@ -140,7 +140,7 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
         show={!!error}
         onHide={() => setError(null)}
         title={enModoEdicion ? "Error al Editar Orden" : "Error al Crear Orden"}
-        message={error as string | null}
+        message={error}
       />
     </>
   );

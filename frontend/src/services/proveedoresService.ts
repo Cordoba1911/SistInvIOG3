@@ -13,6 +13,11 @@ export const proveedoresService = {
     return request<Proveedor[]>(PROVEEDORES_BASE_URL);
   },
 
+  // Obtener solo proveedores activos
+  async getActivos(): Promise<Proveedor[]> {
+    return request<Proveedor[]>(`${PROVEEDORES_BASE_URL}/activos/lista`);
+  },
+
   // Obtener proveedor por ID
   async getById(id: number): Promise<Proveedor> {
     return request<Proveedor>(`${PROVEEDORES_BASE_URL}/${id}`);

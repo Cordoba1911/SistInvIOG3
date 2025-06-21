@@ -106,12 +106,12 @@ export class ArticulosController {
   }
 
   /**
-   * Calcular parámetros del modelo de inventario Intervalo Fijo
+   * Calcular parámetros del modelo de inventario Período Fijo
    * Calcula: Stock de Seguridad, Inventario Máximo
    */
-  @Post('calcular/intervalo-fijo')
+  @Post('calcular/periodo-fijo')
   @HttpCode(HttpStatus.OK)
-  async calcularIntervaloFijo(
+  async calcularPeriodoFijo(
     @Body() datos: CalculoIntervaloFijoDto,
   ): Promise<ResultadoIntervaloFijoDto> {
     return this.articulosService.calcularIntervaloFijo(datos);
@@ -125,7 +125,7 @@ export class ArticulosController {
   @HttpCode(HttpStatus.OK)
   async aplicarCalculoAArticulo(
     @Param('id', ParseIntPipe) id: number,
-    @Param('modelo') modelo: 'lote_fijo' | 'intervalo_fijo',
+    @Param('modelo') modelo: 'lote_fijo' | 'periodo_fijo',
   ): Promise<ArticuloResponseDto> {
     return this.articulosService.aplicarCalculoAArticulo(id, modelo);
   }

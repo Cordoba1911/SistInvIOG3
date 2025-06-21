@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Articulo } from './articulo.entity';
+import { Articulo, ModeloInventario } from './articulo.entity';
 import { Repository } from 'typeorm';
 import { CreateArticuloDto } from './dto/create-articulo.dto';
 import { UpdateArticuloDto } from './dto/update-articulo.dto';
@@ -252,6 +252,7 @@ export class ArticulosService {
         id,
         estado: true,
       },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
     if (!articuloFound) {
@@ -293,11 +294,87 @@ export class ArticulosService {
       }
     }
 
-    const updateArticulo = Object.assign(articuloFound, articulo);
-    const articuloActualizado =
-      await this.articuloRepository.save(updateArticulo);
+    // Separar los datos de proveedores del resto de los datos del artículo
+    const { proveedores: proveedoresData, ...articuloData } = articulo;
 
-    return this.toArticuloResponseDto(articuloActualizado);
+    // Actualizar los campos del artículo
+    const updateArticulo = Object.assign(articuloFound, articuloData);
+    const articuloActualizado = await this.articuloRepository.save(updateArticulo);
+
+    // Si se proporcionaron proveedores, actualizar las relaciones
+    if (proveedoresData && proveedoresData.length > 0) {
+      // Validar que todos los proveedores existen y están activos
+      const proveedorIds = proveedoresData.map(p => p.proveedor_id);
+      const proveedoresUnicos = [...new Set(proveedorIds)];
+      
+      if (proveedorIds.length !== proveedoresUnicos.length) {
+        throw new HttpException(
+          'No se puede incluir el mismo proveedor más de una vez',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const proveedores = await this.proveedorRepository.find({
+        where: proveedorIds.map(id => ({ id, estado: true })),
+      });
+
+      if (proveedores.length !== proveedorIds.length) {
+        const encontrados = proveedores.map(p => p.id);
+        const noEncontrados = proveedorIds.filter(id => !encontrados.includes(id));
+        throw new HttpException(
+          `Proveedores no encontrados o inactivos: ${noEncontrados.join(', ')}`,
+          HttpStatus.NOT_FOUND,
+        );
+      }
+
+      // Validar que solo haya un proveedor predeterminado
+      const predeterminados = proveedoresData.filter(p => p.proveedor_predeterminado === true);
+      if (predeterminados.length > 1) {
+        throw new HttpException(
+          'Solo puede haber un proveedor predeterminado por artículo',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Si no se especifica ningún predeterminado, el primero será el predeterminado
+      const tieneExplicitoPredeterminado = predeterminados.length === 1;
+
+      // Eliminar todas las relaciones existentes
+      await this.articuloProveedorRepository.delete({ articulo: { id } });
+
+      // Crear las nuevas relaciones con todos los proveedores
+      for (let i = 0; i < proveedoresData.length; i++) {
+        const proveedorData = proveedoresData[i];
+        const proveedor = proveedores.find(p => p.id === proveedorData.proveedor_id);
+        
+        const esPredeterminado = tieneExplicitoPredeterminado 
+          ? proveedorData.proveedor_predeterminado === true
+          : i === 0; // Si no hay explícito, el primero es predeterminado
+
+        const articuloProveedor = this.articuloProveedorRepository.create({
+          articulo: articuloActualizado,
+          proveedor: proveedor,
+          precio_unitario: proveedorData.precio_unitario,
+          demora_entrega: proveedorData.demora_entrega || 0,
+          cargos_pedido: proveedorData.cargos_pedido || 0,
+          proveedor_predeterminado: esPredeterminado,
+        });
+
+        await this.articuloProveedorRepository.save(articuloProveedor);
+      }
+    }
+
+    // Recargar el artículo con las relaciones actualizadas
+    const articuloFinal = await this.articuloRepository.findOne({
+      where: { id },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articuloFinal) {
+      throw new HttpException('Error al recargar el artículo actualizado', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return this.toArticuloResponseDto(articuloFinal);
   }
 
   private toArticuloResponseDto(articulo: Articulo): ArticuloResponseDto {
@@ -389,7 +466,7 @@ export class ArticulosService {
   /**
    * Aplicar resultados de cálculo a un artículo específico
    */
-  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'intervalo_fijo'): Promise<ArticuloResponseDto> {
+  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'periodo_fijo'): Promise<ArticuloResponseDto> {
     const articulo = await this.articuloRepository.findOne({
       where: { id: articuloId, estado: true },
     });
@@ -417,13 +494,13 @@ export class ArticulosService {
       articulo.punto_pedido = Math.round(resultado.punto_pedido);
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
       
-    } else if (modelo === 'intervalo_fijo') {
+    } else if (modelo === 'periodo_fijo') {
       const resultado = await this.calcularIntervaloFijo({
         demanda: articulo.demanda,
         intervalo_revision: 30, // TODO: Este valor podría venir como parámetro
       });
 
-      articulo.modelo_inventario = 'periodo_fijo' as any;
+      articulo.modelo_inventario = ModeloInventario.periodo_fijo;
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
       articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
     }

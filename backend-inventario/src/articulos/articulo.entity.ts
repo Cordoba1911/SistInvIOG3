@@ -66,7 +66,7 @@ export class Articulo {
   estado: boolean;
 
   @Column({ type: 'datetime', nullable: true })
-  fecha_baja: Date;
+  fecha_baja: Date | null;
 
   @OneToMany(
     () => ArticuloProveedor,

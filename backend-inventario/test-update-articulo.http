@@ -1,0 +1,48 @@
+# Test para actualizar artículo con proveedores
+PATCH http://localhost:3000/api/articulos/1
+Content-Type: application/json
+
+{
+  "nombre": "Artículo Actualizado Test",
+  "descripcion": "Descripción actualizada",
+  "demanda": 150,
+  "costo_almacenamiento": 2.5,
+  "costo_pedido": 50,
+  "costo_compra": 25,
+  "precio_venta": 40,
+  "modelo_inventario": "lote_fijo",
+  "stock_actual": 100,
+  "proveedores": [
+    {
+      "proveedor_id": 1,
+      "precio_unitario": 22.50,
+      "demora_entrega": 5,
+      "cargos_pedido": 10,
+      "proveedor_predeterminado": true
+    },
+    {
+      "proveedor_id": 2,
+      "precio_unitario": 23.00,
+      "demora_entrega": 7,
+      "cargos_pedido": 8,
+      "proveedor_predeterminado": false
+    }
+  ]
+}
+
+###
+
+# Test para obtener artículo después de actualizar
+GET http://localhost:3000/api/articulos/1
+Content-Type: application/json
+
+###
+
+# Test para actualizar solo campos básicos (sin proveedores)
+PATCH http://localhost:3000/api/articulos/1
+Content-Type: application/json
+
+{
+  "nombre": "Solo cambio de nombre",
+  "stock_actual": 120
+} 

@@ -24,6 +24,11 @@ export class ProveedorController {
     return this.proveedorService.getProveedores();
   }
 
+  @Get('activos/lista')
+  getProveedoresActivos(): Promise<Proveedor[]> {
+    return this.proveedorService.getProveedoresActivos();
+  }
+
   @Get(':id')
   getProveedor(@Param('id', ParseIntPipe) id: number) {
     return this.proveedorService.getProveedor(id);

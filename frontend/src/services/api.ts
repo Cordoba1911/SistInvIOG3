@@ -22,11 +22,27 @@ const request = async <T>(
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(
-      `Error en la petición a ${endpoint}: ${response.status} - ${errorText}`
-    );
-    throw new Error(`Error en ${endpoint}: ${response.status} - ${errorText}`);
+    let errorMessage = `Error ${response.status}`;
+    
+    try {
+      const errorText = await response.text();
+      const errorData = JSON.parse(errorText);
+      
+      // Extraer el mensaje específico del backend si existe
+      if (errorData.message) {
+        errorMessage = errorData.message;
+      } else if (errorData.error) {
+        errorMessage = errorData.error;
+      } else {
+        errorMessage = `Error ${response.status}: ${response.statusText}`;
+      }
+    } catch {
+      // Si no se puede parsear como JSON, usar el status
+      errorMessage = `Error ${response.status}: ${response.statusText}`;
+    }
+    
+    console.error(`Error en la petición a ${endpoint}:`, errorMessage);
+    throw new Error(errorMessage);
   }
 
   return response.json();

@@ -1,5 +1,5 @@
 import request from "./api";
-import type { Articulo, CreateArticuloDto } from "../types/articulo";
+import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/articulo";
 
 const ARTICULOS_BASE_URL = "/articulos";
 
@@ -25,7 +25,7 @@ export const articulosService = {
   // Actualizar artículo
   async update(
     id: number,
-    articulo: Partial<CreateArticuloDto>
+    articulo: UpdateArticuloInput
   ): Promise<Articulo> {
     return request<Articulo>(`${ARTICULOS_BASE_URL}/${id}`, {
       method: "PATCH",

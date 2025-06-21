@@ -46,3 +46,22 @@ export interface CreateArticuloDto {
   stock_actual?: number;
   proveedores: ProveedorArticulo[];
 }
+
+export interface UpdateArticuloInput {
+  codigo?: string;
+  nombre?: string;
+  descripcion?: string;
+  demanda?: number;
+  costo_almacenamiento?: number;
+  costo_pedido?: number;
+  costo_compra?: number;
+  precio_venta?: number;
+  modelo_inventario?: "lote_fijo" | "periodo_fijo";
+  lote_optimo?: number;
+  punto_pedido?: number;
+  stock_seguridad?: number;
+  inventario_maximo?: number;
+  cgi?: number;
+  stock_actual?: number;
+  proveedores?: ProveedorArticulo[];
+}

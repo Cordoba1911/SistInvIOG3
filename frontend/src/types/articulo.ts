@@ -65,3 +65,55 @@ export interface UpdateArticuloInput {
   stock_actual?: number;
   proveedores?: ProveedorArticulo[];
 }
+
+// Nuevos tipos para productos a reponer y productos faltantes
+export interface ProductoFaltante {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  stock_actual: number;
+  stock_seguridad: number;
+  diferencia: number; // stock_seguridad - stock_actual
+  punto_pedido: number;
+  proveedor_predeterminado?: {
+    id: number;
+    nombre: string;
+    telefono: string;
+  };
+}
+
+export interface ProductoAReponer {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  stock_actual: number;
+  punto_pedido: number;
+  diferencia: number; // punto_pedido - stock_actual
+  lote_optimo?: number;
+  modelo_inventario: string;
+  proveedor_predeterminado?: {
+    id: number;
+    nombre: string;
+    telefono: string;
+  };
+  cantidad_sugerida?: number; // Cantidad que se sugiere ordenar
+}
+
+// Tipos para ajuste de inventario
+export interface AjusteInventarioDto {
+  nueva_cantidad: number;
+  motivo?: string;
+}
+
+export interface ResultadoAjusteDto {
+  articulo_id: number;
+  codigo: string;
+  nombre: string;
+  stock_anterior: number;
+  stock_nuevo: number;
+  diferencia: number;
+  motivo?: string;
+  fecha_ajuste: Date;
+}

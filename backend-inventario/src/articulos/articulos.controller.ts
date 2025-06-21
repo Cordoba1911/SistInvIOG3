@@ -18,7 +18,7 @@ import { ArticuloResponseDto } from './dto/articulo-response.dto';
 import { CalculoLoteFijoDto, ResultadoLoteFijoDto } from './dto/calculo-lote-fijo.dto';
 import { CalculoIntervaloFijoDto, ResultadoIntervaloFijoDto } from './dto/calculo-intervalo-fijo.dto';
 import { CalculoCgiDto, ResultadoCgiDto } from './dto/calculo-cgi.dto';
-import { ProductoFaltanteDto } from './dto/productos-faltantes.dto';
+import { ProductoFaltanteDto, ProductoAReponerDto } from './dto/productos-faltantes.dto';
 import { AjusteInventarioDto, ResultadoAjusteDto } from './dto/ajuste-inventario.dto';
 import { ProveedorArticuloResponseDto } from './dto/articulo-response.dto';
 
@@ -32,6 +32,24 @@ export class ArticulosController {
   @Get()
   async getArticulos(): Promise<ArticuloResponseDto[]> {
     return this.articulosService.getArticulos();
+  }
+
+  /**
+   * Obtener listado de productos faltantes
+   * Devuelve artículos cuyo stock actual está por debajo del stock de seguridad
+   */
+  @Get('faltantes')
+  async getProductosFaltantes(): Promise<ProductoFaltanteDto[]> {
+    return this.articulosService.getProductosFaltantes();
+  }
+
+  /**
+   * Obtener listado de productos a reponer
+   * Devuelve artículos que han alcanzado el punto de pedido y no tienen órdenes de compra activas
+   */
+  @Get('a-reponer')
+  async getProductosAReponer(): Promise<ProductoAReponerDto[]> {
+    return this.articulosService.getProductosAReponer();
   }
 
   /**
@@ -152,15 +170,6 @@ export class ArticulosController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ArticuloResponseDto> {
     return this.articulosService.calcularYActualizarCgi(id);
-  }
-
-  /**
-   * Obtener listado de productos faltantes
-   * Devuelve artículos cuyo stock actual está por debajo del stock de seguridad
-   */
-  @Get('faltantes')
-  async getProductosFaltantes(): Promise<ProductoFaltanteDto[]> {
-    return this.articulosService.getProductosFaltantes();
   }
 
   /**

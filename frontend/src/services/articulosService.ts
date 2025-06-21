@@ -1,5 +1,11 @@
 import request from "./api";
-import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/articulo";
+import type { 
+  Articulo, 
+  CreateArticuloDto, 
+  UpdateArticuloInput, 
+  ProductoFaltante, 
+  ProductoAReponer 
+} from "../types/articulo";
 
 const ARTICULOS_BASE_URL = "/articulos";
 
@@ -86,5 +92,31 @@ export const articulosService = {
     return request(`${ARTICULOS_BASE_URL}/${id}/reactivar`, {
       method: "PATCH",
     });
+  },
+
+  // Obtener productos faltantes
+  async getProductosFaltantes(): Promise<ProductoFaltante[]> {
+    return request<ProductoFaltante[]>(`${ARTICULOS_BASE_URL}/faltantes`);
+  },
+
+  // Obtener productos a reponer
+  async getProductosAReponer(): Promise<ProductoAReponer[]> {
+    return request<ProductoAReponer[]>(`${ARTICULOS_BASE_URL}/a-reponer`);
+  },
+
+  // Ajustar inventario de un artículo
+  async ajustarInventario(id: number, nuevaCantidad: number, motivo: string): Promise<any> {
+    return request(`${ARTICULOS_BASE_URL}/${id}/ajustar-inventario`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        nueva_cantidad: nuevaCantidad,
+        motivo: motivo,
+      }),
+    });
+  },
+
+  // Obtener proveedores de un artículo específico
+  async getProveedoresPorArticulo(articuloId: number): Promise<any[]> {
+    return request<any[]>(`${ARTICULOS_BASE_URL}/${articuloId}/proveedores`);
   },
 };

@@ -10,7 +10,7 @@ import { ArticuloResponseDto, ProveedorArticuloResponseDto } from './dto/articul
 import { CalculoLoteFijoDto, ResultadoLoteFijoDto } from './dto/calculo-lote-fijo.dto';
 import { CalculoIntervaloFijoDto, ResultadoIntervaloFijoDto } from './dto/calculo-intervalo-fijo.dto';
 import { CalculoCgiDto, ResultadoCgiDto } from './dto/calculo-cgi.dto';
-import { ProductoFaltanteDto } from './dto/productos-faltantes.dto';
+import { ProductoFaltanteDto, ProductoAReponerDto } from './dto/productos-faltantes.dto';
 import { AjusteInventarioDto, ResultadoAjusteDto } from './dto/ajuste-inventario.dto';
 import { OrdenCompraService } from '../orden_compra/orden-compra.service';
 import { ProveedorService } from '../proveedores/proveedor.service';
@@ -638,6 +638,66 @@ export class ArticulosService {
         } : undefined,
       };
     });
+  }
+
+  /**
+   * Obtener listado de productos a reponer
+   * Productos que han alcanzado el punto de pedido (o están por debajo) 
+   * y no tienen una orden de compra pendiente o enviada
+   */
+  async getProductosAReponer(): Promise<ProductoAReponerDto[]> {
+    // Obtener todos los artículos activos que tienen punto de pedido definido
+    // y cuyo stock actual es menor o igual al punto de pedido
+    const articulos = await this.articuloRepository
+      .createQueryBuilder('articulo')
+      .leftJoinAndSelect('articulo.articulo_proveedor', 'ap')
+      .leftJoinAndSelect('ap.proveedor', 'proveedor')
+      .where('articulo.estado = :estado', { estado: true })
+      .andWhere('articulo.punto_pedido IS NOT NULL')
+      .andWhere('articulo.stock_actual <= articulo.punto_pedido')
+      .getMany();
+
+    // Filtrar artículos que NO tienen órdenes de compra activas
+    const productosAReponer: ProductoAReponerDto[] = [];
+    
+    for (const articulo of articulos) {
+      const tieneOrdenesActivas = await this.ordenCompraService.tieneOrdenesActivas(articulo.id);
+      
+      if (!tieneOrdenesActivas) {
+        // Buscar el proveedor predeterminado
+        const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+          ap => ap.proveedor_predeterminado === true
+        );
+
+        // Calcular cantidad sugerida
+        let cantidadSugerida = articulo.lote_optimo;
+        if (!cantidadSugerida) {
+          // Si no hay lote óptimo, sugerir la diferencia hasta alcanzar el punto de pedido + un buffer
+          const diferencia = articulo.punto_pedido - articulo.stock_actual;
+          cantidadSugerida = diferencia + (articulo.stock_seguridad || Math.ceil(diferencia * 0.2));
+        }
+
+        productosAReponer.push({
+          id: articulo.id,
+          codigo: articulo.codigo,
+          nombre: articulo.nombre,
+          descripcion: articulo.descripcion,
+          stock_actual: articulo.stock_actual,
+          punto_pedido: articulo.punto_pedido,
+          diferencia: articulo.punto_pedido - articulo.stock_actual,
+          lote_optimo: articulo.lote_optimo,
+          modelo_inventario: articulo.modelo_inventario || 'lote_fijo',
+          cantidad_sugerida: cantidadSugerida,
+          proveedor_predeterminado: proveedorPredeterminado ? {
+            id: proveedorPredeterminado.proveedor.id,
+            nombre: proveedorPredeterminado.proveedor.nombre,
+            telefono: proveedorPredeterminado.proveedor.telefono,
+          } : undefined,
+        });
+      }
+    }
+
+    return productosAReponer;
   }
 
   /**

@@ -3,6 +3,10 @@ import { Routes, Route, useNavigate } from "react-router-dom";
 import { Card, Button } from "react-bootstrap";
 import ArticulosForm from "../pages/Articulos/ArticulosForm";
 import ArticulosList from "../pages/Articulos/ArticulosList";
+import ProductosAReponer from "../pages/Articulos/ProductosAReponer";
+import ProductosFaltantes from "../pages/Articulos/ProductosFaltantes";
+import ProveedoresPorArticulo from "../pages/Articulos/ProveedoresPorArticulo";
+import AjusteInventario from "../pages/Articulos/AjusteInventario";
 import AlertModal from "../components/common/AlertModal";
 import { articulosService } from "../services/articulosService";
 import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/articulo";
@@ -178,6 +182,22 @@ const ArticulosRouter = () => {
               </Card.Body>
             </Card>
           }
+        />
+        <Route
+          path="/productos-a-reponer"
+          element={<ProductosAReponer />}
+        />
+        <Route
+          path="/productos-faltantes"
+          element={<ProductosFaltantes />}
+        />
+        <Route
+          path="/proveedores-por-articulo"
+          element={<ProveedoresPorArticulo />}
+        />
+        <Route
+          path="/ajuste-inventario"
+          element={<AjusteInventario />}
         />
       </Routes>
 

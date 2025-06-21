@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import AlertModal from "../../components/common/AlertModal";
+import InventoryFieldsHelp from "../../components/common/InventoryFieldsHelp";
 import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
@@ -117,12 +118,52 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       ],
     },
     {
+      nombre: "lote_optimo",
+      etiqueta: "Lote Óptimo",
+      tipo: "number",
+      min: 0,
+      step: 1,
+      placeholder: "Cantidad óptima por pedido (EOQ)",
+    },
+    {
+      nombre: "punto_pedido",
+      etiqueta: "Punto de Pedido",
+      tipo: "number",
+      min: 0,
+      step: 1,
+      placeholder: "Nivel de stock para realizar pedido",
+    },
+    {
+      nombre: "stock_seguridad",
+      etiqueta: "Stock de Seguridad",
+      tipo: "number",
+      min: 0,
+      step: 1,
+      placeholder: "Stock mínimo de seguridad",
+    },
+    {
+      nombre: "inventario_maximo",
+      etiqueta: "Inventario Máximo",
+      tipo: "number",
+      min: 0,
+      step: 1,
+      placeholder: "Nivel máximo de inventario",
+    },
+    {
       nombre: "stock_actual",
       etiqueta: "Stock Actual",
       tipo: "number",
       min: 0,
       step: 1,
       placeholder: "Cantidad actual en inventario",
+    },
+    {
+      nombre: "cgi",
+      etiqueta: "CGI (Costo Gestión Inventario)",
+      tipo: "number",
+      min: 0,
+      step: 0.001,
+      placeholder: "Costo de gestión del inventario (calculado automáticamente)",
     },
     {
       nombre: "proveedores",
@@ -191,7 +232,12 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         costo_compra: articuloAEditar.costo_compra,
         precio_venta: articuloAEditar.precio_venta,
         modelo_inventario: articuloAEditar.modelo_inventario,
+        lote_optimo: articuloAEditar.lote_optimo,
+        punto_pedido: articuloAEditar.punto_pedido,
+        stock_seguridad: articuloAEditar.stock_seguridad,
+        inventario_maximo: articuloAEditar.inventario_maximo,
         stock_actual: articuloAEditar.stock_actual,
+        cgi: articuloAEditar.cgi,
         proveedores: articuloAEditar.proveedores?.map(p => ({
           proveedor_id: p.proveedor_id,
           precio_unitario: p.precio_unitario,
@@ -210,7 +256,12 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         costo_compra: undefined,
         precio_venta: undefined,
         modelo_inventario: "lote_fijo",
+        lote_optimo: undefined,
+        punto_pedido: undefined,
+        stock_seguridad: undefined,
+        inventario_maximo: undefined,
         stock_actual: 0,
+        cgi: undefined,
         proveedores: [],
       };
 
@@ -256,7 +307,12 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
           precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
           modelo_inventario: datos.modelo_inventario,
+          lote_optimo: datos.lote_optimo ? parseInt(datos.lote_optimo) : undefined,
+          punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
+          stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
+          inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
+          cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores?.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -278,7 +334,12 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
           precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
           modelo_inventario: datos.modelo_inventario,
+          lote_optimo: datos.lote_optimo ? parseInt(datos.lote_optimo) : undefined,
+          punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
+          stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
+          inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
+          cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -315,6 +376,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           </Button>
         )}
       </Form>
+
+      <InventoryFieldsHelp />
 
       <AlertModal
         show={alertModal.show}

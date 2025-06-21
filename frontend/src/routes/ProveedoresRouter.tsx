@@ -6,6 +6,7 @@ import { FaTimes } from "react-icons/fa";
 import ProveedoresForm from "../pages/Proveedores/ProveedoresForm";
 import ProveedoresList from "../pages/Proveedores/ProveedoresList";
 import ArticulosList from "../components/common/ArticulosList";
+import ErrorModal from "../components/common/ErrorModal";
 import type {
   Proveedor,
   CreateProveedorDto,
@@ -34,6 +35,11 @@ const ProveedoresRouter = () => {
   const [loading, setLoading] = useState(true);
   const [loadingArticulos, setLoadingArticulos] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalData, setErrorModalData] = useState<{
+    title: string;
+    message: string;
+  }>({ title: "", message: "" });
   const navigate = useNavigate();
 
   // Función para cargar los proveedores desde el backend
@@ -44,6 +50,7 @@ const ProveedoresRouter = () => {
       setProveedores(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
+      procesarError(err, "cargar_proveedores");
     } finally {
       setLoading(false);
     }
@@ -57,6 +64,77 @@ const ProveedoresRouter = () => {
       console.error("Error al cargar artículos disponibles:", err);
     }
   }, []);
+
+  // Función helper para mostrar errores en modal
+  const mostrarError = (title: string, error: any) => {
+    const message = error instanceof Error ? error.message : String(error);
+    setErrorModalData({ title, message });
+    setShowErrorModal(true);
+  };
+
+  // Función mejorada para procesar errores específicos
+  const procesarError = (error: any, contexto: string) => {
+    let titulo = "Error";
+    // Extraer el mensaje de error real. El servicio de API lo encapsula en `error.message`.
+    const errorMessage = (error?.message || "Ha ocurrido un error inesperado").toLowerCase();
+
+    // Errores específicos de creación de proveedores
+    if (contexto === "crear_proveedor") {
+      if (errorMessage.includes("proveedor con el nombre")) {
+        titulo = "Proveedor duplicado";
+      } else if (errorMessage.includes("no se encontró el artículo")) {
+        titulo = "Artículo no encontrado";
+      }
+    }
+    // Errores específicos de actualización de proveedores
+    else if (contexto === "actualizar_proveedor") {
+      if (errorMessage.includes("no encontrado")) {
+        titulo = "Proveedor no encontrado";
+      } else if (errorMessage.includes("dado de baja")) {
+        titulo = "Proveedor inactivo";
+      }
+    }
+    // Errores específicos de baja de proveedores
+    else if (contexto === "baja_proveedor") {
+      if (errorMessage.includes("no encontrado")) {
+        titulo = "Proveedor no encontrado";
+      } else if (errorMessage.includes("ya está dado de baja")) {
+        titulo = "Proveedor ya inactivo";
+      } else if (errorMessage.includes("proveedor predeterminado")) {
+        titulo = "Proveedor predeterminado";
+      } else if (errorMessage.includes("órdenes de compra")) {
+        titulo = "Órdenes de compra pendientes";
+      }
+    }
+    // Errores específicos de relación de artículos
+    else if (contexto === "relacionar_articulos") {
+      if (errorMessage.includes("proveedor no encontrado")) {
+        titulo = "Proveedor no encontrado";
+      } else if (errorMessage.includes("dado de baja")) {
+        titulo = "Proveedor inactivo";
+      } else if (errorMessage.includes("artículo con id")) {
+        titulo = "Artículo no encontrado";
+      } else if (errorMessage.includes("ya existe una relación")) {
+        titulo = "Relación duplicada";
+      }
+    }
+    // Errores de (des)activación y carga
+    else if (contexto === "activar_proveedor") {
+      if (errorMessage.includes("no encontrado")) {
+        titulo = "Proveedor no encontrado";
+      } else if (errorMessage.includes("ya está activo")) {
+        titulo = "Proveedor ya activo";
+      }
+    } else if (contexto === "cargar_proveedores") {
+      titulo = "Error al cargar proveedores";
+    } else if (contexto === "cargar_articulos") {
+      titulo = "Error al cargar artículos";
+    }
+
+    // Usar el mensaje de error extraído, que ahora será el correcto
+    setErrorModalData({ title: titulo, message: error?.message || "Ha ocurrido un error inesperado" });
+    setShowErrorModal(true);
+  };
 
   // useEffect para cargar los proveedores cuando el componente se monta
   useEffect(() => {
@@ -84,6 +162,8 @@ const ProveedoresRouter = () => {
       await cargarProveedores(); // Recarga la lista para ver los cambios
     } catch (err) {
       console.error("Error al guardar proveedor:", err);
+      const contexto = id ? "actualizar_proveedor" : "crear_proveedor";
+      procesarError(err, contexto);
     }
   };
 
@@ -97,12 +177,21 @@ const ProveedoresRouter = () => {
   // Función para dar de baja lógica a un proveedor
   const bajaLogicaProveedor = async (id: number) => {
     try {
-      // Asumiendo que el servicio/backend maneja la baja lógica (ej. cambiando un campo 'estado')
-      // Si el endpoint de delete hace baja lógica, se usaría proveedoresService.delete(id)
-      await proveedoresService.update(id, { estado: false });
+      await proveedoresService.baja(id);
       await cargarProveedores(); // Recargar la lista
     } catch (err) {
       console.error(`Error al dar de baja al proveedor ${id}:`, err);
+      procesarError(err, "baja_proveedor");
+    }
+  };
+
+  const handleActivarProveedor = async (id: number) => {
+    try {
+      await proveedoresService.reactivar(id);
+      await cargarProveedores();
+    } catch (err) {
+      console.error(`Error al activar al proveedor ${id}:`, err);
+      procesarError(err, "activar_proveedor");
     }
   };
 
@@ -121,7 +210,7 @@ const ProveedoresRouter = () => {
       setArticulos(data);
     } catch (err) {
       console.error("Error al cargar artículos:", err);
-      setError("Error al cargar artículos.");
+      procesarError(err, "cargar_articulos");
     } finally {
       setLoadingArticulos(false);
     }
@@ -153,7 +242,10 @@ const ProveedoresRouter = () => {
       }
     } catch (err) {
       console.error("Error al relacionar artículos:", err);
-      // Manejar el error en la UI si es necesario
+      mostrarError(
+        "Error al relacionar artículos",
+        err
+      );
     }
   };
 
@@ -180,7 +272,10 @@ const ProveedoresRouter = () => {
             <div className="container mt-4">
               <Card>
                 <Card.Body>
-                  <ProveedoresForm onSubmit={handleFormSubmit} />
+                  <ProveedoresForm 
+                    onSubmit={handleFormSubmit} 
+                    onError={(error) => procesarError(error, "crear_proveedor")}
+                  />
                 </Card.Body>
               </Card>
             </div>
@@ -194,6 +289,7 @@ const ProveedoresRouter = () => {
                 proveedores={proveedores}
                 onEditar={handleIniciarEdicion}
                 onBaja={bajaLogicaProveedor}
+                onActivar={handleActivarProveedor}
                 accionesPersonalizadas={(proveedor) => (
                   <>
                     <Button
@@ -234,6 +330,7 @@ const ProveedoresRouter = () => {
                       onSubmit={handleFormSubmit}
                       proveedorExistente={proveedorAEditar}
                       onCancel={() => setProveedorAEditar(null)}
+                      onError={(error) => procesarError(error, "actualizar_proveedor")}
                     />
                   </Card.Body>
                 </Card>
@@ -261,6 +358,12 @@ const ProveedoresRouter = () => {
           onSubmit={handleRelacionarArticulos}
         />
       )}
+      <ErrorModal
+        show={showErrorModal}
+        onHide={() => setShowErrorModal(false)}
+        title={errorModalData.title}
+        message={errorModalData.message}
+      />
     </>
   );
 };

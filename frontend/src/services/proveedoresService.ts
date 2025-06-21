@@ -42,14 +42,21 @@ export const proveedoresService = {
     });
   },
 
-  // Eliminar proveedor
-  async delete(id: number): Promise<{ message: string; proveedor: Proveedor }> {
+  // Eliminar/Dar de baja un proveedor
+  async baja(id: number): Promise<{ message: string; proveedor: Proveedor }> {
     return request<{ message: string; proveedor: Proveedor }>(
       `${PROVEEDORES_BASE_URL}/${id}`,
       {
         method: "DELETE",
       }
     );
+  },
+
+  // Reactivar un proveedor
+  async reactivar(id: number): Promise<Proveedor> {
+    return request<Proveedor>(`${PROVEEDORES_BASE_URL}/${id}/reactivar`, {
+      method: "PATCH",
+    });
   },
 
   // Obtener los artículos de un proveedor específico

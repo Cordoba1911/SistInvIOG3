@@ -17,6 +17,7 @@ export interface ArticuloProveedor {
   demora_entrega?: number;
   precio_unitario: number;
   cargos_pedido?: number;
+  proveedor_predeterminado?: boolean;
 }
 
 export interface CreateProveedorDto {
@@ -34,4 +35,5 @@ export interface ArticuloProveedorDetalle {
   precio_unitario: number;
   demora_entrega?: number;
   cargos_pedido?: number;
+  proveedor_predeterminado?: boolean;
 }

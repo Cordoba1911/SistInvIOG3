@@ -10,12 +10,14 @@ interface PropsProveedoresForm {
   onSubmit: (datos: CreateProveedorDto, id?: number) => void;
   proveedorExistente?: Proveedor | null;
   onCancel?: () => void;
+  onError?: (error: any) => void;
 }
 
 const ProveedoresForm = ({
   onSubmit,
   proveedorExistente,
   onCancel,
+  onError,
 }: PropsProveedoresForm) => {
   const [articulos, setArticulos] = useState<any[]>([]);
   const navigate = useNavigate();
@@ -95,6 +97,11 @@ const ProveedoresForm = ({
                   min: 0,
                   step: 0.01,
                 },
+                {
+                  nombre: "proveedor_predeterminado",
+                  etiqueta: "Proveedor Predeterminado",
+                  tipo: "checkbox",
+                },
               ],
               titulo: "Artículo",
               botonAgregar: "Agregar Artículo",
@@ -128,6 +135,7 @@ const ProveedoresForm = ({
             cargos_pedido: art.cargos_pedido
               ? parseFloat(art.cargos_pedido)
               : undefined,
+            proveedor_predeterminado: art.proveedor_predeterminado || false,
           })),
       };
 
@@ -136,7 +144,11 @@ const ProveedoresForm = ({
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       console.error("Error en el formulario de proveedor:", errorMessage);
-      alert("Error al procesar el formulario. Por favor, intente nuevamente.");
+      if (onError) {
+        onError(error);
+      } else {
+        alert("Error al procesar el formulario. Por favor, intente nuevamente.");
+      }
     }
   };
 

@@ -12,13 +12,14 @@ import { useEffect } from "react";
 export interface CampoFormulario {
   nombre: string;
   etiqueta: string;
-  tipo?: string; // 'text', 'number', 'email', 'select', 'textarea', 'date', 'array'
+  tipo?: string; // 'text', 'number', 'email', 'select', 'textarea', 'date', 'array', 'checkbox'
   opciones?: Array<{ value: string | number; label: string }>; // Para select
   requerido?: boolean;
   placeholder?: string;
   min?: number;
   max?: number;
   step?: number;
+  descripcion?: string; // Para checkboxes y otros campos
   arrayConfig?: {
     campos: CampoFormulario[];
     titulo: string;
@@ -74,11 +75,16 @@ const Form = ({
     nombreArray: string,
     index: number,
     campo: string,
-    valor: any
+    valor: any,
+    tipo?: string
   ) => {
     const arrayActual = formulario[nombreArray] || [];
     const nuevoArray = [...arrayActual];
-    nuevoArray[index] = { ...nuevoArray[index], [campo]: valor };
+    
+    // Para checkboxes, usar el valor booleano directamente
+    const valorFinal = tipo === "checkbox" ? valor : valor;
+    
+    nuevoArray[index] = { ...nuevoArray[index], [campo]: valorFinal };
     setFormulario({ ...formulario, [nombreArray]: nuevoArray });
   };
 
@@ -89,7 +95,8 @@ const Form = ({
     const arrayActual = formulario[nombreArray] || [];
     const nuevoElemento: Record<string, any> = {};
     camposArray.forEach((campo) => {
-      nuevoElemento[campo.nombre] = "";
+      // Inicializar checkboxes como false, otros campos como string vacío
+      nuevoElemento[campo.nombre] = campo.tipo === "checkbox" ? false : "";
     });
     setFormulario({
       ...formulario,
@@ -149,47 +156,71 @@ const Form = ({
                   <Row>
                     {campo.arrayConfig!.campos.map((campoArray) => (
                       <Col key={campoArray.nombre} md={6} className="mb-2">
-                        <label className="form-label small">
-                          {campoArray.etiqueta}
-                        </label>
-                        {campoArray.tipo === "select" && campoArray.opciones ? (
-                          <BsForm.Select
-                            size="sm"
-                            value={elemento[campoArray.nombre] || ""}
-                            onChange={(e) =>
-                              manejarCambioArray(
-                                campo.nombre,
-                                index,
-                                campoArray.nombre,
-                                e.target.value
-                              )
-                            }
-                          >
-                            <option value="">Seleccionar...</option>
-                            {campoArray.opciones.map((opcion) => (
-                              <option key={opcion.value} value={opcion.value}>
-                                {opcion.label}
-                              </option>
-                            ))}
-                          </BsForm.Select>
+                        {campoArray.tipo === "checkbox" ? (
+                          <div className="mt-3">
+                            <BsForm.Check
+                              type="checkbox"
+                              className="small"
+                              checked={elemento[campoArray.nombre] || false}
+                              onChange={(e) =>
+                                manejarCambioArray(
+                                  campo.nombre,
+                                  index,
+                                  campoArray.nombre,
+                                  e.target.checked,
+                                  campoArray.tipo
+                                )
+                              }
+                              label={campoArray.etiqueta}
+                            />
+                          </div>
                         ) : (
-                          <BsForm.Control
-                            size="sm"
-                            type={campoArray.tipo || "text"}
-                            value={elemento[campoArray.nombre] || ""}
-                            onChange={(e) =>
-                              manejarCambioArray(
-                                campo.nombre,
-                                index,
-                                campoArray.nombre,
-                                e.target.value
-                              )
-                            }
-                            placeholder={campoArray.placeholder}
-                            min={campoArray.min}
-                            max={campoArray.max}
-                            step={campoArray.step}
-                          />
+                          <>
+                            <label className="form-label small">
+                              {campoArray.etiqueta}
+                            </label>
+                            {campoArray.tipo === "select" && campoArray.opciones ? (
+                              <BsForm.Select
+                                size="sm"
+                                value={elemento[campoArray.nombre] || ""}
+                                onChange={(e) =>
+                                  manejarCambioArray(
+                                    campo.nombre,
+                                    index,
+                                    campoArray.nombre,
+                                    e.target.value,
+                                    campoArray.tipo
+                                  )
+                                }
+                              >
+                                <option value="">Seleccionar...</option>
+                                {campoArray.opciones.map((opcion) => (
+                                  <option key={opcion.value} value={opcion.value}>
+                                    {opcion.label}
+                                  </option>
+                                ))}
+                              </BsForm.Select>
+                            ) : (
+                              <BsForm.Control
+                                size="sm"
+                                type={campoArray.tipo || "text"}
+                                value={elemento[campoArray.nombre] || ""}
+                                onChange={(e) =>
+                                  manejarCambioArray(
+                                    campo.nombre,
+                                    index,
+                                    campoArray.nombre,
+                                    e.target.value,
+                                    campoArray.tipo
+                                  )
+                                }
+                                placeholder={campoArray.placeholder}
+                                min={campoArray.min}
+                                max={campoArray.max}
+                                step={campoArray.step}
+                              />
+                            )}
+                          </>
                         )}
                       </Col>
                     ))}
@@ -229,53 +260,65 @@ const Form = ({
 
     return (
       <Col key={campo.nombre} md={6} className="mb-3">
-        <label className="form-label">{campo.etiqueta}</label>
-
-        {campo.tipo === "select" && campo.opciones ? (
-          <InputGroup size="sm">
-            <BsForm.Select
-              name={campo.nombre}
-              value={formulario[campo.nombre] || ""}
-              onChange={manejarCambio}
-              aria-label={campo.etiqueta}
-            >
-              <option value="">
-                {campo.etiqueta === "Artículo"
-                  ? "Seleccione un artículo"
-                  : campo.etiqueta === "Proveedor"
-                  ? "Seleccione un proveedor"
-                  : `Seleccione ${campo.etiqueta.toLowerCase()}`}
-              </option>
-              {campo.opciones.map((opcion) => (
-                <option key={opcion.value} value={opcion.value}>
-                  {opcion.label}
-                </option>
-              ))}
-            </BsForm.Select>
-          </InputGroup>
-        ) : campo.tipo === "textarea" ? (
-          <BsForm.Control
-            as="textarea"
-            rows={3}
+        {campo.tipo === "checkbox" ? (
+          <BsForm.Check
+            type="checkbox"
             name={campo.nombre}
-            value={formulario[campo.nombre] || ""}
+            checked={formulario[campo.nombre] || false}
             onChange={manejarCambio}
-            placeholder={campo.placeholder}
+            label={campo.etiqueta}
           />
         ) : (
-          <InputGroup size="sm">
-            <BsForm.Control
-              type={campo.tipo || "text"}
-              name={campo.nombre}
-              value={formulario[campo.nombre] || ""}
-              onChange={manejarCambio}
-              aria-label={campo.etiqueta}
-              placeholder={campo.placeholder}
-              min={campo.min}
-              max={campo.max}
-              step={campo.step}
-            />
-          </InputGroup>
+          <>
+            <label className="form-label">{campo.etiqueta}</label>
+
+            {campo.tipo === "select" && campo.opciones ? (
+              <InputGroup size="sm">
+                <BsForm.Select
+                  name={campo.nombre}
+                  value={formulario[campo.nombre] || ""}
+                  onChange={manejarCambio}
+                  aria-label={campo.etiqueta}
+                >
+                  <option value="">
+                    {campo.etiqueta === "Artículo"
+                      ? "Seleccione un artículo"
+                      : campo.etiqueta === "Proveedor"
+                      ? "Seleccione un proveedor"
+                      : `Seleccione ${campo.etiqueta.toLowerCase()}`}
+                  </option>
+                  {campo.opciones.map((opcion) => (
+                    <option key={opcion.value} value={opcion.value}>
+                      {opcion.label}
+                    </option>
+                  ))}
+                </BsForm.Select>
+              </InputGroup>
+            ) : campo.tipo === "textarea" ? (
+              <BsForm.Control
+                as="textarea"
+                rows={3}
+                name={campo.nombre}
+                value={formulario[campo.nombre] || ""}
+                onChange={manejarCambio}
+                placeholder={campo.placeholder}
+              />
+            ) : (
+              <InputGroup size="sm">
+                <BsForm.Control
+                  type={campo.tipo || "text"}
+                  name={campo.nombre}
+                  value={formulario[campo.nombre] || ""}
+                  onChange={manejarCambio}
+                  aria-label={campo.etiqueta}
+                  placeholder={campo.placeholder}
+                  min={campo.min}
+                  max={campo.max}
+                  step={campo.step}
+                />
+              </InputGroup>
+            )}
+          </>
         )}
 
         {errores[campo.nombre] && (

@@ -17,6 +17,7 @@ interface PropsEntidadList<T> {
   campoId: string;
   campoActivo?: string;
   esActivo?: (entidad: T) => boolean;
+  renderAcciones?: (item: T) => React.ReactNode;
 
   // NUEVO: acciones personalizadas por fila
   accionesPersonalizadas?: (item: T) => React.ReactNode;
@@ -31,6 +32,7 @@ const EntidadList = <T extends Record<string, any>>({
   campoId,
   campoActivo,
   esActivo,
+  renderAcciones,
   accionesPersonalizadas,
 }: PropsEntidadList<T>) => {
   const [showModal, setShowModal] = useState(false);
@@ -94,23 +96,27 @@ const EntidadList = <T extends Record<string, any>>({
                   );
                 })}
                 <td className="text-center">
-                  <div className="d-flex justify-content-center align-items-center gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => onEditar(item[campoId])}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleShowModal(item)}
-                    >
-                      Eliminar
-                    </Button>
-                    {accionesPersonalizadas && accionesPersonalizadas(item)}
-                  </div>
+                  {renderAcciones ? (
+                    renderAcciones(item)
+                  ) : (
+                    <div className="d-flex justify-content-center align-items-center gap-2">
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => onEditar(item[campoId])}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleShowModal(item)}
+                      >
+                        Eliminar
+                      </Button>
+                      {accionesPersonalizadas && accionesPersonalizadas(item)}
+                    </div>
+                  )}
                 </td>
               </tr>
             );

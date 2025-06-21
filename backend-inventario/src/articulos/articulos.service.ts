@@ -134,6 +134,9 @@ export class ArticulosService {
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
     const articulos = await this.articuloRepository.find({
+      where: {
+        estado: true, // Solo artículos activos
+      },
       relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 

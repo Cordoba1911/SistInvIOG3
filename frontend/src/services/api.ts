@@ -22,30 +22,25 @@ const request = async <T>(
   });
 
   if (!response.ok) {
-    let errorMessage = `Error ${response.status}`;
-    
+    const errorText = await response.text(); // Leemos el cuerpo como texto, esto es más seguro.
     try {
-      const errorText = await response.text();
+      // Intentamos parsear el texto. Si funciona, el backend envió un error JSON.
       const errorData = JSON.parse(errorText);
-      
-      // Extraer el mensaje específico del backend si existe
-      if (errorData.message) {
-        errorMessage = errorData.message;
-      } else if (errorData.error) {
-        errorMessage = errorData.error;
-      } else {
-        errorMessage = `Error ${response.status}: ${response.statusText}`;
-      }
-    } catch {
-      // Si no se puede parsear como JSON, usar el status
-      errorMessage = `Error ${response.status}: ${response.statusText}`;
+      // Volvemos a stringificarlo para pasarlo en el mensaje del Error.
+      // Esto permite que el que lo captura pueda acceder al objeto completo.
+      throw new Error(JSON.stringify(errorData));
+    } catch (e) {
+      // Si el parseo falla, no era JSON. El error es el texto o uno genérico.
+      const errorMessage = errorText || `Error ${response.status}: ${response.statusText}`;
+      console.error(`Error en la petición a ${endpoint}:`, errorMessage);
+      throw new Error(errorMessage);
     }
-    
-    console.error(`Error en la petición a ${endpoint}:`, errorMessage);
-    throw new Error(errorMessage);
   }
 
-  return response.json();
+  // Si la respuesta es OK, devolvemos el cuerpo JSON
+  // Si el cuerpo está vacío, response.json() falla. Manejamos ese caso.
+  const text = await response.text();
+  return text ? JSON.parse(text) : {};
 };
 
 export default request;

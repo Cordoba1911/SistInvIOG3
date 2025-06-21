@@ -15,6 +15,7 @@ interface PropsEntidadList<T> {
   onEditar: (id: string) => void;
   onEliminar: (id: string) => void;
   campoId: string;
+  botonCrear?: React.ReactNode;
   campoActivo?: string;
   esActivo?: (entidad: T) => boolean;
   renderAcciones?: (item: T) => React.ReactNode;
@@ -30,6 +31,7 @@ const EntidadList = <T extends Record<string, any>>({
   onEditar,
   onEliminar,
   campoId,
+  botonCrear,
   campoActivo,
   esActivo,
   renderAcciones,
@@ -56,8 +58,11 @@ const EntidadList = <T extends Record<string, any>>({
   };
 
   return (
-    <div className="mt-5">
-      <h3 className="mb-3">Lista de {titulo}</h3>
+    <div className="mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-3">
+        {titulo && <h3 className="mb-0">{titulo}</h3>}
+        {botonCrear}
+      </div>
       <Table striped bordered hover responsive size="sm">
         <thead>
           <tr>

@@ -32,6 +32,7 @@ interface PropsForm {
   campos: CampoFormulario[];
   valoresIniciales: Record<string, any>;
   onSubmit: (datos: Record<string, any>) => void;
+  onFormChange?: (datos: Record<string, any>) => void;
   titulo?: string;
   textoBoton?: string;
   datosExternos?: Record<string, any[]>; // Para selects que necesitan datos externos
@@ -42,6 +43,7 @@ const Form = ({
   campos,
   valoresIniciales,
   onSubmit,
+  onFormChange,
   titulo = "Formulario",
   textoBoton = "Guardar",
   datosExternos = {},
@@ -67,8 +69,14 @@ const Form = ({
       valorFinal = (e.target as HTMLInputElement).checked;
     }
 
-    setFormulario({ ...formulario, [name]: valorFinal });
+    const nuevosValores = { ...formulario, [name]: valorFinal };
+    setFormulario(nuevosValores);
     setErrores({ ...errores, [name]: "" });
+
+    // Notificar al padre sobre el cambio
+    if (onFormChange) {
+      onFormChange(nuevosValores);
+    }
   };
 
   const manejarCambioArray = (
@@ -85,7 +93,13 @@ const Form = ({
     const valorFinal = tipo === "checkbox" ? valor : valor;
     
     nuevoArray[index] = { ...nuevoArray[index], [campo]: valorFinal };
-    setFormulario({ ...formulario, [nombreArray]: nuevoArray });
+    const nuevosValores = { ...formulario, [nombreArray]: nuevoArray };
+    setFormulario(nuevosValores);
+    
+    // Notificar al padre sobre el cambio
+    if (onFormChange) {
+      onFormChange(nuevosValores);
+    }
   };
 
   const agregarElementoArray = (
@@ -98,16 +112,28 @@ const Form = ({
       // Inicializar checkboxes como false, otros campos como string vacío
       nuevoElemento[campo.nombre] = campo.tipo === "checkbox" ? false : "";
     });
-    setFormulario({
+    const nuevosValores = {
       ...formulario,
       [nombreArray]: [...arrayActual, nuevoElemento],
-    });
+    };
+    setFormulario(nuevosValores);
+
+    // Notificar al padre sobre el cambio
+    if (onFormChange) {
+      onFormChange(nuevosValores);
+    }
   };
 
   const eliminarElementoArray = (nombreArray: string, index: number) => {
     const arrayActual = formulario[nombreArray] || [];
     const nuevoArray = arrayActual.filter((_: any, i: number) => i !== index);
-    setFormulario({ ...formulario, [nombreArray]: nuevoArray });
+    const nuevosValores = { ...formulario, [nombreArray]: nuevoArray };
+    setFormulario(nuevosValores);
+
+    // Notificar al padre sobre el cambio
+    if (onFormChange) {
+      onFormChange(nuevosValores);
+    }
   };
 
   const validarFormulario = (): boolean => {
@@ -323,6 +349,10 @@ const Form = ({
 
         {errores[campo.nombre] && (
           <div className="form-text text-danger">{errores[campo.nombre]}</div>
+        )}
+        
+        {campo.descripcion && !errores[campo.nombre] && (
+          <div className="form-text text-muted">{campo.descripcion}</div>
         )}
       </Col>
     );

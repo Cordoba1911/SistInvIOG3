@@ -1,7 +1,7 @@
 // src/routes/ProveedoresRouter.tsx
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { Card, Button } from "react-bootstrap";
+import { Routes, Route, useNavigate, Link } from "react-router-dom";
+import { Card, Button, Badge } from "react-bootstrap";
 import { FaTimes } from "react-icons/fa";
 import ProveedoresForm from "../pages/Proveedores/ProveedoresForm";
 import ProveedoresList from "../pages/Proveedores/ProveedoresList";
@@ -284,32 +284,50 @@ const ProveedoresRouter = () => {
         <Route
           path="/admin-proveedores"
           element={
-            <div className="container mt-4">
-              <ProveedoresList
-                proveedores={proveedores}
-                onEditar={handleIniciarEdicion}
-                onBaja={bajaLogicaProveedor}
-                onActivar={handleActivarProveedor}
-                accionesPersonalizadas={(proveedor) => (
-                  <>
-                    <Button
-                      variant="outline-info"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleVerArticulos(proveedor)}
-                    >
-                      Ver Artículos
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => handleAbrirModalRelacionar(proveedor)}
-                    >
-                      Añadir Artículo
-                    </Button>
-                  </>
-                )}
-              />
+            <>
+              <Card>
+                <Card.Body>
+                  {loading ? (
+                    <p>Cargando proveedores...</p>
+                  ) : (
+                    <ProveedoresList
+                      proveedores={proveedores}
+                      onEditar={handleIniciarEdicion}
+                      onBaja={bajaLogicaProveedor}
+                      onActivar={handleActivarProveedor}
+                      botonCrear={
+                        <Link to="/proveedores/crear-proveedor" className="btn btn-primary">
+                          Crear Proveedor
+                        </Link>
+                      }
+                      accionesPersonalizadas={(proveedor) => (
+                        <>
+                          <Badge
+                            as="button"
+                            className="action-badge"
+                            bg="info"
+                            onClick={() => handleVerArticulos(proveedor)}
+                          >
+                            {proveedorSeleccionado?.id === proveedor.id
+                              ? "Ocultar"
+                              : "Ver Artículos"}
+                          </Badge>
+                          <Badge
+                            as="button"
+                            className="action-badge"
+                            bg="secondary"
+                            onClick={() => handleAbrirModalRelacionar(proveedor)}
+                          >
+                            Añadir Artículo
+                          </Badge>
+                        </>
+                      )}
+                    />
+                  )}
+                </Card.Body>
+              </Card>
+
+              {/* Formulario de EDICIÓN (aparece al hacer clic en Editar) */}
               {proveedorAEditar && (
                 <Card className="mt-4">
                   <Card.Header>
@@ -345,7 +363,7 @@ const ProveedoresRouter = () => {
                   onClose={handleCerrarArticulos}
                 />
               )}
-            </div>
+            </>
           }
         />
       </Routes>

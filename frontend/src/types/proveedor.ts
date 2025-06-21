@@ -37,3 +37,15 @@ export interface ArticuloProveedorDetalle {
   cargos_pedido?: number;
   proveedor_predeterminado?: boolean;
 }
+
+// DTO para la respuesta del endpoint /articulos/:id/proveedores
+export interface ProveedorArticuloResponseDto {
+  proveedor_id: number;
+  nombre: string;
+  telefono?: string;
+  email?: string;
+  precio_unitario: number;
+  demora_entrega?: number;
+  cargos_pedido?: number;
+  proveedor_predeterminado: boolean;
+}

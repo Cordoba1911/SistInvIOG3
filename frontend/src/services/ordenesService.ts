@@ -15,8 +15,12 @@ export const ordenesService = {
   },
 
   // Crear nueva orden de compra
-  async create(orden: CreateOrdenCompraDto): Promise<OrdenCompra> {
-    return request<OrdenCompra>(ORDENES_BASE_URL, {
+  async create(
+    orden: CreateOrdenCompraDto,
+    force = false,
+  ): Promise<OrdenCompra> {
+    const url = force ? `${ORDENES_BASE_URL}?force=true` : ORDENES_BASE_URL;
+    return request<OrdenCompra>(url, {
       method: "POST",
       body: JSON.stringify(orden),
     });

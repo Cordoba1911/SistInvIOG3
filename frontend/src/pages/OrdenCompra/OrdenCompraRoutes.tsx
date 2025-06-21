@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import OrdenForm from "./OrdenForm";
+import { OrdenForm } from "./OrdenForm";
 import OrdenCompraList from "./OrdenCompraList";
 import { useState, useEffect } from "react";
 import { ordenesService } from "../../services/ordenesService";

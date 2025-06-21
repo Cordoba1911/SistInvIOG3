@@ -1,5 +1,5 @@
 // src/pages/Proveedores/ProveedoresList.tsx
-import { Badge, Button } from "react-bootstrap";
+import { Badge } from "react-bootstrap";
 import EntidadList from "../../components/EntityList";
 import type { Proveedor } from "../types/proveedor";
 
@@ -10,6 +10,7 @@ interface PropsProveedoresList {
   onBaja: (id: number) => void;
   onActivar: (id: number) => void;
   accionesPersonalizadas?: (proveedor: Proveedor) => React.ReactNode;
+  botonCrear?: React.ReactNode;
 }
 
 // Componente para listar proveedores
@@ -19,6 +20,7 @@ const ProveedoresList = ({
   onBaja,
   onActivar,
   accionesPersonalizadas,
+  botonCrear,
 }: PropsProveedoresList) => {
   // Las columnas para la lista de proveedores
   const columnas = [
@@ -45,40 +47,46 @@ const ProveedoresList = ({
   // Se renderiza solo la lista, sin su propio contenedor
   return (
     <EntidadList
-      titulo="Proveedores"
+      titulo="Lista de Proveedores"
       datos={proveedoresAdaptados}
       columnas={columnas}
       onEditar={onEditar}
       onEliminar={onBaja}
       campoId="id"
+      botonCrear={botonCrear}
       esActivo={(proveedor) => proveedor.estado === "Activo"}
       renderAcciones={(proveedor) => {
         const estaActivo = proveedor.estado === "Activo";
+        const commonBadgeProps = {
+          as: "button",
+          className: "me-1 action-badge",
+          style: { cursor: "pointer" },
+        };
         return (
           <div className="d-flex justify-content-center align-items-center gap-2">
-            <Button
-              variant="outline-primary"
-              size="sm"
+            <Badge
+              {...commonBadgeProps}
+              bg="primary"
               onClick={() => onEditar(proveedor.id)}
             >
               Editar
-            </Button>
+            </Badge>
             {estaActivo ? (
-              <Button
-                variant="outline-danger"
-                size="sm"
+              <Badge
+                {...commonBadgeProps}
+                bg="danger"
                 onClick={() => onBaja(proveedor.id)}
               >
                 Dar de Baja
-              </Button>
+              </Badge>
             ) : (
-              <Button
-                variant="outline-success"
-                size="sm"
+              <Badge
+                {...commonBadgeProps}
+                bg="success"
                 onClick={() => onActivar(proveedor.id)}
               >
                 Activar
-              </Button>
+              </Badge>
             )}
             {accionesPersonalizadas && accionesPersonalizadas(proveedor)}
           </div>

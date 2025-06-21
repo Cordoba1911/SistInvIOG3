@@ -1,6 +1,7 @@
 import React from "react";
-import { Table, Button, Badge, ButtonGroup } from "react-bootstrap";
+import { Table, Badge, ButtonGroup } from "react-bootstrap";
 import type { OrdenCompra } from "../../types/ordenCompra";
+import { Link } from "react-router-dom";
 
 interface Props {
   ordenes: OrdenCompra[];
@@ -19,9 +20,9 @@ const OrdenCompraList: React.FC<Props> = ({
 }) => {
   const getBadgeVariant = (estado: string) => {
     const estadoNormalizado = estado.toLowerCase();
-    if (estadoNormalizado === "pendiente") return "primary";
+    if (estadoNormalizado === "pendiente") return "warning";
     if (estadoNormalizado === "en proceso" || estadoNormalizado === "enviada")
-      return "warning";
+      return "primary";
     if (estadoNormalizado === "finalizada") return "success";
     if (estadoNormalizado === "cancelada") return "danger";
     return "secondary";
@@ -30,31 +31,49 @@ const OrdenCompraList: React.FC<Props> = ({
   const renderizarAcciones = (orden: OrdenCompra) => {
     const estado = orden.estado.toLowerCase();
 
+    const commonBadgeProps = {
+      as: "button",
+      className: "me-1 action-badge",
+      style: { cursor: "pointer" },
+    };
+
     if (estado === "pendiente") {
       return (
         <ButtonGroup size="sm">
-          <Button variant="outline-primary" onClick={() => onEditar(orden)}>
+          <Badge
+            {...commonBadgeProps}
+            bg="primary"
+            onClick={() => onEditar(orden)}
+          >
             Editar
-          </Button>
-          <Button variant="outline-success" onClick={() => onEnviar(orden.id)}>
+          </Badge>
+          <Badge
+            {...commonBadgeProps}
+            bg="info"
+            onClick={() => onEnviar(orden.id)}
+          >
             Enviar
-          </Button>
-          <Button variant="outline-danger" onClick={() => onCancelar(orden.id)}>
+          </Badge>
+          <Badge
+            {...commonBadgeProps}
+            bg="danger"
+            onClick={() => onCancelar(orden.id)}
+          >
             Cancelar
-          </Button>
+          </Badge>
         </ButtonGroup>
       );
     }
 
     if (estado === "enviada" || estado === "en proceso") {
       return (
-        <Button
-          variant="outline-success"
-          size="sm"
+        <Badge
+          {...commonBadgeProps}
+          bg="success"
           onClick={() => onFinalizar(orden.id)}
         >
           Finalizar
-        </Button>
+        </Badge>
       );
     }
 
@@ -64,7 +83,10 @@ const OrdenCompraList: React.FC<Props> = ({
   return (
     <div>
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h2>Órdenes de Compra</h2>
+        <h3>Lista de Órdenes de Compra</h3>
+        <Link to="/ordenes/orden-compra" className="btn btn-primary">
+          Crear Orden
+        </Link>
       </div>
       <Table striped bordered hover responsive>
         <thead>

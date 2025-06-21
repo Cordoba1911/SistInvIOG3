@@ -1,0 +1,35 @@
+### Test Warning - Orden de Compra con cantidad que no supera punto de pedido
+
+# Crear orden de compra con cantidad que no supera el punto de pedido
+# (Para un artículo con modelo lote fijo y punto de pedido definido)
+POST http://localhost:3000/ordenes_compra
+Content-Type: application/json
+
+{
+  "articulo_id": 1,
+  "proveedor_id": 1,
+  "cantidad": 5
+}
+
+### Test Warning - Orden de Compra con cantidad que SÍ supera punto de pedido
+
+# Crear orden de compra con cantidad que SÍ supera el punto de pedido
+POST http://localhost:3000/ordenes_compra
+Content-Type: application/json
+
+{
+  "articulo_id": 1,
+  "proveedor_id": 1,
+  "cantidad": 50
+}
+
+### Test Warning - Orden de Compra sin especificar cantidad (usa lote óptimo)
+
+# Crear orden de compra sin especificar cantidad
+POST http://localhost:3000/ordenes_compra
+Content-Type: application/json
+
+{
+  "articulo_id": 1,
+  "proveedor_id": 1
+} 

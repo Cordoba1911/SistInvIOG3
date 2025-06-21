@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
 import { Card } from "react-bootstrap";
 import VentasForm from "../pages/Ventas/VentasForm";
 import VentasList from "../pages/Ventas/VentasList";
@@ -11,7 +10,6 @@ const VentasRouter = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
   const cargarVentas = useCallback(async () => {
     try {
@@ -32,36 +30,33 @@ const VentasRouter = () => {
   const handleCrearVenta = async (ventaDto: CreateVentaDto) => {
     try {
       await ventasService.create(ventaDto);
-      navigate("/ventas"); // Volver a la lista
       await cargarVentas(); // Recargar para ver la nueva venta
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al crear la venta");
+    } catch (err: any) {
+      // Intentar parsear el mensaje de error si es un JSON
+      try {
+        const errorData = JSON.parse(err.message);
+        setError(errorData.message || "Ha ocurrido un error inesperado.");
+      } catch (parseError) {
+        // Si no es un JSON, mostrar el mensaje de error directamente
+        setError(err.message || "Error al crear la venta");
+      }
     }
   };
 
   return (
     <>
-      <Routes>
-        <Route
-          index
-          element={
-            loading ? <p>Cargando ventas...</p> : <VentasList ventas={ventas} />
-          }
-        />
-        <Route
-          path="nueva"
-          element={
-            <Card>
-              <Card.Header>
-                <h4>Registrar Nueva Venta</h4>
-              </Card.Header>
-              <Card.Body>
-                <VentasForm onSubmit={handleCrearVenta} />
-              </Card.Body>
-            </Card>
-          }
-        />
-      </Routes>
+      <Card className="mb-4">
+        <Card.Body>
+          <VentasForm onSubmit={handleCrearVenta} />
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Body>
+          {loading ? <p>Cargando ventas...</p> : <VentasList ventas={ventas} />}
+        </Card.Body>
+      </Card>
+
       <ErrorModal
         show={!!error}
         onHide={() => setError(null)}

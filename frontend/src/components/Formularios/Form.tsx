@@ -25,6 +25,7 @@ export interface CampoFormulario {
     titulo: string;
     botonAgregar: string;
     botonEliminar: string;
+    sinEstilo?: boolean;
   };
 }
 
@@ -172,111 +173,123 @@ const Form = ({
 
   const renderizarCampo = (campo: CampoFormulario) => {
     if (campo.tipo === "array" && campo.arrayConfig) {
-      return (
-        <Col key={campo.nombre} md={12} className="mb-3">
-          <label className="form-label">{campo.etiqueta}</label>
-          <Card className="p-3">
-            {(formulario[campo.nombre] || []).map(
-              (elemento: any, index: number) => (
-                <Card key={index} className="mb-2 p-2">
-                  <Row>
-                    {campo.arrayConfig!.campos.map((campoArray) => (
-                      <Col key={campoArray.nombre} md={6} className="mb-2">
-                        {campoArray.tipo === "checkbox" ? (
-                          <div className="mt-3">
-                            <BsForm.Check
-                              type="checkbox"
-                              className="small"
-                              checked={elemento[campoArray.nombre] || false}
+      const arrayContainer = (
+        <>
+          {(formulario[campo.nombre] || []).map(
+            (elemento: any, index: number) => (
+              <Card key={index} className="mb-2 p-2">
+                <Row>
+                  {campo.arrayConfig!.campos.map((campoArray) => (
+                    <Col key={campoArray.nombre} md={6} className="mb-2">
+                      {campoArray.tipo === "checkbox" ? (
+                        <div className="mt-3">
+                          <BsForm.Check
+                            type="checkbox"
+                            className="small"
+                            checked={elemento[campoArray.nombre] || false}
+                            onChange={(e) =>
+                              manejarCambioArray(
+                                campo.nombre,
+                                index,
+                                campoArray.nombre,
+                                e.target.checked,
+                                campoArray.tipo
+                              )
+                            }
+                            label={campoArray.etiqueta}
+                          />
+                        </div>
+                      ) : (
+                        <>
+                          <label className="form-label small">
+                            {campoArray.etiqueta}
+                          </label>
+                          {campoArray.tipo === "select" && campoArray.opciones ? (
+                            <BsForm.Select
+                              size="sm"
+                              value={elemento[campoArray.nombre] || ""}
                               onChange={(e) =>
                                 manejarCambioArray(
                                   campo.nombre,
                                   index,
                                   campoArray.nombre,
-                                  e.target.checked,
+                                  e.target.value,
                                   campoArray.tipo
                                 )
                               }
-                              label={campoArray.etiqueta}
+                            >
+                              <option value="">Seleccionar...</option>
+                              {campoArray.opciones.map((opcion) => (
+                                <option key={opcion.value} value={opcion.value}>
+                                  {opcion.label}
+                                </option>
+                              ))}
+                            </BsForm.Select>
+                          ) : (
+                            <BsForm.Control
+                              size="sm"
+                              type={campoArray.tipo || "text"}
+                              value={elemento[campoArray.nombre] || ""}
+                              onChange={(e) =>
+                                manejarCambioArray(
+                                  campo.nombre,
+                                  index,
+                                  campoArray.nombre,
+                                  e.target.value,
+                                  campoArray.tipo
+                                )
+                              }
+                              placeholder={campoArray.placeholder}
+                              min={campoArray.min}
+                              max={campoArray.max}
+                              step={campoArray.step}
                             />
-                          </div>
-                        ) : (
-                          <>
-                            <label className="form-label small">
-                              {campoArray.etiqueta}
-                            </label>
-                            {campoArray.tipo === "select" && campoArray.opciones ? (
-                              <BsForm.Select
-                                size="sm"
-                                value={elemento[campoArray.nombre] || ""}
-                                onChange={(e) =>
-                                  manejarCambioArray(
-                                    campo.nombre,
-                                    index,
-                                    campoArray.nombre,
-                                    e.target.value,
-                                    campoArray.tipo
-                                  )
-                                }
-                              >
-                                <option value="">Seleccionar...</option>
-                                {campoArray.opciones.map((opcion) => (
-                                  <option key={opcion.value} value={opcion.value}>
-                                    {opcion.label}
-                                  </option>
-                                ))}
-                              </BsForm.Select>
-                            ) : (
-                              <BsForm.Control
-                                size="sm"
-                                type={campoArray.tipo || "text"}
-                                value={elemento[campoArray.nombre] || ""}
-                                onChange={(e) =>
-                                  manejarCambioArray(
-                                    campo.nombre,
-                                    index,
-                                    campoArray.nombre,
-                                    e.target.value,
-                                    campoArray.tipo
-                                  )
-                                }
-                                placeholder={campoArray.placeholder}
-                                min={campoArray.min}
-                                max={campoArray.max}
-                                step={campoArray.step}
-                              />
-                            )}
-                          </>
-                        )}
-                      </Col>
-                    ))}
-                    <Col md={12} className="text-end">
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() =>
-                          eliminarElementoArray(campo.nombre, index)
-                        }
-                      >
-                        {campo.arrayConfig!.botonEliminar}
-                      </Button>
+                          )}
+                        </>
+                      )}
                     </Col>
-                  </Row>
-                </Card>
-              )
-            )}
-            <div className="d-flex">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() =>
-                  agregarElementoArray(campo.nombre, campo.arrayConfig!.campos)
-                }
-              >
-                {campo.arrayConfig!.botonAgregar}
-              </Button>
-            </div>
-          </Card>
+                  ))}
+                  <Col md={12} className="text-end">
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() =>
+                        eliminarElementoArray(campo.nombre, index)
+                      }
+                    >
+                      {campo.arrayConfig!.botonEliminar}
+                    </Button>
+                  </Col>
+                </Row>
+              </Card>
+            )
+          )}
+          <div className="d-flex">
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() =>
+                agregarElementoArray(campo.nombre, campo.arrayConfig!.campos)
+              }
+            >
+              {campo.arrayConfig!.botonAgregar}
+            </Button>
+          </div>
+        </>
+      );
+
+      return (
+        <Col key={campo.nombre} md={12} className="mb-3">
+          {campo.arrayConfig.sinEstilo ? (
+            arrayContainer
+          ) : (
+            <>
+              <label className="form-label">{campo.etiqueta}</label>
+              <Card className="p-3">
+                {arrayContainer}
+              </Card>
+            </>
+          )}
           {errores[campo.nombre] && (
             <div className="form-text text-danger">{errores[campo.nombre]}</div>
           )}

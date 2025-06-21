@@ -16,7 +16,11 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
     const cargarArticulos = async () => {
       try {
         const articulosData = await articulosService.getAll();
-        setArticulos(articulosData);
+        // Filtrar artículos con stock > 0
+        const articulosConStock = articulosData.filter(
+          (a: any) => a.stock_actual && a.stock_actual > 0
+        );
+        setArticulos(articulosConStock);
       } catch (error) {
         console.error("Error al cargar artículos:", error);
         // Opcional: podrías querer pasar este error al padre
@@ -28,10 +32,11 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
   const campos: CampoFormulario[] = [
     {
       nombre: "detalles",
-      etiqueta: "Detalles de Venta",
+      etiqueta: "",
       tipo: "array",
       requerido: true,
       arrayConfig: {
+        sinEstilo: true,
         campos: [
           {
             nombre: "articulo_id",
@@ -40,7 +45,7 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
             requerido: true,
             opciones: articulos.map((a) => ({
               value: a.id,
-              label: `${a.nombre} (${a.codigo})`,
+              label: `${a.nombre} (Stock: ${a.stock_actual})`,
             })),
           },
           {
@@ -53,14 +58,14 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
           },
         ],
         titulo: "Artículo",
-        botonAgregar: "Agregar Artículo",
+        botonAgregar: "Agregar otro artículo",
         botonEliminar: "Eliminar Artículo",
       },
     },
   ];
 
   const valoresIniciales = {
-    detalles: [],
+    detalles: [{ articulo_id: "", cantidad: 1 }],
   };
 
   const manejarEnvio = async (datos: Record<string, any>) => {
@@ -81,7 +86,7 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
       campos={campos}
       valoresIniciales={valoresIniciales}
       onSubmit={manejarEnvio}
-      titulo="Registrar Venta"
+      titulo="Registrar Nueva Venta"
       textoBoton="Registrar Venta"
     />
   );

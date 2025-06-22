@@ -7,12 +7,13 @@ import type {
   OrdenCompra,
   UpdateOrdenCompraDto,
 } from "../../types/ordenCompra";
-import { Button, Card } from "react-bootstrap";
-import { FaTimes } from "react-icons/fa";
+import { Button, Card, Form, InputGroup } from "react-bootstrap";
+import { Search } from "react-bootstrap-icons";
 import EditarOrdenCompraModal from "../../components/common/EditarOrdenCompraModal";
 
 const OrdenCompraRoutes = () => {
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [ordenAEditar, setOrdenAEditar] =
     useState<OrdenCompra | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -57,6 +58,15 @@ const OrdenCompraRoutes = () => {
     cargarOrdenes();
   };
 
+  const filteredOrdenes = ordenes.filter((orden) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      orden.id.toString().includes(term) ||
+      (orden.proveedor?.nombre.toLowerCase().includes(term)) ||
+      (orden.articulo?.nombre.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <Routes>
       <Route
@@ -66,11 +76,26 @@ const OrdenCompraRoutes = () => {
             <Card>
               <Card.Body>
                 <OrdenCompraList
-                  ordenes={ordenes}
+                  ordenes={filteredOrdenes}
                   onEditar={handleEditar}
                   onCancelar={handleCancelar}
                   onEnviar={handleEnviar}
                   onFinalizar={handleFinalizar}
+                  searchBar={
+                    <Form.Group className="mb-4">
+                      <InputGroup>
+                        <InputGroup.Text>
+                          <Search />
+                        </InputGroup.Text>
+                        <Form.Control
+                          type="text"
+                          placeholder="Buscar por ID, proveedor o artículo..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </InputGroup>
+                    </Form.Group>
+                  }
                   botonCrear={
                     <Link to="/ordenes/orden-compra" className="btn btn-primary">
                       Crear Orden

@@ -14,6 +14,7 @@ interface PropsArticulosList {
   onActivar: (id: number) => void;
   accionesPersonalizadas?: (articulo: Articulo) => React.ReactNode;
   botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
 }
 
 const ArticulosList = ({
@@ -23,6 +24,7 @@ const ArticulosList = ({
   onActivar,
   accionesPersonalizadas,
   botonCrear,
+  searchBar,
 }: PropsArticulosList) => {
   const formatValue = (
     value: number | string | undefined | null,
@@ -131,6 +133,7 @@ const ArticulosList = ({
       campoId="id"
       renderAcciones={renderAccionesArticulo}
       botonCrear={botonCrear}
+      searchBar={searchBar}
     />
   );
 };

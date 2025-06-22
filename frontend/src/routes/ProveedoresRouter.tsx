@@ -67,33 +67,44 @@ const ProveedoresRouter = () => {
 
   // Función mejorada para procesar errores específicos
   const procesarError = (error: any, contexto: string) => {
-    const errorMessage = (error?.message || "Ha ocurrido un error inesperado").toLowerCase();
+    const rawMessage = error?.message || "Ha ocurrido un error inesperado";
+    const errorMessageForTitle = rawMessage.toLowerCase();
     let titulo = "Error";
 
     if (contexto === "crear_proveedor") {
-        if (errorMessage.includes("proveedor con el nombre")) titulo = "Proveedor duplicado";
-        else if (errorMessage.includes("no se encontró el artículo")) titulo = "Artículo no encontrado";
+        if (errorMessageForTitle.includes("proveedor con el nombre")) titulo = "Proveedor duplicado";
+        else if (errorMessageForTitle.includes("no se encontró el artículo")) titulo = "Artículo no encontrado";
     } else if (contexto === "actualizar_proveedor") {
-        if (errorMessage.includes("no encontrado")) titulo = "Proveedor no encontrado";
-        else if (errorMessage.includes("dado de baja")) titulo = "Proveedor inactivo";
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("dado de baja")) titulo = "Proveedor inactivo";
     } else if (contexto === "baja_proveedor") {
-        if (errorMessage.includes("no encontrado")) titulo = "Proveedor no encontrado";
-        else if (errorMessage.includes("ya está dado de baja")) titulo = "Proveedor ya inactivo";
-        else if (errorMessage.includes("proveedor predeterminado")) titulo = "Proveedor predeterminado";
-        else if (errorMessage.includes("órdenes de compra")) titulo = "Órdenes de compra pendientes";
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("ya está dado de baja")) titulo = "Proveedor ya inactivo";
+        else if (errorMessageForTitle.includes("proveedor predeterminado")) titulo = "Proveedor predeterminado";
+        else if (errorMessageForTitle.includes("órdenes de compra")) titulo = "Órdenes de compra pendientes";
     } else if (contexto === "relacionar_articulos") {
-        if (errorMessage.includes("proveedor no encontrado")) titulo = "Proveedor no encontrado";
-        else if (errorMessage.includes("dado de baja")) titulo = "Proveedor inactivo";
-        else if (errorMessage.includes("artículo con id")) titulo = "Artículo no encontrado";
-        else if (errorMessage.includes("ya existe una relación")) titulo = "Relación duplicada";
+        if (errorMessageForTitle.includes("proveedor no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("dado de baja")) titulo = "Proveedor inactivo";
+        else if (errorMessageForTitle.includes("artículo con id")) titulo = "Artículo no encontrado";
+        else if (errorMessageForTitle.includes("ya existe una relación")) titulo = "Relación duplicada";
     } else if (contexto === "activar_proveedor") {
-        if (errorMessage.includes("no encontrado")) titulo = "Proveedor no encontrado";
-        else if (errorMessage.includes("ya está activo")) titulo = "Proveedor ya activo";
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("ya está activo")) titulo = "Proveedor ya activo";
     } else {
         titulo = `Error en ${contexto.replace(/_/g, " ")}`;
     }
     
-    setErrorModalData({ title: titulo, message: error?.message || "Ha ocurrido un error inesperado" });
+    let displayMessage = rawMessage;
+    try {
+      const parsedError = JSON.parse(rawMessage);
+      if (parsedError && parsedError.message) {
+        displayMessage = parsedError.message;
+      }
+    } catch (e) {
+      // No es un JSON, se usa el mensaje tal cual
+    }
+
+    setErrorModalData({ title: titulo, message: displayMessage });
     setShowErrorModal(true);
   };
 
@@ -162,20 +173,22 @@ const ProveedoresRouter = () => {
     }
   };
 
+  const handleCerrarArticulos = () => {
+    setShowArticulosModal(false);
+    setProveedorSeleccionado(null);
+    setArticulos([]);
+  };
+
   const handleRelacionarArticulos = async (proveedorId: number, articulos: any[]) => {
     try {
       await proveedoresService.relacionarConArticulos(proveedorId, { articulos });
+      handleCerrarArticulos(); // Cierra el modal de articulos si está abierto para reflejar cambios.
       if (proveedorSeleccionado && proveedorSeleccionado.id === proveedorId) {
         await handleVerArticulos(proveedorSeleccionado);
       }
     } catch (err) {
       procesarError(err, "relacionar_articulos");
     }
-  };
-
-  const handleCerrarArticulos = () => {
-    setProveedorSeleccionado(null);
-    setArticulos([]);
   };
 
   const filteredProveedores = proveedores.filter((proveedor) => {
@@ -190,7 +203,7 @@ const ProveedoresRouter = () => {
     <>
       <div style={{ minWidth: "140px" }}>
         <Button
-          variant="info"
+          variant="secondary"
           size="sm"
           className="w-100"
           onClick={() => handleVerArticulos(proveedor)}
@@ -201,9 +214,9 @@ const ProveedoresRouter = () => {
       </div>
       <div style={{ minWidth: "140px" }}>
         <Button
-          variant="secondary"
+          variant="info"
           size="sm"
-          className="w-100"
+          className="w-100 text-white"
           onClick={() => setProveedorParaRelacionar(proveedor)}
         >
           <PlusLg color="white" className="me-1" />

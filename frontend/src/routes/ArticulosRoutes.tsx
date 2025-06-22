@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, Link } from "react-router-dom";
-import { Card, Button } from "react-bootstrap";
-import { FaTimes } from "react-icons/fa";
+import { Card, Button, Form, InputGroup } from "react-bootstrap";
+import { Search } from "react-bootstrap-icons";
 import ArticulosForm from "../pages/Articulos/ArticulosForm";
 import ArticulosList from "../pages/Articulos/ArticulosList";
 import ProductosAReponer from "../pages/Articulos/ProductosAReponer";
@@ -15,6 +15,7 @@ import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/
 // Definición del componente ArticulosRouter
 const ArticulosRouter = () => {
   const [articulos, setArticulos] = useState<Articulo[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [articuloAEditar, setArticuloAEditar] = useState<Articulo | null>(null);
   const [alertModal, setAlertModal] = useState({
     show: false,
@@ -106,6 +107,15 @@ const ArticulosRouter = () => {
     }
   };
 
+  const filteredArticulos = articulos.filter((articulo) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      articulo.id.toString().includes(term) ||
+      (articulo.codigo?.toLowerCase().includes(term)) ||
+      (articulo.nombre.toLowerCase().includes(term))
+    );
+  });
+
   return (
     <>
       <Routes>
@@ -116,10 +126,25 @@ const ArticulosRouter = () => {
               <Card>
                 <Card.Body>
                   <ArticulosList
-                    articulos={articulos}
+                    articulos={filteredArticulos}
                     onEditar={handleEditar}
                     onBaja={handleBaja}
                     onActivar={handleActivar}
+                    searchBar={
+                      <Form.Group className="mb-4">
+                        <InputGroup>
+                          <InputGroup.Text>
+                            <Search />
+                          </InputGroup.Text>
+                          <Form.Control
+                            type="text"
+                            placeholder="Buscar por ID, código o nombre..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    }
                     botonCrear={
                       <Link
                         to="/articulos/articulos"

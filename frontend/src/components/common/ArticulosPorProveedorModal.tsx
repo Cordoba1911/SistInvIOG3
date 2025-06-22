@@ -18,6 +18,10 @@ const ArticulosPorProveedorModal: React.FC<ArticulosPorProveedorModalProps> = ({
   articulos,
   loading,
 }) => {
+  if (!proveedor) {
+    return null;
+  }
+  
   const formatearPrecio = (precio?: number) => {
     if (precio === undefined || precio === null) return 'N/A';
     return new Intl.NumberFormat('es-AR', {

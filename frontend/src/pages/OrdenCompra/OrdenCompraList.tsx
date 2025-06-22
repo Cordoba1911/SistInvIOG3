@@ -15,6 +15,7 @@ interface PropsOrdenCompraList {
   onEnviar: (id: number) => void;
   onFinalizar: (id: number) => void;
   botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
 }
 
 const OrdenCompraList = ({
@@ -24,6 +25,7 @@ const OrdenCompraList = ({
   onEnviar,
   onFinalizar,
   botonCrear,
+  searchBar,
 }: PropsOrdenCompraList) => {
   const columnas = [
     {
@@ -131,6 +133,7 @@ const OrdenCompraList = ({
       campoId="id"
       renderAcciones={renderAccionesOrden}
       botonCrear={botonCrear}
+      searchBar={searchBar}
     />
   );
 };

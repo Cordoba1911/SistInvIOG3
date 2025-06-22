@@ -7,6 +7,6 @@ import { Articulo } from './articulo.entity';
 @Module({
   imports: [TypeOrmModule.forFeature([Articulo])],
   controllers: [ArticulosController],
-  providers: [ArticulosService]
+  providers: [ArticulosService],
 })
-export class ArticulosModule { }
+export class ArticulosModule {}

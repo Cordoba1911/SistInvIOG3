@@ -48,7 +48,7 @@ export default function AuthForm() {
               <label htmlFor="loginPassword" className="form-label">Contraseña</label>
               <input type="password" className="form-control" id="loginPassword" required />
             </div>
-            <button type="submit" className="btn btn-primary w-100">Ingresar</button>
+            <button type="submit" className="btn btn-primary w-100 register">Ingresar</button>
           </form>
         ) : (
           <form>
@@ -64,7 +64,7 @@ export default function AuthForm() {
               <label htmlFor="registerPassword" className="form-label">Contraseña</label>
               <input type="password" className="form-control" id="registerPassword" required />
             </div>
-            <button type="submit" className="btn btn-success w-100">Crear cuenta</button>
+            <button type="submit" className="btn btn-success w-100 register">Crear cuenta</button>
           </form>
         )}
       </div>

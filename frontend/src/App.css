@@ -83,3 +83,41 @@ a:hover {
   background-color: #6f42c1;
 }
 
+.action-badge {
+  padding: 0.4em 0.8em;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.action-badge.bg-info:hover {
+  background-color: #fff !important;
+  color: var(--bs-info) !important;
+  border: 1px solid var(--bs-info) !important;
+}
+
+.action-badge.bg-success:hover {
+  background-color: #fff !important;
+  color: var(--bs-success) !important;
+  border: 1px solid var(--bs-success) !important;
+}
+
+.action-badge.bg-danger:hover {
+  background-color: #fff !important;
+  color: var(--bs-danger) !important;
+  border: 1px solid var(--bs-danger) !important;
+}
+
+/* Ver Artículos (Azul Principal) */
+.action-badge.bg-primary:hover {
+  background-color: #fff !important;
+  color: var(--bs-primary) !important;
+  border: 1px solid var(--bs-primary) !important;
+}
+
+/* Añadir Artículo (Gris) */
+.action-badge.bg-secondary:hover {
+  background-color: #fff !important;
+  color: var(--bs-secondary) !important;
+  border: 1px solid var(--bs-secondary) !important;
+}
+

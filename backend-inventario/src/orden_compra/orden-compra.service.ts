@@ -26,7 +26,10 @@ export class OrdenCompraService {
   ) {}
 
   // Crear una nueva orden de compra
-  async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
+  async createOrdenCompra(
+    dto: CreateOrdenCompraDto,
+    force = false,
+  ): Promise<OrdenCompra> {
     // Buscar el artículo
     const articulo = await this.articuloRepository.findOne({
       where: { id: dto.articulo_id },
@@ -111,6 +114,30 @@ export class OrdenCompraService {
       throw new HttpException(
         'La cantidad no es válida ni se puede sugerir un lote óptimo',
         HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Validar si la cantidad supera el punto de pedido ANTES de crear
+    if (
+      !force &&
+      articulo.modelo_inventario === ModeloInventario.lote_fijo &&
+      articulo.punto_pedido &&
+      (articulo.stock_actual || 0) + cantidad <= articulo.punto_pedido
+    ) {
+      const warning = `Atención: La cantidad ordenada (${cantidad}) no superará el punto de pedido (${
+        articulo.punto_pedido
+      }). El stock actual es ${
+        articulo.stock_actual || 0
+      } y el stock final proyectado sería ${
+        (articulo.stock_actual || 0) + cantidad
+      }.`;
+
+      throw new HttpException(
+        {
+          message: 'Warning: Reorder point not met.',
+          warning,
+        },
+        HttpStatus.PRECONDITION_FAILED, // 412
       );
     }
 

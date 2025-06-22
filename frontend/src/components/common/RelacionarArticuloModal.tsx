@@ -25,13 +25,23 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
       precio_unitario: "",
       demora_entrega: "",
       cargos_pedido: "",
+      proveedor_predeterminado: false,
     },
   ]);
 
-  const handleChange = (index: number, e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+  const handleChange = (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const isCheckbox = type === "checkbox";
     const list = [...articulos];
-    list[index][name as keyof typeof list[0]] = value;
+
+    const targetValue = isCheckbox
+      ? (e.target as HTMLInputElement).checked
+      : value;
+    (list[index] as any)[name] = targetValue;
+
     setArticulos(list);
   };
 
@@ -43,6 +53,7 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
         precio_unitario: "",
         demora_entrega: "",
         cargos_pedido: "",
+        proveedor_predeterminado: false,
       },
     ]);
   };
@@ -71,6 +82,7 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
         cargos_pedido: art.cargos_pedido
           ? parseFloat(art.cargos_pedido)
           : undefined,
+        proveedor_predeterminado: art.proveedor_predeterminado === "true",
       }));
 
     if (articulosAEnviar.length > 0) {
@@ -92,7 +104,7 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
         <Form onSubmit={handleSubmit}>
           {articulos.map((x, i) => (
             <Row key={i} className="mb-3 align-items-end">
-              <Col md={4}>
+              <Col md={3}>
                 <Form.Group>
                   <Form.Label>Artículo</Form.Label>
                   <Form.Select
@@ -140,7 +152,7 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
               </Col>
               <Col>
                 <Form.Group>
-                  <Form.Label>Cargos Pedido</Form.Label>
+                  <Form.Label className="text-nowrap">Cargos Pedido</Form.Label>
                   <Form.Control
                     type="number"
                     name="cargos_pedido"
@@ -150,6 +162,19 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
                     min="0"
                     step="0.01"
                   />
+                </Form.Group>
+              </Col>
+              <Col xs={12} md={2}>
+                <Form.Group>
+                  <Form.Label>Predeterminado</Form.Label>
+                  <Form.Select
+                    name="proveedor_predeterminado"
+                    value={String(x.proveedor_predeterminado)}
+                    onChange={(e) => handleChange(i, e)}
+                  >
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
               <Col xs="auto" className="d-flex align-items-center">

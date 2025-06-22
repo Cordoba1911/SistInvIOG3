@@ -1,40 +1,40 @@
 // src/routes/ProveedoresRouter.tsx
 import { useState, useEffect, useCallback } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { Card, Button } from "react-bootstrap";
-import { FaTimes } from "react-icons/fa";
+import { Routes, Route, useNavigate, Link } from "react-router-dom";
+import { Card, Button, Form, InputGroup } from "react-bootstrap";
+import { EyeFill, PlusLg, Search } from "react-bootstrap-icons";
 import ProveedoresForm from "../pages/Proveedores/ProveedoresForm";
 import ProveedoresList from "../pages/Proveedores/ProveedoresList";
-import ArticulosList from "../components/common/ArticulosList";
+import ArticulosPorProveedorModal from "../components/common/ArticulosPorProveedorModal";
+import ErrorModal from "../components/common/ErrorModal";
+import EditarProveedorModal from "../components/common/EditarProveedorModal";
 import type {
   Proveedor,
   CreateProveedorDto,
   ArticuloProveedorDetalle,
 } from "../types/proveedor";
 import { proveedoresService } from "../services/proveedoresService";
-import RelacionarArticuloModal from "../components/common/RelacionarArticuloModal";
 import { articulosService } from "../services/articulosService";
 import type { Articulo } from "../types/articulo";
+import RelacionarArticuloModal from "../components/common/RelacionarArticuloModal";
 
 // Definición del componente ProveedoresRouter
 const ProveedoresRouter = () => {
   // Estado para manejar la lista de proveedores
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
-  const [proveedorAEditar, setProveedorAEditar] = useState<Proveedor | null>(
-    null
-  );
-  const [proveedorSeleccionado, setProveedorSeleccionado] =
-    useState<Proveedor | null>(null);
-  const [proveedorParaRelacionar, setProveedorParaRelacionar] =
-    useState<Proveedor | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [proveedorAEditar, setProveedorAEditar] = useState<Proveedor | null>(null);
+  const [proveedorSeleccionado, setProveedorSeleccionado] = useState<Proveedor | null>(null);
+  const [proveedorParaRelacionar, setProveedorParaRelacionar] = useState<Proveedor | null>(null);
   const [articulos, setArticulos] = useState<ArticuloProveedorDetalle[]>([]);
-  const [articulosDisponibles, setArticulosDisponibles] = useState<Articulo[]>(
-    []
-  );
+  const [articulosDisponibles, setArticulosDisponibles] = useState<Articulo[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingArticulos, setLoadingArticulos] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [errorModalData, setErrorModalData] = useState<{ title: string; message: string; }>({ title: "", message: "" });
   const navigate = useNavigate();
+  const [showArticulosModal, setShowArticulosModal] = useState(false);
 
   // Función para cargar los proveedores desde el backend
   const cargarProveedores = useCallback(async () => {
@@ -43,7 +43,7 @@ const ProveedoresRouter = () => {
       const data = await proveedoresService.getAll();
       setProveedores(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      procesarError(err, "cargar_proveedores");
     } finally {
       setLoading(false);
     }
@@ -58,6 +58,56 @@ const ProveedoresRouter = () => {
     }
   }, []);
 
+  // Función helper para mostrar errores en modal
+  const mostrarError = (title: string, error: any) => {
+    const message = error instanceof Error ? error.message : String(error);
+    setErrorModalData({ title, message });
+    setShowErrorModal(true);
+  };
+
+  // Función mejorada para procesar errores específicos
+  const procesarError = (error: any, contexto: string) => {
+    const rawMessage = error?.message || "Ha ocurrido un error inesperado";
+    const errorMessageForTitle = rawMessage.toLowerCase();
+    let titulo = "Error";
+
+    if (contexto === "crear_proveedor") {
+        if (errorMessageForTitle.includes("proveedor con el nombre")) titulo = "Proveedor duplicado";
+        else if (errorMessageForTitle.includes("no se encontró el artículo")) titulo = "Artículo no encontrado";
+    } else if (contexto === "actualizar_proveedor") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("dado de baja")) titulo = "Proveedor inactivo";
+    } else if (contexto === "baja_proveedor") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("ya está dado de baja")) titulo = "Proveedor ya inactivo";
+        else if (errorMessageForTitle.includes("proveedor predeterminado")) titulo = "Proveedor predeterminado";
+        else if (errorMessageForTitle.includes("órdenes de compra")) titulo = "Órdenes de compra pendientes";
+    } else if (contexto === "relacionar_articulos") {
+        if (errorMessageForTitle.includes("proveedor no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("dado de baja")) titulo = "Proveedor inactivo";
+        else if (errorMessageForTitle.includes("artículo con id")) titulo = "Artículo no encontrado";
+        else if (errorMessageForTitle.includes("ya existe una relación")) titulo = "Relación duplicada";
+    } else if (contexto === "activar_proveedor") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Proveedor no encontrado";
+        else if (errorMessageForTitle.includes("ya está activo")) titulo = "Proveedor ya activo";
+    } else {
+        titulo = `Error en ${contexto.replace(/_/g, " ")}`;
+    }
+    
+    let displayMessage = rawMessage;
+    try {
+      const parsedError = JSON.parse(rawMessage);
+      if (parsedError && parsedError.message) {
+        displayMessage = parsedError.message;
+      }
+    } catch (e) {
+      // No es un JSON, se usa el mensaje tal cual
+    }
+
+    setErrorModalData({ title: titulo, message: displayMessage });
+    setShowErrorModal(true);
+  };
+
   // useEffect para cargar los proveedores cuando el componente se monta
   useEffect(() => {
     cargarProveedores();
@@ -65,25 +115,20 @@ const ProveedoresRouter = () => {
   }, [cargarProveedores, cargarArticulosDisponibles]);
 
   // Maneja el submit del formulario (crear o editar)
-  const handleFormSubmit = async (
-    proveedorDto: CreateProveedorDto,
-    id?: number
-  ) => {
+  const handleFormSubmit = async (proveedorDto: CreateProveedorDto, id?: number) => {
     try {
       if (id) {
-        // Para editar, enviamos solo los datos permitidos por el UpdateProveedorDto
-        // Usamos desestructuración para excluir la propiedad 'articulos'
         const { articulos, ...updateData } = proveedorDto;
         await proveedoresService.update(id, updateData);
       } else {
-        // Para crear, enviamos el objeto completo
         await proveedoresService.create(proveedorDto);
-        navigate("/proveedores/admin-proveedores"); // Redirigir a la lista después de crear
+        navigate("/proveedores/admin-proveedores");
       }
-      setProveedorAEditar(null); // Cierra el form de edición
-      await cargarProveedores(); // Recarga la lista para ver los cambios
+      setShowEditModal(false);
+      await cargarProveedores();
     } catch (err) {
-      console.error("Error al guardar proveedor:", err);
+      const contexto = id ? "actualizar_proveedor" : "crear_proveedor";
+      procesarError(err, contexto);
     }
   };
 
@@ -91,83 +136,98 @@ const ProveedoresRouter = () => {
     const proveedor = proveedores.find((p) => p.id === id);
     if (proveedor) {
       setProveedorAEditar(proveedor);
+      setShowEditModal(true);
     }
   };
 
   // Función para dar de baja lógica a un proveedor
   const bajaLogicaProveedor = async (id: number) => {
     try {
-      // Asumiendo que el servicio/backend maneja la baja lógica (ej. cambiando un campo 'estado')
-      // Si el endpoint de delete hace baja lógica, se usaría proveedoresService.delete(id)
-      await proveedoresService.update(id, { estado: false });
-      await cargarProveedores(); // Recargar la lista
+      await proveedoresService.baja(id);
+      await cargarProveedores();
     } catch (err) {
-      console.error(`Error al dar de baja al proveedor ${id}:`, err);
+      procesarError(err, "baja_proveedor");
+    }
+  };
+
+  const handleActivarProveedor = async (id: number) => {
+    try {
+      await proveedoresService.reactivar(id);
+      await cargarProveedores();
+    } catch (err) {
+      procesarError(err, "activar_proveedor");
     }
   };
 
   const handleVerArticulos = async (proveedor: Proveedor) => {
-    // Si ya estamos mostrando los artículos de este proveedor, los ocultamos.
-    if (proveedorSeleccionado && proveedorSeleccionado.id === proveedor.id) {
-      setProveedorSeleccionado(null);
-      setArticulos([]);
-      return;
-    }
-
     setProveedorSeleccionado(proveedor);
+    setShowArticulosModal(true);
     setLoadingArticulos(true);
     try {
       const data = await proveedoresService.getArticulos(proveedor.id);
       setArticulos(data);
     } catch (err) {
-      console.error("Error al cargar artículos:", err);
-      setError("Error al cargar artículos.");
+      procesarError(err, "cargar_articulos");
     } finally {
       setLoadingArticulos(false);
     }
   };
 
-  const handleAbrirModalRelacionar = (proveedor: Proveedor) => {
-    setProveedorParaRelacionar(proveedor);
-  };
-
-  const handleCerrarModalRelacionar = () => {
-    setProveedorParaRelacionar(null);
-  };
-
-  const handleRelacionarArticulos = async (
-    proveedorId: number,
-    articulos: any[]
-  ) => {
-    try {
-      await proveedoresService.relacionarConArticulos(proveedorId, {
-        articulos,
-      });
-      handleCerrarModalRelacionar();
-      // Opcional: recargar la lista de artículos del proveedor si está visible
-      if (
-        proveedorSeleccionado &&
-        proveedorSeleccionado.id === proveedorId
-      ) {
-        await handleVerArticulos(proveedorSeleccionado);
-      }
-    } catch (err) {
-      console.error("Error al relacionar artículos:", err);
-      // Manejar el error en la UI si es necesario
-    }
-  };
-
   const handleCerrarArticulos = () => {
+    setShowArticulosModal(false);
     setProveedorSeleccionado(null);
     setArticulos([]);
   };
 
+  const handleRelacionarArticulos = async (proveedorId: number, articulos: any[]) => {
+    try {
+      await proveedoresService.relacionarConArticulos(proveedorId, { articulos });
+      handleCerrarArticulos(); // Cierra el modal de articulos si está abierto para reflejar cambios.
+      if (proveedorSeleccionado && proveedorSeleccionado.id === proveedorId) {
+        await handleVerArticulos(proveedorSeleccionado);
+      }
+    } catch (err) {
+      procesarError(err, "relacionar_articulos");
+    }
+  };
+
+  const filteredProveedores = proveedores.filter((proveedor) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      proveedor.id.toString().includes(term) ||
+      proveedor.nombre.toLowerCase().includes(term)
+    );
+  });
+
+  const renderArticulosButton = (proveedor: Proveedor) => (
+    <>
+      <div style={{ minWidth: "140px" }}>
+        <Button
+          variant="secondary"
+          size="sm"
+          className="w-100"
+          onClick={() => handleVerArticulos(proveedor)}
+        >
+          <EyeFill color="white" className="me-1" />
+          Ver Artículos
+        </Button>
+      </div>
+      <div style={{ minWidth: "140px" }}>
+        <Button
+          variant="info"
+          size="sm"
+          className="w-100 text-white"
+          onClick={() => setProveedorParaRelacionar(proveedor)}
+        >
+          <PlusLg color="white" className="me-1" />
+          Añadir Artículo
+        </Button>
+      </div>
+    </>
+  );
+
   if (loading) {
     return <div>Cargando proveedores...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
   }
 
   // Renderiza las rutas para agregar y administrar proveedores
@@ -177,90 +237,82 @@ const ProveedoresRouter = () => {
         <Route
           path="/proveedores"
           element={
-            <div className="container mt-4">
-              <Card>
-                <Card.Body>
-                  <ProveedoresForm onSubmit={handleFormSubmit} />
-                </Card.Body>
-              </Card>
-            </div>
+            <Card>
+              <Card.Body>
+                <ProveedoresForm onSubmit={handleFormSubmit} />
+              </Card.Body>
+            </Card>
           }
         />
         <Route
           path="/admin-proveedores"
           element={
-            <div className="container mt-4">
-              <ProveedoresList
-                proveedores={proveedores}
-                onEditar={handleIniciarEdicion}
-                onBaja={bajaLogicaProveedor}
-                accionesPersonalizadas={(proveedor) => (
-                  <>
-                    <Button
-                      variant="outline-info"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => handleVerArticulos(proveedor)}
-                    >
-                      Ver Artículos
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      size="sm"
-                      onClick={() => handleAbrirModalRelacionar(proveedor)}
-                    >
-                      Añadir Artículo
-                    </Button>
-                  </>
-                )}
+            <>
+              <Card>
+                <Card.Body>
+                  <ProveedoresList
+                    proveedores={filteredProveedores}
+                    onEditar={handleIniciarEdicion}
+                    onBaja={bajaLogicaProveedor}
+                    onActivar={handleActivarProveedor}
+                    accionesPersonalizadas={renderArticulosButton}
+                    searchBar={
+                      <Form.Group className="mb-4">
+                        <InputGroup>
+                          <InputGroup.Text><Search /></InputGroup.Text>
+                          <Form.Control
+                            type="text"
+                            placeholder="Buscar por ID o nombre..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    }
+                    botonCrear={
+                      <Link to="/proveedores/proveedores" className="btn btn-primary">
+                        <PlusLg /> Crear Proveedor
+                      </Link>
+                    }
+                  />
+                </Card.Body>
+              </Card>
+
+              <EditarProveedorModal
+                show={showEditModal}
+                proveedor={proveedorAEditar}
+                onHide={() => setShowEditModal(false)}
+                onSave={handleFormSubmit}
               />
-              {proveedorAEditar && (
-                <Card className="mt-4">
-                  <Card.Header>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h5 className="mb-0">Editar Proveedor</h5>
-                      <Button
-                        variant="link"
-                        className="p-0"
-                        onClick={() => setProveedorAEditar(null)}
-                        style={{ color: "red" }}
-                      >
-                        <FaTimes size={20} />
-                      </Button>
-                    </div>
-                  </Card.Header>
-                  <Card.Body>
-                    <ProveedoresForm
-                      onSubmit={handleFormSubmit}
-                      proveedorExistente={proveedorAEditar}
-                      onCancel={() => setProveedorAEditar(null)}
-                    />
-                  </Card.Body>
-                </Card>
-              )}
-              {loadingArticulos && (
-                <div className="mt-4 text-center">Cargando artículos...</div>
-              )}
-              {proveedorSeleccionado && !loadingArticulos && (
-                <ArticulosList
-                  articulos={articulos}
-                  proveedorNombre={proveedorSeleccionado.nombre}
-                  onClose={handleCerrarArticulos}
-                />
-              )}
-            </div>
+            </>
           }
         />
       </Routes>
+
+      <ArticulosPorProveedorModal
+        show={showArticulosModal}
+        onHide={handleCerrarArticulos}
+        proveedor={proveedorSeleccionado}
+        articulos={articulos}
+        loading={loadingArticulos}
+      />
+
       {proveedorParaRelacionar && (
         <RelacionarArticuloModal
           show={!!proveedorParaRelacionar}
-          onHide={handleCerrarModalRelacionar}
+          onHide={() => setProveedorParaRelacionar(null)}
           proveedor={proveedorParaRelacionar}
           articulosDisponibles={articulosDisponibles}
           onSubmit={handleRelacionarArticulos}
         />
       )}
+
+      <ErrorModal
+        show={showErrorModal}
+        onHide={() => setShowErrorModal(false)}
+        title={errorModalData.title}
+        message={errorModalData.message}
+      />
     </>
   );
 };

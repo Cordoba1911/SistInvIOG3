@@ -5,18 +5,22 @@ import ConfirmationModal from "./common/ConfirmationModal";
 interface Columna {
   campo: string;
   etiqueta: string;
-  render?: (valor: any) => React.ReactNode;
+  render?: (valor: any, item: any) => React.ReactNode;
+  cellStyle?: React.CSSProperties;
 }
 
 interface PropsEntidadList<T> {
   titulo: string;
   datos: T[];
   columnas: Columna[];
-  onEditar: (id: string) => void;
-  onEliminar: (id: string) => void;
+  onEditar?: (id: string) => void;
+  onEliminar?: (id: string) => void;
   campoId: string;
+  botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
   campoActivo?: string;
   esActivo?: (entidad: T) => boolean;
+  renderAcciones?: (item: T) => React.ReactNode;
 
   // NUEVO: acciones personalizadas por fila
   accionesPersonalizadas?: (item: T) => React.ReactNode;
@@ -29,12 +33,17 @@ const EntidadList = <T extends Record<string, any>>({
   onEditar,
   onEliminar,
   campoId,
+  botonCrear,
+  searchBar,
   campoActivo,
   esActivo,
+  renderAcciones,
   accionesPersonalizadas,
 }: PropsEntidadList<T>) => {
   const [showModal, setShowModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+
+  const mostrarAcciones = onEditar || onEliminar || renderAcciones || accionesPersonalizadas;
 
   const handleShowModal = (item: any) => {
     setItemToDelete(item);
@@ -47,22 +56,30 @@ const EntidadList = <T extends Record<string, any>>({
   };
 
   const handleConfirmDelete = () => {
-    if (itemToDelete) {
+    if (itemToDelete && onEliminar) {
       onEliminar(itemToDelete[campoId]);
     }
     handleCloseModal();
   };
 
   return (
-    <div className="mt-5">
-      <h3 className="mb-3">Lista de {titulo}</h3>
-      <Table striped bordered hover responsive size="sm">
-        <thead>
+    <div className="mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-5">
+        {titulo && <h3 className="mb-0">{titulo}</h3>}
+        {botonCrear}
+      </div>
+      {searchBar}
+      <Table striped bordered hover responsive>
+        <thead className="table-dark">
           <tr>
             {columnas.map((col) => (
-              <th key={col.campo}>{col.etiqueta}</th>
+              <th key={col.campo} style={{ whiteSpace: "nowrap" }}>
+                {col.etiqueta}
+              </th>
             ))}
-            <th>Acciones</th>
+            {mostrarAcciones && (
+              <th style={{ whiteSpace: "nowrap" }}>Acciones</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -74,44 +91,53 @@ const EntidadList = <T extends Record<string, any>>({
               : true;
 
             return (
-              <tr key={item[campoId]}>
+              <tr key={item[campoId]} className="align-middle">
                 {columnas.map((col) => {
                   const valor = item[col.campo];
-                  const renderizado = col.render ? col.render(valor) : null;
+                  const renderizado = col.render ? col.render(valor, item) : null;
 
                   return (
                     <td
                       key={col.campo}
                       style={{
                         wordBreak: "break-word",
-                        maxWidth: "200px",
                         whiteSpace: "pre-wrap",
-                        textAlign: "center",
+                        ...col.cellStyle,
                       }}
                     >
                       {renderizado ?? valor ?? "-"}
                     </td>
                   );
                 })}
-                <td className="text-center">
-                  <div className="d-flex justify-content-center align-items-center gap-2">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => onEditar(item[campoId])}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => handleShowModal(item)}
-                    >
-                      Eliminar
-                    </Button>
-                    {accionesPersonalizadas && accionesPersonalizadas(item)}
-                  </div>
-                </td>
+                {mostrarAcciones && (
+                  <td className="">
+                    {renderAcciones ? (
+                      renderAcciones(item)
+                    ) : (
+                      <div className="d-flex align-items-center gap-2">
+                        {onEditar && (
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => onEditar(item[campoId])}
+                          >
+                            Editar
+                          </Button>
+                        )}
+                        {onEliminar && (
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleShowModal(item)}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
+                        {accionesPersonalizadas && accionesPersonalizadas(item)}
+                      </div>
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}

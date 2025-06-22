@@ -6,6 +6,7 @@ import {
   ValidateNested,
   IsNumber,
   IsPositive,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -27,6 +28,10 @@ class ArticuloProveedorDto {
   @IsNumber()
   @IsPositive()
   cargos_pedido?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  proveedor_predeterminado?: boolean;
 }
 
 export class CreateProveedorDto {

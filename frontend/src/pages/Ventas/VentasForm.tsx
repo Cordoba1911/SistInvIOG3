@@ -1,26 +1,29 @@
 import { useState, useEffect } from "react";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import type { CreateVentaDto } from "../../types/venta";
-import { ventasService } from "../../services/ventasService";
 import { articulosService } from "../../services/articulosService";
-import { useNavigate } from "react-router-dom";
 
-interface PropsVentasForm {
-  onAlta?: (datos: CreateVentaDto) => void;
+interface VentasFormProps {
+  onSubmit: (datos: CreateVentaDto) => Promise<void>;
 }
 
-const VentasForm = ({ onAlta }: PropsVentasForm) => {
+const VentasForm = ({ onSubmit }: VentasFormProps) => {
   const [articulos, setArticulos] = useState<any[]>([]);
-  const navigate = useNavigate();
+  // El error se manejará en el router
+  // const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Cargar artículos disponibles
     const cargarArticulos = async () => {
       try {
         const articulosData = await articulosService.getAll();
-        setArticulos(articulosData);
+        // Filtrar artículos con stock > 0
+        const articulosConStock = articulosData.filter(
+          (a: any) => a.stock_actual && a.stock_actual > 0
+        );
+        setArticulos(articulosConStock);
       } catch (error) {
         console.error("Error al cargar artículos:", error);
+        // Opcional: podrías querer pasar este error al padre
       }
     };
     cargarArticulos();
@@ -29,10 +32,11 @@ const VentasForm = ({ onAlta }: PropsVentasForm) => {
   const campos: CampoFormulario[] = [
     {
       nombre: "detalles",
-      etiqueta: "Detalles de Venta",
+      etiqueta: "",
       tipo: "array",
       requerido: true,
       arrayConfig: {
+        sinEstilo: true,
         campos: [
           {
             nombre: "articulo_id",
@@ -41,7 +45,7 @@ const VentasForm = ({ onAlta }: PropsVentasForm) => {
             requerido: true,
             opciones: articulos.map((a) => ({
               value: a.id,
-              label: `${a.nombre} (${a.codigo})`,
+              label: `${a.nombre} (Stock: ${a.stock_actual})`,
             })),
           },
           {
@@ -54,39 +58,27 @@ const VentasForm = ({ onAlta }: PropsVentasForm) => {
           },
         ],
         titulo: "Artículo",
-        botonAgregar: "Agregar Artículo",
+        botonAgregar: "Agregar otro artículo",
         botonEliminar: "Eliminar Artículo",
       },
     },
   ];
 
   const valoresIniciales = {
-    detalles: [],
+    detalles: [{ articulo_id: "", cantidad: 1 }],
   };
 
   const manejarEnvio = async (datos: Record<string, any>) => {
-    try {
-      // Transformar los datos para que coincidan con el DTO del backend
-      const ventaData: CreateVentaDto = {
-        detalles: datos.detalles.map((detalle: any) => ({
-          articulo_id: parseInt(detalle.articulo_id),
-          cantidad: parseInt(detalle.cantidad),
-        })),
-      };
+    // No se necesita try-catch aquí, el router lo manejará.
+    const ventaData: CreateVentaDto = {
+      detalles: datos.detalles.map((detalle: any) => ({
+        articulo_id: parseInt(detalle.articulo_id),
+        cantidad: parseInt(detalle.cantidad),
+      })),
+    };
 
-      // Llamar al servicio para crear la venta
-      const nuevaVenta = await ventasService.create(ventaData);
-
-      if (onAlta) {
-        onAlta(ventaData);
-      }
-
-      // Redirigir a la lista de ventas
-      navigate("/ventas/admin-ventas");
-    } catch (error) {
-      console.error("Error al crear venta:", error);
-      alert("Error al crear la venta. Por favor, intente nuevamente.");
-    }
+    // La lógica de creación y navegación se maneja en el componente padre.
+    await onSubmit(ventaData);
   };
 
   return (
@@ -94,8 +86,8 @@ const VentasForm = ({ onAlta }: PropsVentasForm) => {
       campos={campos}
       valoresIniciales={valoresIniciales}
       onSubmit={manejarEnvio}
-      titulo="Registrar Venta"
-      textoBoton="Registrar Venta"
+      titulo="Crear Nueva Venta"
+      textoBoton="Crear Venta"
     />
   );
 };

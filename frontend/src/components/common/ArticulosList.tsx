@@ -39,6 +39,7 @@ const ArticulosList: React.FC<ArticulosListProps> = ({
               <th>Precio Unitario</th>
               <th>Cargos de Pedido</th>
               <th>Días de Demora</th>
+              <th>Predeterminado</th>
             </tr>
           </thead>
           <tbody>
@@ -52,6 +53,7 @@ const ArticulosList: React.FC<ArticulosListProps> = ({
                   precio_unitario,
                   cargos_pedido,
                   demora_entrega,
+                  proveedor_predeterminado,
                 } = detalle;
 
                 const precio =
@@ -71,12 +73,13 @@ const ArticulosList: React.FC<ArticulosListProps> = ({
                     <td>{precio}</td>
                     <td>{costoPedido}</td>
                     <td>{demora_entrega ?? "N/A"}</td>
+                    <td>{proveedor_predeterminado ? "Sí" : "No"}</td>
                   </tr>
                 );
               })
             ) : (
               <tr>
-                <td colSpan={6} className="text-center">
+                <td colSpan={7} className="text-center">
                   No hay artículos para mostrar.
                 </td>
               </tr>

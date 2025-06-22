@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { Card, Button } from "react-bootstrap";
+import { Routes, Route, useNavigate, Link } from "react-router-dom";
+import { Card, Button, Form, InputGroup } from "react-bootstrap";
+import { Search } from "react-bootstrap-icons";
 import ArticulosForm from "../pages/Articulos/ArticulosForm";
 import ArticulosList from "../pages/Articulos/ArticulosList";
 import ProductosAReponer from "../pages/Articulos/ProductosAReponer";
@@ -14,6 +15,7 @@ import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/
 // Definición del componente ArticulosRouter
 const ArticulosRouter = () => {
   const [articulos, setArticulos] = useState<Articulo[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [articuloAEditar, setArticuloAEditar] = useState<Articulo | null>(null);
   const [alertModal, setAlertModal] = useState({
     show: false,
@@ -73,64 +75,46 @@ const ArticulosRouter = () => {
 
   const handleBaja = async (id: number) => {
     const articulo = articulos.find(a => a.id === id);
-    if (!articulo) return;
+    if (!articulo || !articulo.estado) return;
 
     try {
-      if (articulo.estado) {
-        // Confirmar antes de dar de baja
-        const confirmacion = window.confirm(
-          `¿Está seguro que desea dar de baja el artículo "${articulo.nombre}"?`
-        );
-        
-        if (!confirmacion) return;
-        
-        await articulosService.delete(id);
-        showAlert('Éxito', 'Artículo dado de baja exitosamente', 'success');
-      } else {
-        // Confirmar antes de reactivar
-        const confirmacion = window.confirm(
-          `¿Está seguro que desea reactivar el artículo "${articulo.nombre}"?`
-        );
-        
-        if (!confirmacion) return;
-        
-        await articulosService.reactivar(id);
-        showAlert('Éxito', 'Artículo reactivado exitosamente', 'success');
-      }
-      
+      const confirmacion = window.confirm(`¿Está seguro que desea dar de baja el artículo "${articulo.nombre}"?`);
+      if (!confirmacion) return;
+
+      await articulosService.delete(id);
+      showAlert('Éxito', 'Artículo dado de baja exitosamente', 'success');
       await cargarArticulos();
     } catch (error: any) {
-      console.error('Error al procesar la baja/reactivación:', error);
-      
-      // Mostrar alerta específica según el error
-      if (error.message) {
-        // El backend devuelve mensajes específicos para cada validación
-        const message = error.message;
-        
-        // Determinar el tipo de alerta según el contenido del mensaje
-        let variant: 'danger' | 'warning' | 'success' | 'info' = 'danger';
-        let title = 'Error';
-        
-        if (message.includes('stock') && message.includes('unidades en stock')) {
-          variant = 'warning';
-          title = 'Stock Insuficiente';
-        } else if (message.includes('órdenes de compra') || message.includes('ordenes de compra')) {
-          variant = 'warning';
-          title = 'Órdenes Pendientes';
-        } else if (message.includes('ya está dado de baja')) {
-          variant = 'info';
-          title = 'Artículo ya Inactivo';
-        } else if (message.includes('ya está activo')) {
-          variant = 'info';
-          title = 'Artículo ya Activo';
-        }
-        
-        showAlert(title, message, variant);
-      } else {
-        showAlert('Error', 'Error inesperado al procesar la solicitud', 'danger');
-      }
+      console.error('Error al dar de baja:', error);
+      showAlert('Error al dar de baja', error.message || 'Error desconocido', 'danger');
     }
   };
+
+  const handleActivar = async (id: number) => {
+    const articulo = articulos.find(a => a.id === id);
+    if (!articulo || articulo.estado) return;
+
+    try {
+      const confirmacion = window.confirm(`¿Está seguro que desea reactivar el artículo "${articulo.nombre}"?`);
+      if (!confirmacion) return;
+
+      await articulosService.reactivar(id);
+      showAlert('Éxito', 'Artículo reactivado exitosamente', 'success');
+      await cargarArticulos();
+    } catch (error: any) {
+      console.error('Error al reactivar:', error);
+      showAlert('Error al reactivar', error.message || 'Error desconocido', 'danger');
+    }
+  };
+
+  const filteredArticulos = articulos.filter((articulo) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      articulo.id.toString().includes(term) ||
+      (articulo.codigo?.toLowerCase().includes(term)) ||
+      (articulo.nombre.toLowerCase().includes(term))
+    );
+  });
 
   return (
     <>
@@ -142,25 +126,39 @@ const ArticulosRouter = () => {
               <Card>
                 <Card.Body>
                   <ArticulosList
-                    articulos={articulos}
+                    articulos={filteredArticulos}
                     onEditar={handleEditar}
                     onBaja={handleBaja}
+                    onActivar={handleActivar}
+                    searchBar={
+                      <Form.Group className="mb-4">
+                        <InputGroup>
+                          <InputGroup.Text>
+                            <Search />
+                          </InputGroup.Text>
+                          <Form.Control
+                            type="text"
+                            placeholder="Buscar por ID, código o nombre..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                          />
+                        </InputGroup>
+                      </Form.Group>
+                    }
+                    botonCrear={
+                      <Link
+                        to="/articulos/articulos"
+                        className="btn btn-primary"
+                      >
+                        Crear Artículo
+                      </Link>
+                    }
                   />
                 </Card.Body>
               </Card>
 
               {articuloAEditar && (
                 <Card className="mt-4">
-                   <Card.Header>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <h5 className="mb-0">
-                        Editar Artículo: {articuloAEditar.nombre}
-                      </h5>
-                      <Button variant="link" className="p-0" onClick={handleCancelarEdicion} style={{ color: "red" }}>
-                        <i className="fas fa-times"></i>
-                      </Button>
-                    </div>
-                  </Card.Header>
                   <Card.Body>
                     <ArticulosForm
                       articuloAEditar={articuloAEditar}

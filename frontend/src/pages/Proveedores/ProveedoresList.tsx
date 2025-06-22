@@ -1,7 +1,8 @@
 // src/pages/Proveedores/ProveedoresList.tsx
-import { Badge } from "react-bootstrap";
+import { Badge, Button } from "react-bootstrap";
+import { PencilFill, TrashFill, CheckCircleFill } from "react-bootstrap-icons";
 import EntidadList from "../../components/EntityList";
-import type { Proveedor } from "../types/proveedor";
+import type { Proveedor } from "../../types/proveedor";
 
 // Definición de las propiedades del componente ProveedoresList
 interface PropsProveedoresList {
@@ -11,6 +12,7 @@ interface PropsProveedoresList {
   onActivar: (id: number) => void;
   accionesPersonalizadas?: (proveedor: Proveedor) => React.ReactNode;
   botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
 }
 
 // Componente para listar proveedores
@@ -21,10 +23,24 @@ const ProveedoresList = ({
   onActivar,
   accionesPersonalizadas,
   botonCrear,
+  searchBar,
 }: PropsProveedoresList) => {
   // Las columnas para la lista de proveedores
   const columnas = [
-    { campo: "nombre", etiqueta: "Nombre" },
+    {
+      campo: "id",
+      etiqueta: "ID",
+      render: (id: number) => (
+        <span style={{ color: "#0d6efd" }}>
+          {id}
+        </span>
+      ),
+    },
+    {
+      campo: "nombre",
+      etiqueta: "Nombre",
+      render: (nombre: string) => <strong>{nombre}</strong>,
+    },
     { campo: "email", etiqueta: "Email" },
     { campo: "telefono", etiqueta: "Teléfono" },
     {
@@ -50,45 +66,64 @@ const ProveedoresList = ({
       titulo="Lista de Proveedores"
       datos={proveedoresAdaptados}
       columnas={columnas}
-      onEditar={onEditar}
-      onEliminar={onBaja}
+      onEditar={(id) => onEditar(Number(id))}
+      onEliminar={(id) => onBaja(Number(id))}
       campoId="id"
       botonCrear={botonCrear}
+      searchBar={searchBar}
       esActivo={(proveedor) => proveedor.estado === "Activo"}
-      renderAcciones={(proveedor) => {
-        const estaActivo = proveedor.estado === "Activo";
+      renderAcciones={(proveedorAdaptado) => {
+        const estaActivo = proveedorAdaptado.estado === "Activo";
         const commonBadgeProps = {
-          as: "button",
-          className: "me-1 action-badge",
+          as: "button" as const,
           style: { cursor: "pointer" },
         };
+
+        const proveedorOriginal = proveedores.find(
+          (p) => p.id === proveedorAdaptado.id,
+        );
+
         return (
-          <div className="d-flex justify-content-center align-items-center gap-2">
-            <Badge
-              {...commonBadgeProps}
-              bg="primary"
-              onClick={() => onEditar(proveedor.id)}
-            >
-              Editar
-            </Badge>
-            {estaActivo ? (
-              <Badge
-                {...commonBadgeProps}
-                bg="danger"
-                onClick={() => onBaja(proveedor.id)}
+          <div className="d-flex justify-content-start align-items-center gap-3">
+            <div style={{ minWidth: "140px" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-100"
+                onClick={() => onEditar(proveedorAdaptado.id)}
               >
-                Dar de Baja
-              </Badge>
-            ) : (
-              <Badge
-                {...commonBadgeProps}
-                bg="success"
-                onClick={() => onActivar(proveedor.id)}
-              >
-                Activar
-              </Badge>
-            )}
-            {accionesPersonalizadas && accionesPersonalizadas(proveedor)}
+                <PencilFill color="white" className="me-1" />
+                Editar
+              </Button>
+            </div>
+
+            <div style={{ minWidth: "140px" }}>
+              {estaActivo ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onBaja(proveedorAdaptado.id)}
+                >
+                  <TrashFill color="white" className="me-1" />
+                  Dar de Baja
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onActivar(proveedorAdaptado.id)}
+                >
+                  <CheckCircleFill color="white" className="me-1" />
+                  Activar
+                </Button>
+              )}
+            </div>
+
+            {accionesPersonalizadas &&
+              proveedorOriginal &&
+              accionesPersonalizadas(proveedorOriginal)}
           </div>
         );
       }}

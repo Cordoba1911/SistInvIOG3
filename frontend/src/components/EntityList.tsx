@@ -17,6 +17,7 @@ interface PropsEntidadList<T> {
   onEliminar?: (id: string) => void;
   campoId: string;
   botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
   campoActivo?: string;
   esActivo?: (entidad: T) => boolean;
   renderAcciones?: (item: T) => React.ReactNode;
@@ -33,6 +34,7 @@ const EntidadList = <T extends Record<string, any>>({
   onEliminar,
   campoId,
   botonCrear,
+  searchBar,
   campoActivo,
   esActivo,
   renderAcciones,
@@ -62,17 +64,22 @@ const EntidadList = <T extends Record<string, any>>({
 
   return (
     <div className="mt-3">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-5">
         {titulo && <h3 className="mb-0">{titulo}</h3>}
         {botonCrear}
       </div>
-      <Table striped bordered hover responsive size="sm">
-        <thead>
+      {searchBar}
+      <Table striped bordered hover responsive>
+        <thead className="table-dark">
           <tr>
             {columnas.map((col) => (
-              <th key={col.campo}>{col.etiqueta}</th>
+              <th key={col.campo} style={{ whiteSpace: "nowrap" }}>
+                {col.etiqueta}
+              </th>
             ))}
-            {mostrarAcciones && <th>Acciones</th>}
+            {mostrarAcciones && (
+              <th style={{ whiteSpace: "nowrap" }}>Acciones</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -84,7 +91,7 @@ const EntidadList = <T extends Record<string, any>>({
               : true;
 
             return (
-              <tr key={item[campoId]}>
+              <tr key={item[campoId]} className="align-middle">
                 {columnas.map((col) => {
                   const valor = item[col.campo];
                   const renderizado = col.render ? col.render(valor, item) : null;

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Link } from "react-router-dom";
 import { OrdenForm } from "./OrdenForm";
 import OrdenCompraList from "./OrdenCompraList";
 import { useState, useEffect } from "react";
@@ -9,11 +9,13 @@ import type {
 } from "../../types/ordenCompra";
 import { Button, Card } from "react-bootstrap";
 import { FaTimes } from "react-icons/fa";
+import EditarOrdenCompraModal from "../../components/common/EditarOrdenCompraModal";
 
 const OrdenCompraRoutes = () => {
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
   const [ordenAEditar, setOrdenAEditar] =
     useState<OrdenCompra | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const cargarOrdenes = async () => {
     const data = await ordenesService.getAll();
@@ -26,16 +28,18 @@ const OrdenCompraRoutes = () => {
 
   const handleEditar = (orden: OrdenCompra) => {
     setOrdenAEditar(orden);
+    setShowEditModal(true);
   };
 
   const handleCancelarEdicion = () => {
     setOrdenAEditar(null);
+    setShowEditModal(false);
   };
 
   const handleUpdate = async (id: number, datos: UpdateOrdenCompraDto) => {
     await ordenesService.update(id, datos);
-    setOrdenAEditar(null);
-    cargarOrdenes(); 
+    handleCancelarEdicion();
+    cargarOrdenes();
   };
 
   const handleCancelar = async (id: number) => {
@@ -59,7 +63,6 @@ const OrdenCompraRoutes = () => {
         path="/admin-orden-compra"
         element={
           <>
-            {/* Lista de Órdenes */}
             <Card>
               <Card.Body>
                 <OrdenCompraList
@@ -68,36 +71,21 @@ const OrdenCompraRoutes = () => {
                   onCancelar={handleCancelar}
                   onEnviar={handleEnviar}
                   onFinalizar={handleFinalizar}
+                  botonCrear={
+                    <Link to="/ordenes/orden-compra" className="btn btn-primary">
+                      Crear Orden
+                    </Link>
+                  }
                 />
               </Card.Body>
             </Card>
 
-            {/* Formulario de EDICIÓN (aparece al hacer clic en Editar) */}
-            {ordenAEditar && (
-              <Card className="mt-4">
-                <Card.Header>
-                  <div className="d-flex justify-content-between align-items-center">
-                    <h5 className="mb-0">
-                      Modificar Orden de Compra #{ordenAEditar.id}
-                    </h5>
-                    <Button
-                      variant="link"
-                      className="p-0"
-                      onClick={handleCancelarEdicion}
-                      style={{ color: "red" }}
-                    >
-                      <FaTimes size={20} />
-                    </Button>
-                  </div>
-                </Card.Header>
-                <Card.Body>
-                  <OrdenForm
-                    ordenAEditar={ordenAEditar}
-                    onUpdate={handleUpdate}
-                  />
-                </Card.Body>
-              </Card>
-            )}
+            <EditarOrdenCompraModal
+              show={showEditModal}
+              onHide={handleCancelarEdicion}
+              orden={ordenAEditar}
+              onUpdate={handleUpdate}
+            />
           </>
         }
       />

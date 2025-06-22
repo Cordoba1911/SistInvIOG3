@@ -1,124 +1,137 @@
-import React from "react";
-import { Table, Badge, ButtonGroup } from "react-bootstrap";
+import { Badge, Button } from "react-bootstrap";
+import {
+  PencilFill,
+  CheckCircleFill,
+  XCircleFill,
+  Truck,
+} from "react-bootstrap-icons";
+import EntidadList from "../../components/EntityList";
 import type { OrdenCompra } from "../../types/ordenCompra";
-import { Link } from "react-router-dom";
 
-interface Props {
+interface PropsOrdenCompraList {
   ordenes: OrdenCompra[];
   onEditar: (orden: OrdenCompra) => void;
   onCancelar: (id: number) => void;
   onEnviar: (id: number) => void;
   onFinalizar: (id: number) => void;
+  botonCrear?: React.ReactNode;
 }
 
-const OrdenCompraList: React.FC<Props> = ({
+const OrdenCompraList = ({
   ordenes,
   onEditar,
   onCancelar,
   onEnviar,
   onFinalizar,
-}) => {
-  const getBadgeVariant = (estado: string) => {
-    const estadoNormalizado = estado.toLowerCase();
-    if (estadoNormalizado === "pendiente") return "warning";
-    if (estadoNormalizado === "en proceso" || estadoNormalizado === "enviada")
-      return "primary";
-    if (estadoNormalizado === "finalizada") return "success";
-    if (estadoNormalizado === "cancelada") return "danger";
-    return "secondary";
-  };
+  botonCrear,
+}: PropsOrdenCompraList) => {
+  const columnas = [
+    {
+      campo: "id",
+      etiqueta: "ID",
+      render: (id: number) => <span style={{ color: "#0d6efd" }}>{id}</span>,
+    },
+    {
+      campo: "nombre_articulo",
+      etiqueta: "Artículo",
+      render: (nombre: string) => <strong>{nombre}</strong>,
+    },
+    { campo: "nombre_proveedor", etiqueta: "Proveedor" },
+    { campo: "cantidad", etiqueta: "Cantidad" },
+    {
+      campo: "estado",
+      etiqueta: "Estado",
+      render: (estado: string) => {
+        const variants = {
+          pendiente: "warning",
+          enviada: "info",
+          finalizada: "success",
+          cancelada: "danger",
+        };
+        const variantKey = estado.toLowerCase() as keyof typeof variants;
+        const variant = variants[variantKey] || "secondary";
+        const estadoCapitalizado =
+          estado.charAt(0).toUpperCase() + estado.slice(1);
+        return <Badge bg={variant}>{estadoCapitalizado}</Badge>;
+      },
+    },
+    {
+      campo: "fecha_creacion",
+      etiqueta: "Fecha de Creación",
+      render: (fecha: string) => new Date(fecha).toLocaleDateString(),
+    },
+  ];
 
-  const renderizarAcciones = (orden: OrdenCompra) => {
+  const datosAdaptados = ordenes.map((orden) => ({
+    ...orden,
+    nombre_articulo: orden.articulo?.nombre ?? "N/A",
+    nombre_proveedor: orden.proveedor?.nombre ?? "N/A",
+  }));
+
+  const renderAccionesOrden = (orden: OrdenCompra) => {
     const estado = orden.estado.toLowerCase();
 
-    const commonBadgeProps = {
-      as: "button",
-      className: "me-1 action-badge",
-      style: { cursor: "pointer" },
-    };
-
-    if (estado === "pendiente") {
-      return (
-        <ButtonGroup size="sm">
-          <Badge
-            {...commonBadgeProps}
-            bg="primary"
-            onClick={() => onEditar(orden)}
-          >
-            Editar
-          </Badge>
-          <Badge
-            {...commonBadgeProps}
-            bg="info"
-            onClick={() => onEnviar(orden.id)}
-          >
-            Enviar
-          </Badge>
-          <Badge
-            {...commonBadgeProps}
-            bg="danger"
-            onClick={() => onCancelar(orden.id)}
-          >
-            Cancelar
-          </Badge>
-        </ButtonGroup>
-      );
-    }
-
-    if (estado === "enviada" || estado === "en proceso") {
-      return (
-        <Badge
-          {...commonBadgeProps}
-          bg="success"
-          onClick={() => onFinalizar(orden.id)}
-        >
-          Finalizar
-        </Badge>
-      );
-    }
-
-    return null; // Sin acciones para estados finalizados o cancelados
+    return (
+      <div className="d-flex justify-content-start align-items-center gap-3">
+        {estado === "pendiente" && (
+          <>
+            <div style={{ minWidth: "110px" }}>
+              <Button
+                variant="primary"
+                className="w-100"
+                size="sm"
+                onClick={() => onEditar(orden)}
+              >
+                <PencilFill className="me-1" /> Editar
+              </Button>
+            </div>
+            <div style={{ minWidth: "110px" }}>
+              <Button
+                variant="info"
+                className="w-100 text-white"
+                size="sm"
+                onClick={() => onEnviar(orden.id)}
+              >
+                <Truck className="me-1" /> Enviar
+              </Button>
+            </div>
+            <div style={{ minWidth: "110px" }}>
+              <Button
+                variant="danger"
+                className="w-100"
+                size="sm"
+                onClick={() => onCancelar(orden.id)}
+              >
+                <XCircleFill className="me-1" /> Cancelar
+              </Button>
+            </div>
+          </>
+        )}
+        {estado === "enviada" && (
+          <div style={{ minWidth: "110px" }}>
+            <Button
+              variant="success"
+              className="w-100"
+              size="sm"
+              onClick={() => onFinalizar(orden.id)}
+            >
+              <CheckCircleFill className="me-1" /> Finalizar
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3>Lista de Órdenes de Compra</h3>
-        <Link to="/ordenes/orden-compra" className="btn btn-primary">
-          Crear Orden
-        </Link>
-      </div>
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Artículo</th>
-            <th>Proveedor</th>
-            <th>Cantidad</th>
-            <th>Estado</th>
-            <th>Fecha de Creación</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ordenes.map((orden) => (
-            <tr key={orden.id}>
-              <td>{orden.id}</td>
-              <td>{orden.articulo?.nombre}</td>
-              <td>{orden.proveedor?.nombre}</td>
-              <td>{orden.cantidad}</td>
-              <td>
-                <Badge pill bg={getBadgeVariant(orden.estado)}>
-                  {orden.estado}
-                </Badge>
-              </td>
-              <td>{new Date(orden.fecha_creacion).toLocaleDateString()}</td>
-              <td>{renderizarAcciones(orden)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
-    </div>
+    <EntidadList
+      titulo="Lista de Órdenes de Compra"
+      datos={datosAdaptados}
+      columnas={columnas}
+      campoId="id"
+      renderAcciones={renderAccionesOrden}
+      botonCrear={botonCrear}
+    />
   );
 };
 

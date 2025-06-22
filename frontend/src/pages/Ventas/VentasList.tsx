@@ -11,15 +11,15 @@ const VentasList = ({ ventas }: VentasListProps) => {
     <div>
       <h3 className="mb-4">Listado de Ventas</h3>
       <Table striped bordered hover responsive>
-        <thead>
+        <thead className="table-dark">
           <tr>
-            <th>ID Venta</th>
-            <th>Fecha</th>
-            <th>Artículo</th>
-            <th className="text-end">Cantidad</th>
-            <th className="text-end">P. Unit.</th>
-            <th className="text-end">Subtotal</th>
-            <th className="text-end">Total Venta</th>
+            <th style={{ whiteSpace: 'nowrap' }}>ID Venta</th>
+            <th style={{ whiteSpace: 'nowrap' }}>Fecha</th>
+            <th style={{ whiteSpace: 'nowrap' }}>Artículo</th>
+            <th className="text-end" style={{ whiteSpace: 'nowrap' }}>Cantidad</th>
+            <th className="text-end" style={{ whiteSpace: 'nowrap' }}>P. Unit.</th>
+            <th className="text-end" style={{ whiteSpace: 'nowrap' }}>Subtotal</th>
+            <th className="text-end" style={{ whiteSpace: 'nowrap' }}>Total Venta</th>
           </tr>
         </thead>
         <tbody>
@@ -32,28 +32,38 @@ const VentasList = ({ ventas }: VentasListProps) => {
                   const totalVenta = Number(venta.detalle_venta.reduce((sum, d) => sum + (d.cantidad * (d.articulo?.precio_venta ?? 0)), 0));
 
                   return (
-                    <tr key={detalle.id}>
+                    <tr key={detalle.id} className="align-middle">
                       {index === 0 && (
                         <>
-                          <td rowSpan={venta.detalle_venta.length} style={{ verticalAlign: 'middle' }}>{venta.id}</td>
-                          <td rowSpan={venta.detalle_venta.length} style={{ verticalAlign: 'middle' }}>{new Date(venta.fecha_venta).toLocaleDateString()}</td>
+                          <td rowSpan={venta.detalle_venta.length}>
+                            <span style={{ color: "#0d6efd" }}>{venta.id}</span>
+                          </td>
+                          <td rowSpan={venta.detalle_venta.length}>
+                            {new Date(venta.fecha_venta).toLocaleDateString()}
+                          </td>
                         </>
                       )}
                       
-                      <td>{detalle.articulo?.nombre || 'Artículo no encontrado'}</td>
+                      <td>
+                        <strong>{detalle.articulo?.nombre || 'Artículo no encontrado'}</strong>
+                      </td>
                       <td className="text-end">{detalle.cantidad}</td>
                       <td className="text-end">{`$${precioUnitario.toFixed(2)}`}</td>
                       <td className="text-end">{`$${subtotal.toFixed(2)}`}</td>
 
                       {index === 0 && (
-                        <td rowSpan={venta.detalle_venta.length} className="text-end" style={{ verticalAlign: 'middle' }}>{`$${totalVenta.toFixed(2)}`}</td>
+                        <td rowSpan={venta.detalle_venta.length} className="text-end">
+                          {`$${totalVenta.toFixed(2)}`}
+                        </td>
                       )}
                     </tr>
                   );
                 })
               ) : (
-                <tr key={`${venta.id}-empty`}>
-                  <td>{venta.id}</td>
+                <tr key={`${venta.id}-empty`} className="align-middle">
+                  <td>
+                    <span style={{ color: "#0d6efd" }}>{venta.id}</span>
+                  </td>
                   <td>{new Date(venta.fecha_venta).toLocaleDateString()}</td>
                   <td colSpan={4}>Esta venta no tiene artículos.</td>
                   <td className="text-end">$0.00</td>

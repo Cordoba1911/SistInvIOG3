@@ -86,8 +86,8 @@ const VentasForm = ({ onSubmit }: VentasFormProps) => {
       campos={campos}
       valoresIniciales={valoresIniciales}
       onSubmit={manejarEnvio}
-      titulo="Registrar Nueva Venta"
-      textoBoton="Registrar Venta"
+      titulo="Crear Nueva Venta"
+      textoBoton="Crear Venta"
     />
   );
 };

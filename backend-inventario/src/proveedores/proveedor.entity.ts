@@ -1,22 +1,33 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
+import { OrdenCompra } from 'src/orden_compra/orden-compra.entity';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 
-@Entity({ name: 'Proveedores' })
+@Entity({ name: 'proveedores' })
 export class Proveedor {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 100 })
   nombre: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   telefono: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   email: string;
 
-  @Column({ default: true })
+  @Column({ type: 'boolean', default: true })
   estado: boolean;
 
-  @Column({ nullable: true, type: 'datetime' })
-  fecha_baja: Date;
+  @Column({ type: 'datetime', nullable: true })
+  fecha_baja: Date | null;
+
+  @OneToMany(
+    () => ArticuloProveedor,
+    (articuloProveedor) => articuloProveedor.proveedor,
+  )
+  articulo_proveedor: ArticuloProveedor[]; // Relación con ArticuloProveedor
+
+  @OneToMany(() => OrdenCompra, (ordenCompra) => ordenCompra.proveedor)
+  orden_compra: OrdenCompra[]; // Relación con OrdenCompra
 }

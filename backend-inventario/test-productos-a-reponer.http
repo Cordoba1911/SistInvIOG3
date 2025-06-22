@@ -1,0 +1,15 @@
+### Obtener productos a reponer
+GET http://localhost:3000/articulos/a-reponer
+Content-Type: application/json
+
+### Comparación - Obtener productos faltantes (para contraste)
+GET http://localhost:3000/articulos/faltantes
+Content-Type: application/json
+
+### Ver todos los artículos (para verificar datos)
+GET http://localhost:3000/articulos
+Content-Type: application/json
+
+### Ver órdenes de compra activas (para verificar filtro)
+GET http://localhost:3000/ordenes_compra
+Content-Type: application/json 

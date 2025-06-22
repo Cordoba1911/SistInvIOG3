@@ -1,0 +1,96 @@
+### Test de Ajuste de Inventario
+### Este archivo contiene pruebas para la funcionalidad de ajuste de inventario
+
+### 1. Obtener todos los artículos para ver el stock actual
+GET http://localhost:3000/articulos
+Content-Type: application/json
+
+###
+
+### 2. Obtener un artículo específico por ID
+GET http://localhost:3000/articulos/1
+Content-Type: application/json
+
+###
+
+### 3. Ajustar inventario - Incrementar stock
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 150,
+  "motivo": "Conteo físico - Se encontraron unidades adicionales en el almacén"
+}
+
+###
+
+### 4. Ajustar inventario - Reducir stock
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 75,
+  "motivo": "Merma por productos vencidos"
+}
+
+###
+
+### 5. Ajustar inventario sin motivo
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 100
+}
+
+###
+
+### 6. Ajustar inventario a cero
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 0,
+  "motivo": "Agotamiento de stock - Producto descontinuado"
+}
+
+###
+
+### 7. Prueba de error - Cantidad negativa
+PATCH http://localhost:3000/articulos/1/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": -10,
+  "motivo": "Prueba de validación"
+}
+
+###
+
+### 8. Prueba de error - Artículo inexistente
+PATCH http://localhost:3000/articulos/99999/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 50,
+  "motivo": "Prueba con artículo inexistente"
+}
+
+###
+
+### 9. Verificar estado después del ajuste
+GET http://localhost:3000/articulos/1
+Content-Type: application/json
+
+###
+
+### 10. Ajuste con motivo detallado
+PATCH http://localhost:3000/articulos/2/ajustar-inventario
+Content-Type: application/json
+
+{
+  "nueva_cantidad": 200,
+  "motivo": "Ajuste por inventario físico realizado el 2024-01-15. Diferencias encontradas durante el conteo anual. Responsable: Juan Pérez. Observaciones: Se encontraron productos mal ubicados en el sector B."
+}
+
+### 

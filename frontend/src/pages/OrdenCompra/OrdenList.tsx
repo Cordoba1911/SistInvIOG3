@@ -1,156 +1,97 @@
-import { useState } from 'react';
-import { Form, InputGroup } from 'react-bootstrap';
+import { useState } from "react";
+import { Badge } from "react-bootstrap";
+import EntidadList from "../../components/EntityList";
+import type { OrdenCompra } from "../../types/ordenCompra";
 
-type Estado = 'pendiente' | 'enviado' | 'finalizado';
+interface PropsOrdenCompraList {
+  ordenes: OrdenCompra[];
+  onModificar: (id: string, nuevosDatos: Partial<OrdenCompra>) => void;
+  onBaja: (id: string) => void;
+}
 
-type Orden = {
-  id: number;
-  articulo_id: number;
-  proveedor_id: number;
-  cantidad: number;
-  estado: Estado;
-  fecha_creacion: string;
-  fecha_envio: string;
-  fecha_finalizacion: string;
-};
+const OrdenCompraList = ({ ordenes, onModificar, onBaja }: PropsOrdenCompraList) => {
+  const [ordenSeleccionada, setOrdenSeleccionada] = useState<OrdenCompra | null>(null);
 
-export default function OrdenList() {
-  const [ordenes, setOrdenes] = useState<Orden[]>([
+  const columnas = [
+    { campo: "id", etiqueta: "ID Orden" },
+    { campo: "nombre_articulo", etiqueta: "Artículo" },
+    { campo: "nombre_proveedor", etiqueta: "Proveedor" },
+    { campo: "cantidad", etiqueta: "Cantidad" },
     {
-      id: 1,
-      articulo_id: 101,
-      proveedor_id: 201,
-      cantidad: 5,
-      estado: 'pendiente',
-      fecha_creacion: '2025-05-23T10:00:00',
-      fecha_envio: '',
-      fecha_finalizacion: '',
+      campo: "estado",
+      etiqueta: "Estado",
+      render: (estado: string) => {
+        const variants = {
+          pendiente: "warning",
+          enviada: "info",
+          finalizada: "success",
+          cancelada: "danger",
+        };
+        const variantKey = estado as keyof typeof variants;
+        const variant = variants[variantKey] || "secondary";
+        return <Badge bg={variant}>{estado.toUpperCase()}</Badge>;
+      },
     },
     {
-      id: 2,
-      articulo_id: 102,
-      proveedor_id: 202,
-      cantidad: 10,
-      estado: 'enviado',
-      fecha_creacion: '2025-05-20T14:30:00',
-      fecha_envio: '2025-05-22T08:00:00',
-      fecha_finalizacion: '',
+      campo: "fecha_creacion",
+      etiqueta: "Fecha de Creación",
+      render: (fecha: string) => new Date(fecha).toLocaleDateString(),
     },
-    {
-      id: 3,
-      articulo_id: 103,
-      proveedor_id: 203,
-      cantidad: 20,
-      estado: 'finalizado',
-      fecha_creacion: '2025-05-10T09:00:00',
-      fecha_envio: '2025-05-12T11:00:00',
-      fecha_finalizacion: '2025-05-18T16:30:00',
-    },
-  ]);
+  ];
 
-  const handleEdit = (id: number) => {
-    console.log('Editar orden:', id);
+  // Adaptar los datos para el componente genérico EntidadList
+  const datosAdaptados = ordenes.map((orden) => ({
+    ...orden,
+    nombre_articulo: orden.articulo?.nombre ?? "N/A",
+    nombre_proveedor: orden.proveedor?.nombre ?? "N/A",
+  }));
+
+  // La lógica del formulario de edición se mantiene por ahora,
+  // aunque no será funcional hasta que se conecten las acciones.
+  const campos = [
+    { nombre: "cantidad", etiqueta: "Cantidad", tipo: "number" },
+    {
+      nombre: "estado",
+      etiqueta: "Estado",
+      tipo: "select",
+      opciones: ["pendiente", "enviada", "finalizada", "cancelada"],
+    },
+  ];
+
+  const valoresIniciales = ordenSeleccionada
+    ? {
+        cantidad: ordenSeleccionada.cantidad?.toString() || "",
+        estado: ordenSeleccionada.estado,
+      }
+    : {
+        cantidad: "",
+        estado: "pendiente",
+      };
+
+  const manejarEnvio = (datos: Record<string, string>) => {
+    if (ordenSeleccionada) {
+      // onModificar no está implementado aún, esto no funcionará.
+    }
+    setOrdenSeleccionada(null);
   };
 
-  const handleDelete = (id: number) => {
-    console.log('Eliminar orden:', id);
+  const manejarEditar = (id: string | number) => {
+    const ordenEncontrada = ordenes.find((o) => o.id === id);
+    if (ordenEncontrada) setOrdenSeleccionada(ordenEncontrada);
   };
 
   return (
     <div className="container mt-4">
-      {/* Filtros */}
-      <div className="d-flex gap-2 mb-3">
-        <InputGroup style={{ maxWidth: '250px' }}>
-  <InputGroup.Text>
-    <i className="bi bi-calendar"></i>
-  </InputGroup.Text>
-  <Form.Control type="date" />
-</InputGroup>
-
-        <select className="form-select" style={{ maxWidth: '250px' }}>
-          <option>Selecciona el proveedor</option>
-          <option value="201">Pepito</option>
-          <option value="202">Cerabol</option>
-        </select>
-
-        <div className="input-group" style={{ maxWidth: '250px' }}>
-          <input type="text" className="form-control" placeholder="Buscar por número" />
-          <button className="btn btn-outline-secondary">
-            <i className="bi bi-search" />
-          </button>
-        </div>
-
-        <div className="ms-auto d-flex gap-2">
-          <button className="btn btn-outline-primary">
-            <i className="bi bi-plus" /> Nuevo
-          </button>
-          <button className="btn btn-outline-secondary">Mostrar</button>
-        </div>
-      </div>
-
-      {/* Tabla */}
-      <div className="table-responsive">
-        <table className="table table-bordered table-hover">
-          <thead className="table-light">
-            <tr>
-              <th>Orden Nº</th>
-              <th>Artículo ID</th>
-              <th>Proveedor ID</th>
-              <th>Cantidad</th>
-              <th>Estado</th>
-              <th>Creación</th>
-              <th>Envío</th>
-              <th>Finalización</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ordenes.map((orden) => (
-              <tr key={orden.id}>
-                <td>{orden.id}</td>
-                <td>{orden.articulo_id}</td>
-                <td>{orden.proveedor_id}</td>
-                <td>{orden.cantidad}</td>
-                <td>
-                  <span className={`badge 
-                    ${orden.estado === 'pendiente' ? 'bg-warning' : 
-                      orden.estado === 'enviado' ? 'bg-info' : 
-                      'bg-success'}
-                  `}>
-                    {orden.estado}
-                  </span>
-                </td>
-                <td>{orden.fecha_creacion ? new Date(orden.fecha_creacion).toLocaleDateString() : '-'}</td>
-                <td>{orden.fecha_envio ? new Date(orden.fecha_envio).toLocaleDateString() : '-'}</td>
-                <td>{orden.fecha_finalizacion ? new Date(orden.fecha_finalizacion).toLocaleDateString() : '-'}</td>
-                <td>
-                  <div className="dropdown">
-                    <button
-                      className="btn btn-sm btn-secondary dropdown-toggle"
-                      type="button"
-                      data-bs-toggle="dropdown"
-                    >
-                      Acciones
-                    </button>
-                    <ul className="dropdown-menu">
-                      <li>
-                        <button className="dropdown-item" onClick={() => handleEdit(orden.id)}>
-                          Editar
-                        </button>
-                      </li>
-                      <li>
-                        <button className="dropdown-item" onClick={() => handleDelete(orden.id)}>
-                          Eliminar
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <EntidadList
+        titulo="Órdenes de Compra"
+        datos={datosAdaptados}
+        columnas={columnas}
+        onEditar={manejarEditar}
+        onEliminar={onBaja}
+        campoId="id"
+      />
     </div>
   );
-}
+};
+
+export default OrdenCompraList;

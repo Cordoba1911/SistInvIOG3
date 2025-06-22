@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Delete,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -22,6 +23,11 @@ export class ProveedorController {
   @Get()
   getProveedores(): Promise<Proveedor[]> {
     return this.proveedorService.getProveedores();
+  }
+
+  @Get('activos/lista')
+  getProveedoresActivos(): Promise<Proveedor[]> {
+    return this.proveedorService.getProveedoresActivos();
   }
 
   @Get(':id')
@@ -42,9 +48,14 @@ export class ProveedorController {
     return this.proveedorService.updateProveedor(id, proveedor);
   }
 
-  @Patch(':id/baja')
+  @Delete(':id')
   bajaProveedor(@Param('id', ParseIntPipe) id: number) {
     return this.proveedorService.bajaProveedor(id);
+  }
+
+  @Patch(':id/reactivar')
+  reactivarProveedor(@Param('id', ParseIntPipe) id: number) {
+    return this.proveedorService.reactivarProveedor(id);
   }
 
   @Get(':id/articulos')

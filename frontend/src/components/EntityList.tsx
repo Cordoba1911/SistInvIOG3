@@ -1,18 +1,26 @@
-import { Table, Button, Badge, Image } from 'react-bootstrap';
+import { useState } from "react";
+import { Table, Button, Badge, Image } from "react-bootstrap";
+import ConfirmationModal from "./common/ConfirmationModal";
 
 interface Columna {
   campo: string;
   etiqueta: string;
+  render?: (valor: any, item: any) => React.ReactNode;
+  cellStyle?: React.CSSProperties;
 }
 
 interface PropsEntidadList<T> {
   titulo: string;
   datos: T[];
   columnas: Columna[];
-  onEditar: (id: string) => void;
-  onEliminar: (id: string) => void;
+  onEditar?: (id: string) => void;
+  onEliminar?: (id: string) => void;
   campoId: string;
+  botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
   campoActivo?: string;
+  esActivo?: (entidad: T) => boolean;
+  renderAcciones?: (item: T) => React.ReactNode;
 
   // NUEVO: acciones personalizadas por fila
   accionesPersonalizadas?: (item: T) => React.ReactNode;
@@ -25,81 +33,127 @@ const EntidadList = <T extends Record<string, any>>({
   onEditar,
   onEliminar,
   campoId,
+  botonCrear,
+  searchBar,
   campoActivo,
+  esActivo,
+  renderAcciones,
   accionesPersonalizadas,
 }: PropsEntidadList<T>) => {
+  const [showModal, setShowModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null);
+
+  const mostrarAcciones = onEditar || onEliminar || renderAcciones || accionesPersonalizadas;
+
+  const handleShowModal = (item: any) => {
+    setItemToDelete(item);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setItemToDelete(null);
+    setShowModal(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete && onEliminar) {
+      onEliminar(itemToDelete[campoId]);
+    }
+    handleCloseModal();
+  };
+
   return (
-    <div className="mt-5">
-      <h3 className="mb-3">Lista de {titulo}</h3>
-      <Table striped bordered hover responsive size="sm">
-        <thead>
+    <div className="mt-3">
+      <div className="d-flex justify-content-between align-items-center mb-5">
+        {titulo && <h3 className="mb-0">{titulo}</h3>}
+        {botonCrear}
+      </div>
+      {searchBar}
+      <Table striped bordered hover responsive>
+        <thead className="table-dark">
           <tr>
             {columnas.map((col) => (
-              <th key={col.campo}>{col.etiqueta}</th>
+              <th key={col.campo} style={{ whiteSpace: "nowrap" }}>
+                {col.etiqueta}
+              </th>
             ))}
-            <th>Acciones</th>
+            {mostrarAcciones && (
+              <th style={{ whiteSpace: "nowrap" }}>Acciones</th>
+            )}
           </tr>
         </thead>
         <tbody>
-          {datos.map((item) => (
-            <tr
-              key={item[campoId]}
-              className={!item[campoActivo ?? 'activo'] ? 'text-muted' : ''}
-            >
-              {columnas.map((col) => {
-                const valor = item[col.campo];
-                return (
-                  <td
-                    key={col.campo}
-                    style={{
-                      wordBreak: 'break-word',
-                      maxWidth: col.campo === 'imagen' ? '150px' : '200px',
-                      whiteSpace: 'pre-wrap',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {col.campo === 'imagen' && valor ? (
-                      <Image
-                        src={typeof valor === 'string' ? valor : URL.createObjectURL(valor)}
-                        alt="imagen"
-                        thumbnail
-                        style={{ width: '80px', height: 'auto' }}
-                      />
-                    ) : col.campo === 'estado' ? (
-                      <Badge bg={item[campoActivo ?? 'activo'] ? 'success' : 'secondary'}>
-                        {valor}
-                      </Badge>
+          {datos.map((item) => {
+            const estaActivo = esActivo
+              ? esActivo(item)
+              : campoActivo
+              ? !!item[campoActivo]
+              : true;
+
+            return (
+              <tr key={item[campoId]} className="align-middle">
+                {columnas.map((col) => {
+                  const valor = item[col.campo];
+                  const renderizado = col.render ? col.render(valor, item) : null;
+
+                  return (
+                    <td
+                      key={col.campo}
+                      style={{
+                        wordBreak: "break-word",
+                        whiteSpace: "pre-wrap",
+                        ...col.cellStyle,
+                      }}
+                    >
+                      {renderizado ?? valor ?? "-"}
+                    </td>
+                  );
+                })}
+                {mostrarAcciones && (
+                  <td className="">
+                    {renderAcciones ? (
+                      renderAcciones(item)
                     ) : (
-                      valor ?? '-'
+                      <div className="d-flex align-items-center gap-2">
+                        {onEditar && (
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() => onEditar(item[campoId])}
+                          >
+                            Editar
+                          </Button>
+                        )}
+                        {onEliminar && (
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleShowModal(item)}
+                          >
+                            Eliminar
+                          </Button>
+                        )}
+                        {accionesPersonalizadas && accionesPersonalizadas(item)}
+                      </div>
                     )}
                   </td>
-                );
-              })}
-              <td className="text-center">
-                <div className="d-flex flex-column gap-1 align-items-center">
-                  <div className="d-flex gap-2 mb-1">
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      onClick={() => onEditar(item[campoId])}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline-danger"
-                      size="sm"
-                      onClick={() => onEliminar(item[campoId])}
-                    >
-                      Eliminar
-                    </Button>
-                  </div>
-                  {accionesPersonalizadas && accionesPersonalizadas(item)}
-                </div>
-              </td>
-            </tr>
-          ))}
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </Table>
+
+      {itemToDelete && (
+        <ConfirmationModal
+          show={showModal}
+          onHide={handleCloseModal}
+          onConfirm={handleConfirmDelete}
+          title="Confirmar Baja"
+          message={`¿Estás seguro de que deseas dar de baja a "${itemToDelete.nombre}"? Esta acción no se puede deshacer.`}
+          confirmText="Dar de Baja"
+        />
+      )}
     </div>
   );
 };

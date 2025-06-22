@@ -30,6 +30,6 @@ export class ArticuloResponseDto {
   cgi?: number;
   stock_actual?: number;
   estado: boolean;
-  fecha_baja?: Date;
+  fecha_baja?: Date | null;
   proveedores: ProveedorArticuloResponseDto[];
 }

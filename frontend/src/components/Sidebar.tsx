@@ -82,6 +82,38 @@ export default function Sidebar() {
         >
           Lista de artículos
         </Dropdown.Item>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/productos-a-reponer"
+          className={isActive("/articulos/productos-a-reponer") ? "bg-secondary" : ""}
+        >
+          <i className="fas fa-exclamation-triangle text-warning me-2"></i>
+          Productos a reponer
+        </Dropdown.Item>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/productos-faltantes"
+          className={isActive("/articulos/productos-faltantes") ? "bg-secondary" : ""}
+        >
+          <i className="fas fa-exclamation-circle text-danger me-2"></i>
+          Productos faltantes
+        </Dropdown.Item>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/proveedores-por-articulo"
+          className={isActive("/articulos/proveedores-por-articulo") ? "bg-secondary" : ""}
+        >
+          <i className="fas fa-search text-info me-2"></i>
+          Proveedores por artículo
+        </Dropdown.Item>
+        <Dropdown.Item
+          as={Link}
+          to="/articulos/ajuste-inventario"
+          className={isActive("/articulos/ajuste-inventario") ? "bg-secondary" : ""}
+        >
+          <i className="fas fa-edit text-primary me-2"></i>
+          Ajuste de inventario
+        </Dropdown.Item>
       </Dropdown.Menu>
     </Dropdown>
     <Dropdown className="mb-1">

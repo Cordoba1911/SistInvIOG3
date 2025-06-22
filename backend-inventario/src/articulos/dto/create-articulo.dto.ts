@@ -80,7 +80,7 @@ export class CreateArticuloDto {
 
   @IsOptional()
   @IsEnum(ModeloInventario, {
-    message: 'El modelo de inventario debe ser "lote_fijo" o "intervalo_fijo"',
+    message: 'El modelo de inventario debe ser "lote_fijo" o "periodo_fijo"',
   })
   modelo_inventario: ModeloInventario;
 

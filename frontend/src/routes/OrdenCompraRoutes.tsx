@@ -3,20 +3,9 @@ import { Routes, Route } from "react-router-dom";
 import { Card } from "react-bootstrap";
 import OrdenCompraForm from "../pages/OrdenCompra/OrdenForm";
 import OrdenCompraList from "../pages/OrdenCompra/OrdenList";
+import SugerenciasOrdenCompra from "../pages/OrdenCompra/SugerenciasOrdenCompra";
 import { ordenesService } from "../services/ordenesService";
 import type { OrdenCompra } from "../types/ordenCompra";
-
-export interface OrdenCompra {
-  id: string;
-  nombre: string;
-  proveedor: string;
-  cantidad: number; // Cantidad de artículos en la orden
-  estado: 'Pendiente' | 'Enviada' | 'Finalizada' | 'Cancelada';
-  fecha_creacion: string; // Formato YYYY-MM-DD
-  fecha_envio?: string; // Formato YYYY-MM-DD, opcional
-  fecha_finalizacion?: string; // Formato YYYY-MM-DD, opcional
-  activo: boolean; // Indica si la orden está activa
-}
 
 const OrdenCompraRouter = () => {
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
@@ -54,7 +43,7 @@ const OrdenCompraRouter = () => {
   return (
     <Routes>
       <Route
-        path="/orden-compra"
+        path="orden-compra"
         element={
           <div className="container mt-4">
             <Card>
@@ -66,7 +55,7 @@ const OrdenCompraRouter = () => {
         }
       />
       <Route
-        path="/admin-orden-compra"
+        path="admin-orden-compra"
         element={
           <OrdenCompraList
             ordenes={ordenes}
@@ -75,9 +64,16 @@ const OrdenCompraRouter = () => {
           />
         }
       />
+      <Route
+        path="sugerencias-orden-compra"
+        element={
+          <div className="container mt-4">
+            <SugerenciasOrdenCompra />
+          </div>
+        }
+      />
     </Routes>
   );
 };
 
 export default OrdenCompraRouter;
-export type OrdenCompraSinID = Omit<OrdenCompra, 'id' | 'activo'>;

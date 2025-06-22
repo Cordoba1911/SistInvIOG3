@@ -117,6 +117,21 @@ export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   stock_actual?: number;
 
   @IsOptional()
+  @IsNumber({}, { message: 'La desviación estándar debe ser un número' })
+  @Min(0, { message: 'La desviación estándar debe ser mayor o igual a 0' })
+  desviacion_estandar?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El nivel de servicio debe ser un número' })
+  @Min(0.5, { message: 'El nivel de servicio debe ser mayor a 0.5' })
+  nivel_servicio?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'El intervalo de revisión debe ser un número entero' })
+  @IsPositive({ message: 'El intervalo de revisión debe ser mayor a 0' })
+  intervalo_revision?: number;
+
+  @IsOptional()
   @IsNumber({}, { message: 'El ID del proveedor debe ser un número' })
   @IsPositive({ message: 'El ID del proveedor debe ser mayor a 0' })
   proveedor_id?: number;

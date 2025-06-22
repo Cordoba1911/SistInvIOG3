@@ -30,6 +30,11 @@ export class CalculoLoteFijoDto {
   @IsNumber({}, { message: 'El nivel de servicio debe ser un número' })
   @IsPositive({ message: 'El nivel de servicio debe ser mayor a 0' })
   nivel_servicio?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El costo de compra debe ser un número' })
+  @IsPositive({ message: 'El costo de compra debe ser mayor a 0' })
+  costo_compra?: number;
 }
 
 export class ResultadoLoteFijoDto {
@@ -38,4 +43,8 @@ export class ResultadoLoteFijoDto {
   stock_seguridad: number;
   costo_total_anual: number;
   tiempo_reposicion: number;
+  numero_pedidos_anuales: number;
+  costo_pedidos_anuales: number;
+  costo_almacenamiento_anual: number;
+  stock_promedio: number;
 } 

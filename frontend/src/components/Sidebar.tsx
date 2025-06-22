@@ -44,6 +44,14 @@ export default function Sidebar() {
           <Dropdown.Menu>
             <Dropdown.Item
               as={Link}
+              to="/ordenes/sugerencias-orden-compra"
+              className={isActive("/ordenes/sugerencias-orden-compra") ? "bg-secondary" : ""}
+            >
+              <i className="fas fa-lightbulb text-warning me-2"></i>
+              Sugerencias inteligentes
+            </Dropdown.Item>
+            <Dropdown.Item
+              as={Link}
               to="/ordenes/orden-compra"
               className={isActive("/ordenes/orden-compra") ? "bg-secondary" : ""}
             >

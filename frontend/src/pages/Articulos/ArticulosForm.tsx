@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import AlertModal from "../../components/common/AlertModal";
 import InventoryFieldsHelp from "../../components/common/InventoryFieldsHelp";
+import CalculosInventario from "../../components/common/CalculosInventario";
 import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
@@ -166,6 +167,31 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       placeholder: "Costo de gestión del inventario (calculado automáticamente)",
     },
     {
+      nombre: "desviacion_estandar",
+      etiqueta: "Desviación Estándar de la Demanda",
+      tipo: "number",
+      min: 0,
+      step: 0.1,
+      placeholder: "Variabilidad de la demanda (opcional)",
+    },
+    {
+      nombre: "nivel_servicio",
+      etiqueta: "Nivel de Servicio",
+      tipo: "number",
+      min: 0.5,
+      max: 0.999,
+      step: 0.01,
+      placeholder: "Ej: 0.95 (95% de confiabilidad)",
+    },
+    {
+      nombre: "intervalo_revision",
+      etiqueta: "Intervalo de Revisión (días)",
+      tipo: "number",
+      min: 1,
+      step: 1,
+      placeholder: "Frecuencia de revisión del inventario (para modelo período fijo)",
+    },
+    {
       nombre: "proveedores",
       etiqueta: "Proveedores",
       tipo: "array",
@@ -238,6 +264,9 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         inventario_maximo: articuloAEditar.inventario_maximo,
         stock_actual: articuloAEditar.stock_actual,
         cgi: articuloAEditar.cgi,
+        desviacion_estandar: articuloAEditar.desviacion_estandar,
+        nivel_servicio: articuloAEditar.nivel_servicio,
+        intervalo_revision: articuloAEditar.intervalo_revision,
         proveedores: articuloAEditar.proveedores?.map(p => ({
           proveedor_id: p.proveedor_id,
           precio_unitario: p.precio_unitario,
@@ -262,6 +291,9 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         inventario_maximo: undefined,
         stock_actual: 0,
         cgi: undefined,
+        desviacion_estandar: undefined,
+        nivel_servicio: 0.95,
+        intervalo_revision: undefined,
         proveedores: [],
       };
 
@@ -299,8 +331,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       if (enModoEdicion && onUpdate && articuloAEditar) {
         const articuloData: UpdateArticuloInput = {
           codigo: datos.codigo,
-          nombre: datos.nombre,
-          descripcion: datos.descripcion,
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
           demanda: datos.demanda ? parseInt(datos.demanda) : undefined,
           costo_almacenamiento: datos.costo_almacenamiento ? parseFloat(datos.costo_almacenamiento) : undefined,
           costo_pedido: datos.costo_pedido ? parseFloat(datos.costo_pedido) : undefined,
@@ -313,6 +345,9 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
           cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) : undefined,
+          intervalo_revision: datos.intervalo_revision ? parseInt(datos.intervalo_revision) : undefined,
           proveedores: datos.proveedores?.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -340,6 +375,9 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
           cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) : undefined,
+          intervalo_revision: datos.intervalo_revision ? parseInt(datos.intervalo_revision) : undefined,
           proveedores: datos.proveedores.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -361,8 +399,13 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
     }
   };
 
-  return (
+    return (
     <>
+      {/* Mostrar cálculos al principio cuando estamos editando */}
+      {enModoEdicion && articuloAEditar && (
+        <CalculosInventario articulo={articuloAEditar} />
+      )}
+
       <Form
         campos={campos}
         valoresIniciales={valoresIniciales}

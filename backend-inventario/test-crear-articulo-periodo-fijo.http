@@ -1,0 +1,45 @@
+### Crear Artículo de Prueba con Modelo Período Fijo
+### Descripción: Crear un artículo para probar la calculadora de intervalo fijo
+
+### 1. Crear artículo con modelo periodo_fijo
+POST http://localhost:3000/api/articulos
+Content-Type: application/json
+
+{
+  "codigo": "TEST-PF-001",
+  "nombre": "Artículo Prueba Período Fijo",
+  "descripcion": "Artículo de prueba para modelo período fijo",
+  "demanda": 1200,
+  "costo_almacenamiento": 5.5,
+  "costo_pedido": 50,
+  "costo_compra": 25,
+  "precio_venta": 75,
+  "modelo_inventario": "periodo_fijo",
+  "stock_actual": 100,
+  "desviacion_estandar": 120,
+  "nivel_servicio": 0.95,
+  "intervalo_revision": 30,
+  "proveedores": [
+    {
+      "proveedor_id": 1,
+      "precio_unitario": 25,
+      "demora_entrega": 7,
+      "cargos_pedido": 10,
+      "proveedor_predeterminado": true
+    }
+  ]
+}
+
+### 2. Verificar que se creó correctamente
+GET http://localhost:3000/api/articulos
+
+### 3. Actualizar artículo existente (ID 1) para que sea periodo_fijo
+PATCH http://localhost:3000/api/articulos/1
+Content-Type: application/json
+
+{
+  "modelo_inventario": "periodo_fijo",
+  "intervalo_revision": 30,
+  "desviacion_estandar": 24,
+  "nivel_servicio": 0.95
+} 

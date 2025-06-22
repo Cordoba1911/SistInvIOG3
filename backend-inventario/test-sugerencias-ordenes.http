@@ -1,0 +1,28 @@
+### Test de Sugerencias de Órdenes de Compra
+### Endpoint para obtener sugerencias inteligentes basadas en modelos de inventario
+
+### 1. Obtener sugerencias de órdenes de compra
+GET http://localhost:3000/api/ordenes_compra/sugerencias
+Content-Type: application/json
+
+### 2. Verificar estado de artículos (para comparar)
+GET http://localhost:3000/api/articulos
+Content-Type: application/json
+
+### 3. Obtener productos a reponer (endpoint existente para comparar)
+GET http://localhost:3000/api/articulos/a-reponer
+Content-Type: application/json
+
+### 4. Crear orden de compra basada en sugerencia
+POST http://localhost:3000/api/ordenes_compra
+Content-Type: application/json
+
+{
+  "articulo_id": 1,
+  "proveedor_id": 1,
+  "cantidad": 100
+}
+
+### 5. Verificar que la sugerencia desaparece después de crear la orden
+GET http://localhost:3000/api/ordenes_compra/sugerencias
+Content-Type: application/json 

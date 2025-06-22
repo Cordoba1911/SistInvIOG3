@@ -28,6 +28,12 @@ export class OrdenCompraController {
     return this.ordenCompraService.getOrdenesCompra();
   }
 
+  // Obtener sugerencias inteligentes para órdenes de compra
+  @Get('sugerencias')
+  getSugerencias() {
+    return this.ordenCompraService.getSugerenciasOrdenesCompra();
+  }
+
   // Obtener una orden por ID
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {

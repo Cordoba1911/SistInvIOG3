@@ -1,34 +1,24 @@
 "use client"
 
-import { useState } from "react"
-import { Container, Tabs, Tab } from "react-bootstrap"
-import { FixedLotModel } from "../pages/Cálculo de Modelos/FixedLotModel"
-import { FixedIntervalModel } from "../pages/Cálculo de Modelos/FixedIntervalModel"
-import { CGICalculation } from "../pages/Cálculo de Modelos/CGICalculation"
+import { Container, Alert } from "react-bootstrap"
 
 export function InventoryCalculations() {
-  const [key, setKey] = useState<string>("fixed-lot")
-
   return (
     <Container className="py-4">
       <h2 className="mb-4">Cálculos de Inventario</h2>
-
-      <Tabs
-        id="inventory-calculations-tabs"
-        activeKey={key}
-        onSelect={(k) => setKey(k || "fixed-lot")}
-        className="mb-4"
-      >
-        <Tab eventKey="fixed-lot" title="Modelo Lote Fijo">
-          <FixedLotModel />
-        </Tab>
-        <Tab eventKey="fixed-interval" title="Modelo Intervalo Fijo">
-          <FixedIntervalModel />
-        </Tab>
-        <Tab eventKey="cgi" title="Cálculo CGI">
-          <CGICalculation />
-        </Tab>
-      </Tabs>
+      
+      <Alert variant="info">
+        <Alert.Heading>📊 Funcionalidades de Cálculo</Alert.Heading>
+        <p>
+          Los cálculos de inventario están disponibles directamente en la gestión de artículos:
+        </p>
+        <ul className="mb-0">
+          <li><strong>Artículos</strong> → Crear/Editar artículo → Configurar modelo de inventario</li>
+          <li><strong>Productos a Reponer</strong> → Ver artículos que necesitan reposición</li>
+          <li><strong>Productos Faltantes</strong> → Ver artículos con stock bajo</li>
+          <li><strong>Ajuste de Inventario</strong> → Modificar stock actual</li>
+        </ul>
+      </Alert>
     </Container>
   )
 }

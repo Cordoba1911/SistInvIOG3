@@ -62,9 +62,9 @@ export const articulosService = {
     });
   },
 
-  // Calcular modelo de intervalo fijo
+  // Calcular modelo de intervalo fijo (periodo fijo)
   async calcularIntervaloFijo(datos: any): Promise<any> {
-    return request<any>(`${ARTICULOS_BASE_URL}/calcular/intervalo-fijo`, {
+    return request<any>(`${ARTICULOS_BASE_URL}/calcular/periodo-fijo`, {
       method: "POST",
       body: JSON.stringify(datos),
     });
@@ -118,5 +118,10 @@ export const articulosService = {
   // Obtener proveedores de un artículo específico
   async getProveedoresPorArticulo(articuloId: number): Promise<any[]> {
     return request<any[]>(`${ARTICULOS_BASE_URL}/${articuloId}/proveedores`);
+  },
+
+  // Aplicar cálculo a artículo con modelo específico
+  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'periodo_fijo'): Promise<Articulo> {
+    return this.aplicarCalculo(articuloId, modelo);
   },
 };

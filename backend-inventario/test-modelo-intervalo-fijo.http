@@ -1,0 +1,205 @@
+### PRUEBAS MODELO INTERVALO FIJO (PERÍODO FIJO)
+### Sistema de Inventario IOG3
+### Fecha: 2025-06-21
+
+### 1. Calcular Modelo Intervalo Fijo - Caso Básico
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1200,
+  "intervalo_revision": 30,
+  "demora_entrega": 7,
+  "desviacion_estandar": 120,
+  "nivel_servicio": 0.95,
+  "stock_actual": 150,
+  "costo_almacenamiento": 5.5,
+  "costo_compra": 25.0
+}
+
+### 2. Calcular Modelo Intervalo Fijo - Con Valores Mínimos
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 500,
+  "intervalo_revision": 15
+}
+
+### 3. Calcular Modelo Intervalo Fijo - Alto Nivel de Servicio
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 2400,
+  "intervalo_revision": 45,
+  "demora_entrega": 14,
+  "desviacion_estandar": 200,
+  "nivel_servicio": 0.99,
+  "stock_actual": 300,
+  "costo_almacenamiento": 8.0,
+  "costo_compra": 15.0
+}
+
+### 4. Calcular Modelo Intervalo Fijo - Intervalo Corto
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 3600,
+  "intervalo_revision": 7,
+  "demora_entrega": 3,
+  "desviacion_estandar": 300,
+  "nivel_servicio": 0.90,
+  "stock_actual": 100,
+  "costo_almacenamiento": 12.0,
+  "costo_compra": 8.5
+}
+
+### 5. Aplicar Cálculo de Intervalo Fijo a Artículo Específico
+POST http://localhost:3000/articulos/1/aplicar-calculo/periodo_fijo
+Content-Type: application/json
+
+### 6. Crear Artículo con Modelo Intervalo Fijo
+POST http://localhost:3000/articulos
+Content-Type: application/json
+
+{
+  "codigo": "ART-IF-001",
+  "nombre": "Artículo Intervalo Fijo Test",
+  "descripcion": "Artículo de prueba para modelo intervalo fijo",
+  "demanda": 1800,
+  "costo_almacenamiento": 6.0,
+  "costo_pedido": 45.0,
+  "costo_compra": 18.0,
+  "precio_venta": 35.0,
+  "modelo_inventario": "periodo_fijo",
+  "stock_actual": 200,
+  "desviacion_estandar": 150,
+  "nivel_servicio": 0.95,
+  "intervalo_revision": 21,
+  "proveedores": [
+    {
+      "proveedor_id": 1,
+      "precio_unitario": 18.0,
+      "demora_entrega": 10,
+      "cargos_pedido": 25.0,
+      "proveedor_predeterminado": true
+    }
+  ]
+}
+
+### 7. Actualizar Artículo - Cambiar Intervalo de Revisión (Debe Recalcular)
+PUT http://localhost:3000/articulos/1
+Content-Type: application/json
+
+{
+  "intervalo_revision": 35,
+  "nivel_servicio": 0.98
+}
+
+### 8. Actualizar Artículo - Cambiar Demanda (Debe Recalcular)
+PUT http://localhost:3000/articulos/1
+Content-Type: application/json
+
+{
+  "demanda": 2200,
+  "desviacion_estandar": 180
+}
+
+### 9. Comparar Modelos - Mismo Artículo con Lote Fijo vs Intervalo Fijo
+### Primero calcular Lote Fijo
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1500,
+  "costo_almacenamiento": 7.0,
+  "costo_pedido": 40.0,
+  "costo_compra": 20.0,
+  "demora_entrega": 8,
+  "desviacion_estandar": 130,
+  "nivel_servicio": 0.95
+}
+
+### Luego calcular Intervalo Fijo con los mismos datos
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1500,
+  "intervalo_revision": 30,
+  "demora_entrega": 8,
+  "desviacion_estandar": 130,
+  "nivel_servicio": 0.95,
+  "stock_actual": 180,
+  "costo_almacenamiento": 7.0,
+  "costo_compra": 20.0
+}
+
+### 10. Validar Errores - Datos Faltantes
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1000
+}
+
+### 11. Validar Errores - Valores Negativos
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": -500,
+  "intervalo_revision": -10
+}
+
+### 12. Obtener Artículo Después de Aplicar Cálculo
+GET http://localhost:3000/articulos/1
+
+### CASOS DE PRUEBA ESPECÍFICOS
+
+### Caso A: Demanda Alta, Intervalo Largo
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 5000,
+  "intervalo_revision": 60,
+  "demora_entrega": 21,
+  "desviacion_estandar": 400,
+  "nivel_servicio": 0.975,
+  "stock_actual": 500,
+  "costo_almacenamiento": 10.0,
+  "costo_compra": 12.0
+}
+
+### Caso B: Demanda Baja, Intervalo Corto
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 200,
+  "intervalo_revision": 5,
+  "demora_entrega": 2,
+  "desviacion_estandar": 25,
+  "nivel_servicio": 0.85,
+  "stock_actual": 20,
+  "costo_almacenamiento": 2.0,
+  "costo_compra": 50.0
+}
+
+### Caso C: Sin Stock Actual (Nuevo Producto)
+POST http://localhost:3000/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 800,
+  "intervalo_revision": 14,
+  "demora_entrega": 5,
+  "desviacion_estandar": 80,
+  "nivel_servicio": 0.95,
+  "stock_actual": 0,
+  "costo_almacenamiento": 3.5,
+  "costo_compra": 22.0
+} 

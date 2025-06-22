@@ -1,0 +1,50 @@
+### Test Modelo Intervalo Fijo - Verificación Post-Corrección
+### Descripción: Prueba del cálculo de modelo intervalo fijo con campos corregidos
+
+### 1. Calcular Intervalo Fijo - Caso básico
+POST http://localhost:3000/api/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1200,
+  "intervalo_revision": 30,
+  "demora_entrega": 7,
+  "desviacion_estandar": 120,
+  "nivel_servicio": 0.95,
+  "stock_actual": 100,
+  "costo_almacenamiento": 5.5,
+  "costo_pedido": 50,
+  "costo_compra": 25
+}
+
+### 2. Calcular Intervalo Fijo - Solo campos obligatorios
+POST http://localhost:3000/api/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 800,
+  "intervalo_revision": 21
+}
+
+### 3. Verificar que devuelve los campos correctos
+### Esperamos: cantidad_pedido, costo_total_anual, tiempo_ciclo, demanda_durante_revision, etc.
+POST http://localhost:3000/api/articulos/calcular/periodo-fijo
+Content-Type: application/json
+
+{
+  "demanda": 2400,
+  "intervalo_revision": 14,
+  "demora_entrega": 10,
+  "desviacion_estandar": 200,
+  "nivel_servicio": 0.99,
+  "stock_actual": 150,
+  "costo_almacenamiento": 8.0,
+  "costo_pedido": 75,
+  "costo_compra": 30
+}
+
+### 4. Aplicar cálculo a un artículo específico (ID 1)
+POST http://localhost:3000/api/articulos/1/aplicar-calculo/periodo_fijo
+
+### 5. Verificar artículo actualizado
+GET http://localhost:3000/api/articulos/1 

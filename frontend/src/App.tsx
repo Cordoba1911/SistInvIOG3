@@ -5,7 +5,7 @@ import './App.css';
 import ProveedoresRouter from './routes/ProveedoresRouter';
 import ArticulosRouter from './routes/ArticulosRoutes';
 import VentasRouter from './routes/VentasRoute';
-import { OrdenCompraRoutes as OrdenCompraRouter } from './pages/OrdenCompra/OrdenCompraRoutes';
+import OrdenCompraRouter from './routes/OrdenCompraRoutes';
 import { InventoryCalculations } from './components/InventoryCalculations'; 
 
 function App() { 

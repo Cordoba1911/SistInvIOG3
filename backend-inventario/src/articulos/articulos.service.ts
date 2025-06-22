@@ -374,7 +374,116 @@ export class ArticulosService {
       throw new HttpException('Error al recargar el artículo actualizado', HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    // Recalcular automáticamente si cambió alguna variable del modelo lote fijo
+    await this.recalcularModeloSiEsNecesario(articuloFinal);
+
     return this.toArticuloResponseDto(articuloFinal);
+  }
+
+  /**
+   * Recalcular automáticamente el modelo de inventario si cambiaron variables relevantes
+   */
+  private async recalcularModeloSiEsNecesario(articulo: Articulo): Promise<void> {
+    // Solo recalcular si el artículo tiene modelo lote fijo y las variables necesarias
+    if (
+      articulo.modelo_inventario === 'lote_fijo' &&
+      articulo.demanda &&
+      articulo.costo_almacenamiento &&
+      articulo.costo_pedido
+    ) {
+      try {
+        // Obtener datos del proveedor predeterminado
+        const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+          ap => ap.proveedor_predeterminado === true
+        );
+
+        // Recalcular parámetros del modelo lote fijo
+        const resultado = await this.calcularLoteFijo({
+          demanda: articulo.demanda,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          costo_compra: articulo.costo_compra,
+          demora_entrega: proveedorPredeterminado?.demora_entrega || 7,
+          desviacion_estandar: articulo.desviacion_estandar,
+          nivel_servicio: articulo.nivel_servicio,
+        });
+
+        // Actualizar solo si los valores calculados son diferentes
+        const valoresActualizados: Partial<Articulo> = {};
+        
+        if (articulo.lote_optimo !== Math.round(resultado.lote_optimo)) {
+          valoresActualizados.lote_optimo = Math.round(resultado.lote_optimo);
+        }
+        
+        if (articulo.punto_pedido !== Math.round(resultado.punto_pedido)) {
+          valoresActualizados.punto_pedido = Math.round(resultado.punto_pedido);
+        }
+        
+        if (articulo.stock_seguridad !== Math.round(resultado.stock_seguridad)) {
+          valoresActualizados.stock_seguridad = Math.round(resultado.stock_seguridad);
+        }
+
+        // Solo actualizar si hay cambios
+        if (Object.keys(valoresActualizados).length > 0) {
+          await this.articuloRepository.update(articulo.id, valoresActualizados);
+          
+          // Actualizar el objeto en memoria también
+          Object.assign(articulo, valoresActualizados);
+        }
+      } catch (error) {
+        // Log del error pero no fallar la operación principal
+        console.warn(`Error al recalcular modelo lote fijo para artículo ${articulo.id}:`, error);
+      }
+    }
+    
+    // Recalcular si el artículo tiene modelo intervalo fijo y las variables necesarias
+    else if (
+      articulo.modelo_inventario === 'periodo_fijo' &&
+      articulo.demanda &&
+      articulo.intervalo_revision &&
+      articulo.costo_almacenamiento
+    ) {
+      try {
+        // Obtener datos del proveedor predeterminado
+        const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+          ap => ap.proveedor_predeterminado === true
+        );
+
+        // Recalcular parámetros del modelo intervalo fijo
+        const resultado = await this.calcularIntervaloFijo({
+          demanda: articulo.demanda,
+          intervalo_revision: articulo.intervalo_revision,
+          demora_entrega: proveedorPredeterminado?.demora_entrega || 7,
+          desviacion_estandar: articulo.desviacion_estandar,
+          nivel_servicio: articulo.nivel_servicio,
+          stock_actual: articulo.stock_actual,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_compra: articulo.costo_compra,
+        });
+
+        // Actualizar solo si los valores calculados son diferentes
+        const valoresActualizados: Partial<Articulo> = {};
+        
+        if (articulo.stock_seguridad !== Math.round(resultado.stock_seguridad)) {
+          valoresActualizados.stock_seguridad = Math.round(resultado.stock_seguridad);
+        }
+        
+        if (articulo.inventario_maximo !== Math.round(resultado.inventario_maximo)) {
+          valoresActualizados.inventario_maximo = Math.round(resultado.inventario_maximo);
+        }
+
+        // Solo actualizar si hay cambios
+        if (Object.keys(valoresActualizados).length > 0) {
+          await this.articuloRepository.update(articulo.id, valoresActualizados);
+          
+          // Actualizar el objeto en memoria también
+          Object.assign(articulo, valoresActualizados);
+        }
+      } catch (error) {
+        // Log del error pero no fallar la operación principal
+        console.warn(`Error al recalcular modelo intervalo fijo para artículo ${articulo.id}:`, error);
+      }
+    }
   }
 
   private toArticuloResponseDto(articulo: Articulo): ArticuloResponseDto {
@@ -406,6 +515,9 @@ export class ArticulosService {
       inventario_maximo: articulo.inventario_maximo,
       cgi: articulo.cgi,
       stock_actual: articulo.stock_actual,
+      desviacion_estandar: articulo.desviacion_estandar,
+      nivel_servicio: articulo.nivel_servicio,
+      intervalo_revision: articulo.intervalo_revision,
       estado: articulo.estado,
       fecha_baja: articulo.fecha_baja,
       proveedores: proveedores,
@@ -414,52 +526,177 @@ export class ArticulosService {
 
   /**
    * Calcular parámetros del modelo de inventario de Lote Fijo
+   * 
+   * Fórmulas implementadas:
+   * - Lote Óptimo (EOQ): √(2 × D × S / H)
+   * - Punto de Pedido: (D × L) + SS
+   * - Stock de Seguridad: Z × σ × √L
+   * - Costo Total Anual: (D/Q)×S + (Q/2)×H + D×C
    */
   async calcularLoteFijo(datos: CalculoLoteFijoDto): Promise<ResultadoLoteFijoDto> {
-    // TODO: Implementar fórmulas del modelo Lote Fijo
-    // Fórmulas que debes implementar:
-    // - Lote Óptimo (EOQ): √(2 × D × S / H)
-    // - Punto de Pedido: D × L + SS
-    // - Stock de Seguridad: Z × σ × √L
-    // - Costo Total Anual: (D/Q)×S + (Q/2)×H + D×C
+    const {
+      demanda,
+      costo_almacenamiento,
+      costo_pedido,
+      demora_entrega = 7, // días por defecto
+      desviacion_estandar = demanda * 0.1, // 10% de la demanda si no se proporciona
+      nivel_servicio = 0.95, // 95% por defecto
+      costo_compra = 0
+    } = datos;
+
+    // 1. Calcular Lote Óptimo (EOQ): √(2 × D × S / H)
+    const lote_optimo = Math.sqrt((2 * demanda * costo_pedido) / costo_almacenamiento);
+
+    // 2. Calcular Stock de Seguridad: Z × σ × √L
+    // Convertir nivel de servicio a Z-score (aproximación)
+    let z_score: number;
+    if (nivel_servicio >= 0.99) z_score = 2.33;
+    else if (nivel_servicio >= 0.975) z_score = 1.96;
+    else if (nivel_servicio >= 0.95) z_score = 1.645;
+    else if (nivel_servicio >= 0.90) z_score = 1.28;
+    else if (nivel_servicio >= 0.85) z_score = 1.04;
+    else z_score = 0.84;
+
+    // Convertir demora de entrega de días a fracción de año
+    const demora_entrega_anual = demora_entrega / 365;
     
-    const lote_optimo = 0; // TODO: Calcular EOQ
-    const punto_pedido = 0; // TODO: Calcular punto de pedido
-    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
-    const costo_total_anual = 0; // TODO: Calcular costo total
-    const tiempo_reposicion = 0; // TODO: Calcular tiempo de reposición
+    // Desviación estándar durante el tiempo de entrega
+    const desviacion_tiempo_entrega = desviacion_estandar * Math.sqrt(demora_entrega_anual);
     
+    const stock_seguridad = z_score * desviacion_tiempo_entrega;
+
+    // 3. Calcular Punto de Pedido: (D × L) + SS
+    const demanda_durante_entrega = demanda * demora_entrega_anual;
+    const punto_pedido = demanda_durante_entrega + stock_seguridad;
+
+    // 4. Calcular costos
+    const numero_pedidos_anuales = demanda / lote_optimo;
+    const costo_pedidos_anuales = numero_pedidos_anuales * costo_pedido;
+    const stock_promedio = lote_optimo / 2;
+    const costo_almacenamiento_anual = stock_promedio * costo_almacenamiento;
+    
+    let costo_total_anual = costo_pedidos_anuales + costo_almacenamiento_anual;
+    if (costo_compra > 0) {
+      costo_total_anual += demanda * costo_compra;
+    }
+
+    // 5. Tiempo de reposición (en días)
+    const tiempo_reposicion = lote_optimo / (demanda / 365);
+
     return {
-      lote_optimo,
-      punto_pedido,
-      stock_seguridad,
-      costo_total_anual,
-      tiempo_reposicion,
+      lote_optimo: Math.round(lote_optimo),
+      punto_pedido: Math.round(punto_pedido),
+      stock_seguridad: Math.round(stock_seguridad),
+      costo_total_anual: Math.round(costo_total_anual * 100) / 100,
+      tiempo_reposicion: Math.round(tiempo_reposicion * 10) / 10,
+      numero_pedidos_anuales: Math.round(numero_pedidos_anuales * 100) / 100,
+      costo_pedidos_anuales: Math.round(costo_pedidos_anuales * 100) / 100,
+      costo_almacenamiento_anual: Math.round(costo_almacenamiento_anual * 100) / 100,
+      stock_promedio: Math.round(stock_promedio),
     };
   }
 
   /**
    * Calcular parámetros del modelo de inventario de Intervalo Fijo
+   * 
+   * El modelo de Intervalo Fijo (Período Fijo) es un sistema de control de inventario
+   * donde las revisiones se realizan en intervalos fijos de tiempo.
+   * 
+   * Fórmulas utilizadas:
+   * - Stock de Seguridad: Z × σ × √(R + L)
+   * - Inventario Máximo: D × (R + L) + SS
+   * - Cantidad a Ordenar: IM - I_actual + D × R
+   * - Demanda durante ciclo: D × R
+   * - Demanda durante entrega: D × L
+   * 
+   * Donde:
+   * - D = Demanda anual
+   * - R = Intervalo de revisión (en días)
+   * - L = Demora de entrega (en días)
+   * - σ = Desviación estándar de la demanda
+   * - Z = Factor de seguridad (basado en el nivel de servicio)
+   * - SS = Stock de seguridad
+   * - IM = Inventario máximo
+   * - I_actual = Inventario actual
    */
   async calcularIntervaloFijo(datos: CalculoIntervaloFijoDto): Promise<ResultadoIntervaloFijoDto> {
-    // TODO: Implementar fórmulas del modelo Intervalo Fijo
-    // Fórmulas que debes implementar:
-    // - Stock de Seguridad: Z × σ × √(R + L)
-    // - Inventario Máximo: D × (R + L) + SS
-    // - Cantidad a Ordenar: IM - I + D × R
+    const {
+      demanda,
+      intervalo_revision,
+      demora_entrega = 7, // días por defecto
+      desviacion_estandar = demanda * 0.1, // 10% de la demanda si no se proporciona
+      nivel_servicio = 0.95, // 95% por defecto
+      stock_actual = 0,
+      costo_almacenamiento = 0,
+      costo_pedido = 0,
+      costo_compra = 0
+    } = datos;
+
+    // Convertir demanda anual a demanda diaria
+    const demanda_diaria = demanda / 365;
+
+    // 1. Calcular Stock de Seguridad: Z × σ × √(R + L)
+    // Convertir nivel de servicio a Z-score
+    let z_score: number;
+    if (nivel_servicio >= 0.99) z_score = 2.33;
+    else if (nivel_servicio >= 0.975) z_score = 1.96;
+    else if (nivel_servicio >= 0.95) z_score = 1.645;
+    else if (nivel_servicio >= 0.90) z_score = 1.28;
+    else if (nivel_servicio >= 0.85) z_score = 1.04;
+    else z_score = 0.84;
+
+    // Desviación estándar diaria
+    const desviacion_diaria = desviacion_estandar / Math.sqrt(365);
     
-    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
-    const inventario_maximo = 0; // TODO: Calcular inventario máximo
-    const cantidad_ordenar = 0; // TODO: Calcular cantidad a ordenar
-    const costo_total_periodo = 0; // TODO: Calcular costo total del período
-    const nivel_inventario_objetivo = 0; // TODO: Calcular nivel objetivo
+    // Tiempo total del ciclo (revisión + entrega)
+    const tiempo_ciclo_completo = intervalo_revision + demora_entrega;
     
+    const stock_seguridad = z_score * desviacion_diaria * Math.sqrt(tiempo_ciclo_completo);
+
+    // 2. Calcular Inventario Máximo: D × (R + L) + SS
+    const demanda_durante_ciclo = demanda_diaria * tiempo_ciclo_completo;
+    const inventario_maximo = demanda_durante_ciclo + stock_seguridad;
+
+    // 3. Calcular Cantidad a Ordenar: IM - I_actual + D × R
+    // Incluir la demanda durante el intervalo de revisión
+    const demanda_durante_revision = demanda_diaria * intervalo_revision;
+    const cantidad_ordenar = Math.max(0, inventario_maximo - stock_actual + demanda_durante_revision);
+
+    // 4. Calcular métricas adicionales
+    const demanda_durante_entrega = demanda_diaria * demora_entrega;
+    
+    // Stock promedio esperado durante el ciclo
+    const stock_promedio_esperado = (inventario_maximo + stock_seguridad) / 2;
+    
+    // Nivel de inventario objetivo (punto donde se debe hacer el pedido)
+    const nivel_inventario_objetivo = demanda_durante_entrega + stock_seguridad;
+
+    // 5. Calcular costos del período y anuales
+    let costo_almacenamiento_periodo = 0;
+    
+    if (costo_almacenamiento > 0) {
+      // Costo de almacenamiento durante el intervalo de revisión
+      costo_almacenamiento_periodo = stock_promedio_esperado * costo_almacenamiento * (intervalo_revision / 365);
+    }
+    
+    // Calcular métricas anuales
+    const numero_pedidos_anuales = 365 / intervalo_revision; // Pedidos por año
+    const costo_pedidos_anuales = numero_pedidos_anuales * costo_pedido;
+    const costo_almacenamiento_anual = stock_promedio_esperado * costo_almacenamiento;
+    const costo_total_anual = costo_pedidos_anuales + costo_almacenamiento_anual + (cantidad_ordenar * costo_compra);
+
     return {
-      stock_seguridad,
-      inventario_maximo,
-      cantidad_ordenar,
-      costo_total_periodo,
-      nivel_inventario_objetivo,
+      stock_seguridad: Math.round(stock_seguridad),
+      inventario_maximo: Math.round(inventario_maximo),
+      cantidad_pedido: Math.round(cantidad_ordenar), // Cambiado nombre
+      nivel_inventario_objetivo: Math.round(nivel_inventario_objetivo),
+      costo_total_anual: Math.round(costo_total_anual * 100) / 100, // Cambiado nombre
+      tiempo_ciclo: tiempo_ciclo_completo, // Cambiado nombre
+      demanda_durante_revision: Math.round(demanda_durante_ciclo * 10) / 10, // Cambiado nombre
+      demanda_durante_entrega: Math.round(demanda_durante_entrega * 10) / 10,
+      costo_almacenamiento_anual: Math.round(costo_almacenamiento_anual * 100) / 100, // Cambiado nombre
+      costo_pedidos_anuales: Math.round(costo_pedidos_anuales * 100) / 100, // Nuevo campo
+      numero_pedidos_anuales: Math.round(numero_pedidos_anuales * 10) / 10, // Nuevo campo
     };
   }
 
@@ -483,10 +720,18 @@ export class ArticulosService {
     }
 
     if (modelo === 'lote_fijo') {
+      // Obtener datos del proveedor predeterminado para cálculos más precisos
+      const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+        ap => ap.proveedor_predeterminado === true
+      );
+
       const resultado = await this.calcularLoteFijo({
         demanda: articulo.demanda,
         costo_almacenamiento: articulo.costo_almacenamiento,
         costo_pedido: articulo.costo_pedido,
+        costo_compra: articulo.costo_compra,
+        demora_entrega: proveedorPredeterminado?.demora_entrega || 7,
+        // Se pueden agregar más parámetros según sea necesario
       });
 
       articulo.modelo_inventario = 'lote_fijo' as any;
@@ -495,9 +740,20 @@ export class ArticulosService {
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
       
     } else if (modelo === 'periodo_fijo') {
+      // Obtener datos del proveedor predeterminado para cálculos más precisos
+      const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+        ap => ap.proveedor_predeterminado === true
+      );
+
       const resultado = await this.calcularIntervaloFijo({
         demanda: articulo.demanda,
-        intervalo_revision: 30, // TODO: Este valor podría venir como parámetro
+        intervalo_revision: articulo.intervalo_revision || 30, // Usar valor del artículo o 30 días por defecto
+        demora_entrega: proveedorPredeterminado?.demora_entrega || 7,
+        desviacion_estandar: articulo.desviacion_estandar,
+        nivel_servicio: articulo.nivel_servicio,
+        stock_actual: articulo.stock_actual,
+        costo_almacenamiento: articulo.costo_almacenamiento,
+        costo_compra: articulo.costo_compra,
       });
 
       articulo.modelo_inventario = ModeloInventario.periodo_fijo;

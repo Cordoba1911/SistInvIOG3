@@ -62,6 +62,17 @@ export class Articulo {
   @Column({ type: 'int', default: 0 })
   stock_actual: number;
 
+  // Campos adicionales para modelo lote fijo
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  desviacion_estandar: number;
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0.95 })
+  nivel_servicio: number;
+
+  // Campos adicionales para modelo intervalo fijo
+  @Column({ type: 'int', nullable: true })
+  intervalo_revision: number; // Intervalo de revisión en días
+
   @Column({ type: 'boolean', default: true })
   estado: boolean;
 

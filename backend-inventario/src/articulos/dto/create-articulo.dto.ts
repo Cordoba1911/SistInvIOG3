@@ -7,6 +7,7 @@ import {
   IsEnum,
   IsInt,
   Min,
+  Max,
   IsArray,
   ValidateNested,
   IsBoolean,
@@ -113,6 +114,22 @@ export class CreateArticuloDto {
   @IsInt({ message: 'El stock actual debe ser un número entero' })
   @Min(0, { message: 'El stock actual debe ser mayor o igual a 0' })
   stock_actual?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'La desviación estándar debe ser un número' })
+  @Min(0, { message: 'La desviación estándar debe ser mayor o igual a 0' })
+  desviacion_estandar?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El nivel de servicio debe ser un número' })
+  @Min(0.5, { message: 'El nivel de servicio debe ser mayor a 0.5' })
+  @Max(0.999, { message: 'El nivel de servicio debe ser menor a 0.999' })
+  nivel_servicio?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'El intervalo de revisión debe ser un número entero' })
+  @IsPositive({ message: 'El intervalo de revisión debe ser mayor a 0' })
+  intervalo_revision?: number;
 
   // RELACIÓN CON PROVEEDORES - OBLIGATORIA (AL MENOS UNO)
   @IsNotEmpty({ message: 'Debe proporcionar al menos un proveedor' })

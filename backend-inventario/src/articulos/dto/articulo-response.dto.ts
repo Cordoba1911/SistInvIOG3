@@ -29,6 +29,9 @@ export class ArticuloResponseDto {
   inventario_maximo?: number;
   cgi?: number;
   stock_actual?: number;
+  desviacion_estandar?: number;
+  nivel_servicio?: number;
+  intervalo_revision?: number;
   estado: boolean;
   fecha_baja?: Date | null;
   proveedores: ProveedorArticuloResponseDto[];

@@ -4,6 +4,7 @@ import { Repository, In } from 'typeorm';
 import { OrdenCompra, EstadoOrdenCompra } from './orden-compra.entity';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
 import { UpdateOrdenCompraDto } from './dto/update-orden-compra.dto';
+import { SugerenciaOrdenCompraDto } from './dto/sugerencia-orden-compra.dto';
 import { Articulo, ModeloInventario } from 'src/articulos/articulo.entity';
 import { Proveedor } from 'src/proveedores/proveedor.entity';
 import { ArticuloProveedor } from 'src/articulo-proveedor/articulo-proveedor.entity';
@@ -169,6 +170,104 @@ export class OrdenCompraService {
       order: {
         fecha_creacion: 'DESC',
       },
+    });
+  }
+
+  /**
+   * Obtener sugerencias inteligentes para crear órdenes de compra
+   * Basado en productos que necesitan reposición según sus modelos de inventario
+   */
+  async getSugerenciasOrdenesCompra(): Promise<SugerenciaOrdenCompraDto[]> {
+    // Obtener artículos que necesitan reposición
+    const articulos = await this.articuloRepository
+      .createQueryBuilder('articulo')
+      .leftJoinAndSelect('articulo.articulo_proveedor', 'ap')
+      .leftJoinAndSelect('ap.proveedor', 'proveedor')
+      .where('articulo.estado = :estado', { estado: true })
+      .andWhere('articulo.punto_pedido IS NOT NULL')
+      .andWhere('articulo.stock_actual <= articulo.punto_pedido')
+      .getMany();
+
+    const sugerencias: SugerenciaOrdenCompraDto[] = [];
+
+    for (const articulo of articulos) {
+      // Verificar que no tenga órdenes activas
+      const tieneOrdenesActivas = await this.tieneOrdenesActivas(articulo.id);
+      
+      if (!tieneOrdenesActivas) {
+        // Buscar el proveedor predeterminado
+        const proveedorPredeterminado = articulo.articulo_proveedor?.find(
+          ap => ap.proveedor_predeterminado === true
+        );
+
+        if (proveedorPredeterminado) {
+          // Calcular cantidad sugerida según el modelo
+          let cantidadSugerida = 0;
+          let razonSugerencia = '';
+          
+          if (articulo.modelo_inventario === 'lote_fijo' && articulo.lote_optimo) {
+            cantidadSugerida = articulo.lote_optimo;
+            razonSugerencia = `Lote óptimo calculado (EOQ): ${articulo.lote_optimo} unidades`;
+          } else if (articulo.modelo_inventario === 'periodo_fijo' && articulo.inventario_maximo) {
+            // Para período fijo: cantidad = inventario_máximo - stock_actual
+            cantidadSugerida = Math.max(0, articulo.inventario_maximo - articulo.stock_actual);
+            razonSugerencia = `Reposición hasta inventario máximo: ${articulo.inventario_maximo} unidades`;
+          } else {
+            // Método de respaldo: diferencia hasta punto de pedido + buffer
+            const diferencia = articulo.punto_pedido - articulo.stock_actual;
+            cantidadSugerida = diferencia + (articulo.stock_seguridad || Math.ceil(diferencia * 0.3));
+            razonSugerencia = `Reposición hasta punto de pedido + stock de seguridad`;
+          }
+
+          // Calcular costo estimado
+          const costoEstimado = cantidadSugerida * proveedorPredeterminado.precio_unitario;
+
+          // Calcular prioridad (más urgente = mayor prioridad)
+          const porcentajeFaltante = ((articulo.punto_pedido - articulo.stock_actual) / articulo.punto_pedido) * 100;
+          let prioridad: 'ALTA' | 'MEDIA' | 'BAJA' = 'BAJA';
+          
+          if (articulo.stock_actual <= 0) {
+            prioridad = 'ALTA';
+          } else if (porcentajeFaltante >= 50) {
+            prioridad = 'ALTA';
+          } else if (porcentajeFaltante >= 25) {
+            prioridad = 'MEDIA';
+          }
+
+          sugerencias.push({
+            articulo_id: articulo.id,
+            codigo: articulo.codigo,
+            nombre: articulo.nombre,
+            descripcion: articulo.descripcion,
+            stock_actual: articulo.stock_actual,
+            punto_pedido: articulo.punto_pedido,
+            stock_seguridad: articulo.stock_seguridad,
+            modelo_inventario: articulo.modelo_inventario,
+            cantidad_sugerida: Math.ceil(cantidadSugerida),
+            razon_sugerencia: razonSugerencia,
+            prioridad,
+            proveedor_predeterminado: {
+              id: proveedorPredeterminado.proveedor.id,
+              nombre: proveedorPredeterminado.proveedor.nombre,
+              telefono: proveedorPredeterminado.proveedor.telefono,
+              email: proveedorPredeterminado.proveedor.email,
+              precio_unitario: proveedorPredeterminado.precio_unitario,
+              demora_entrega: proveedorPredeterminado.demora_entrega,
+            },
+            costo_estimado: Math.round(costoEstimado * 100) / 100,
+            dias_sin_stock: Math.max(0, Math.ceil((articulo.stock_actual * -1) / (articulo.demanda / 365))),
+          });
+        }
+      }
+    }
+
+    // Ordenar por prioridad y luego por días sin stock
+    return sugerencias.sort((a, b) => {
+      const prioridadOrder = { 'ALTA': 3, 'MEDIA': 2, 'BAJA': 1 };
+      if (prioridadOrder[a.prioridad] !== prioridadOrder[b.prioridad]) {
+        return prioridadOrder[b.prioridad] - prioridadOrder[a.prioridad];
+      }
+      return b.dias_sin_stock - a.dias_sin_stock;
     });
   }
 

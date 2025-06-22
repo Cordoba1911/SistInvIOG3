@@ -68,4 +68,9 @@ export const ordenesService = {
       method: "PATCH",
     });
   },
+
+  // Obtener sugerencias inteligentes para órdenes de compra
+  async getSugerencias(): Promise<any[]> {
+    return request<any[]>(`${ORDENES_BASE_URL}/sugerencias`);
+  },
 };

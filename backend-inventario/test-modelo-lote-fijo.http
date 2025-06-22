@@ -1,0 +1,105 @@
+### Test Modelo Lote Fijo - Cálculo Básico
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1000,
+  "costo_almacenamiento": 2.5,
+  "costo_pedido": 50,
+  "costo_compra": 10,
+  "demora_entrega": 7,
+  "desviacion_estandar": 100,
+  "nivel_servicio": 0.95
+}
+
+### Test Modelo Lote Fijo - Con parámetros opcionales
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 2400,
+  "costo_almacenamiento": 3.0,
+  "costo_pedido": 75,
+  "costo_compra": 15,
+  "demora_entrega": 14,
+  "desviacion_estandar": 150,
+  "nivel_servicio": 0.99
+}
+
+### Test Modelo Lote Fijo - Mínimos requeridos
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 500,
+  "costo_almacenamiento": 1.2,
+  "costo_pedido": 25
+}
+
+### Test Modelo Lote Fijo - Nivel de servicio bajo
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 800,
+  "costo_almacenamiento": 4.0,
+  "costo_pedido": 60,
+  "demora_entrega": 10,
+  "nivel_servicio": 0.85
+}
+
+### Test Modelo Lote Fijo - Artículo de alta rotación
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 5000,
+  "costo_almacenamiento": 1.5,
+  "costo_pedido": 100,
+  "costo_compra": 5,
+  "demora_entrega": 3,
+  "desviacion_estandar": 200,
+  "nivel_servicio": 0.975
+}
+
+### Aplicar cálculo a artículo específico (ID 1) - Lote Fijo
+POST http://localhost:3000/articulos/1/aplicar-calculo/lote_fijo
+Content-Type: application/json
+
+### Aplicar cálculo a artículo específico (ID 2) - Lote Fijo
+POST http://localhost:3000/articulos/2/aplicar-calculo/lote_fijo
+Content-Type: application/json
+
+### Ver artículo después del cálculo
+GET http://localhost:3000/articulos/1
+
+### Test con datos inválidos - Demanda negativa
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": -100,
+  "costo_almacenamiento": 2.5,
+  "costo_pedido": 50
+}
+
+### Test con datos inválidos - Costo almacenamiento cero
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1000,
+  "costo_almacenamiento": 0,
+  "costo_pedido": 50
+}
+
+### Test con datos inválidos - Nivel de servicio fuera de rango
+POST http://localhost:3000/articulos/calcular/lote-fijo
+Content-Type: application/json
+
+{
+  "demanda": 1000,
+  "costo_almacenamiento": 2.5,
+  "costo_pedido": 50,
+  "nivel_servicio": 1.5
+} 

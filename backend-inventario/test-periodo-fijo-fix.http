@@ -1,0 +1,59 @@
+# Test para crear artículo con modelo periodo_fijo
+POST http://localhost:3000/api/articulos
+Content-Type: application/json
+
+{
+  "codigo": "TEST-PERIODO-001",
+  "nombre": "Artículo Test Período Fijo",
+  "descripcion": "Artículo de prueba para modelo período fijo",
+  "demanda": 100,
+  "costo_almacenamiento": 2.0,
+  "costo_pedido": 25.0,
+  "costo_compra": 15.0,
+  "precio_venta": 30.0,
+  "modelo_inventario": "periodo_fijo",
+  "stock_actual": 50,
+  "proveedores": [
+    {
+      "proveedor_id": 1,
+      "precio_unitario": 15.0,
+      "demora_entrega": 5,
+      "cargos_pedido": 5.0,
+      "proveedor_predeterminado": true
+    }
+  ]
+}
+
+###
+
+# Test para crear artículo con modelo lote_fijo (debería seguir funcionando)
+POST http://localhost:3000/api/articulos
+Content-Type: application/json
+
+{
+  "codigo": "TEST-LOTE-001",
+  "nombre": "Artículo Test Lote Fijo",
+  "descripcion": "Artículo de prueba para modelo lote fijo",
+  "demanda": 200,
+  "costo_almacenamiento": 1.5,
+  "costo_pedido": 30.0,
+  "costo_compra": 12.0,
+  "precio_venta": 25.0,
+  "modelo_inventario": "lote_fijo",
+  "stock_actual": 75,
+  "proveedores": [
+    {
+      "proveedor_id": 1,
+      "precio_unitario": 12.0,
+      "demora_entrega": 3,
+      "cargos_pedido": 3.0,
+      "proveedor_predeterminado": true
+    }
+  ]
+}
+
+###
+
+# Test para verificar que el artículo se creó correctamente
+GET http://localhost:3000/api/articulos
+Content-Type: application/json 

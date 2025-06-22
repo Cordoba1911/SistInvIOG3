@@ -1,0 +1,95 @@
+###
+### Pruebas de Cálculo de CGI (Costo de Gestión del Inventario)
+### 
+
+### 1. Calcular CGI con datos mínimos (se calcula automáticamente EOQ)
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00
+}
+
+### 2. Calcular CGI con lote óptimo especificado
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00,
+  "lote_optimo": 316
+}
+
+### 3. Calcular CGI con lote óptimo y stock promedio especificados
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00,
+  "lote_optimo": 316,
+  "stock_promedio": 158
+}
+
+### 4. Ejemplo con producto más costoso
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 500,
+  "costo_compra": 15.80,
+  "costo_almacenamiento": 2.50,
+  "costo_pedido": 50.00
+}
+
+### 5. Ejemplo con producto de baja rotación
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 100,
+  "costo_compra": 120.00,
+  "costo_almacenamiento": 12.00,
+  "costo_pedido": 75.00
+}
+
+### 6. Calcular y actualizar CGI de un artículo específico (requiere ID existente)
+POST http://localhost:3000/articulos/1/calcular-cgi
+Content-Type: application/json
+
+### 7. Error - datos incompletos
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 2.30
+}
+
+### 8. Error - valores negativos
+POST http://localhost:3000/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": -2.30,
+  "costo_almacenamiento": 0.50,
+  "costo_pedido": 25.00
+}
+
+###
+### Respuestas esperadas:
+### 
+### Para ejemplos 1-3: CGI ≈ 1.069 (costo de gestión 6.9% mayor al costo de productos)
+### Para ejemplo 4: CGI ≈ 1.032 (gestión muy eficiente)
+### Para ejemplo 5: CGI ≈ 1.113 (gestión aceptable)
+### Para ejemplo 6: Artículo actualizado con CGI calculado
+### Para ejemplos 7-8: Errores de validación 400
+### 

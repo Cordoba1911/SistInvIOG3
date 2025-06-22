@@ -1,7 +1,7 @@
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f5fafd;
-  color: #333;
+  font-family: 'Poppins', sans-serif;
+  background-color: #A8DADC;
+  color: #1D3557;
 }
 
 header {
@@ -40,11 +40,12 @@ a:hover {
 }
 
 .custom-header {
-  background-color: #457B9D;
+  background-color: #1D3557;
 }
 
 .custom-sidebar {
-  background-color: #457B9D;
+  background-color: #1D3557;
+  color: #F1FAEE
 }
 
 .custom-navlink:hover,
@@ -53,3 +54,70 @@ a:hover {
   border-color: #E63946 !important;
   color: white !important;
 }
+
+.custom-navlink {
+  color: #F1FAEE !important;
+  text-decoration: none;
+  width: 150px;
+  text-align: center;
+}
+
+.custom-navlink:hover,
+.custom-navlink.active {
+  background-color: #457B9D; 
+  color: #F1FAEE !important;
+}
+
+.register {
+  background-color: #457B9D;
+  color: #F1FAEE !important;
+}
+.register:hover,
+.register.active {
+  background-color: #E63946 !important;
+  border-color: #E63946 !important;
+  color: white !important;
+}
+
+.bg-purple {
+  background-color: #6f42c1;
+}
+
+.action-badge {
+  padding: 0.4em 0.8em;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+}
+
+.action-badge.bg-info:hover {
+  background-color: #fff !important;
+  color: var(--bs-info) !important;
+  border: 1px solid var(--bs-info) !important;
+}
+
+.action-badge.bg-success:hover {
+  background-color: #fff !important;
+  color: var(--bs-success) !important;
+  border: 1px solid var(--bs-success) !important;
+}
+
+.action-badge.bg-danger:hover {
+  background-color: #fff !important;
+  color: var(--bs-danger) !important;
+  border: 1px solid var(--bs-danger) !important;
+}
+
+/* Ver Artículos (Azul Principal) */
+.action-badge.bg-primary:hover {
+  background-color: #fff !important;
+  color: var(--bs-primary) !important;
+  border: 1px solid var(--bs-primary) !important;
+}
+
+/* Añadir Artículo (Gris) */
+.action-badge.bg-secondary:hover {
+  background-color: #fff !important;
+  color: var(--bs-secondary) !important;
+  border: 1px solid var(--bs-secondary) !important;
+}
+

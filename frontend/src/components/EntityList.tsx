@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Table, Button, Badge, Image } from "react-bootstrap";
+import { Table, Button } from "react-bootstrap";
 import ConfirmationModal from "./common/ConfirmationModal";
 
 interface Columna {
@@ -84,12 +84,6 @@ const EntidadList = <T extends Record<string, any>>({
         </thead>
         <tbody>
           {datos.map((item) => {
-            const estaActivo = esActivo
-              ? esActivo(item)
-              : campoActivo
-              ? !!item[campoActivo]
-              : true;
-
             return (
               <tr key={item[campoId]} className="align-middle">
                 {columnas.map((col) => {

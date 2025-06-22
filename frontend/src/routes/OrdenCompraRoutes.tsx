@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route } from "react-router-dom";
 import { Card } from "react-bootstrap";
-import OrdenCompraForm from "../pages/OrdenCompra/OrdenForm";
+import { OrdenForm } from "../pages/OrdenCompra/OrdenForm";
 import OrdenCompraList from "../pages/OrdenCompra/OrdenList";
 import SugerenciasOrdenCompra from "../pages/OrdenCompra/SugerenciasOrdenCompra";
 import { ordenesService } from "../services/ordenesService";
@@ -48,7 +48,7 @@ const OrdenCompraRouter = () => {
           <div className="container mt-4">
             <Card>
               <Card.Body>
-                <OrdenCompraForm onAlta={handleAlta} />
+                <OrdenForm onAlta={handleAlta} />
               </Card.Body>
             </Card>
           </div>

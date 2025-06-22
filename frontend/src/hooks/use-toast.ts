@@ -2,19 +2,28 @@
 
 // Inspirado en la librería react-hot-toast
 import * as React from "react"
-import type { ToastProps } from "react-bootstrap"
 
 // Límite máximo de toasts visibles al mismo tiempo
 const TOAST_LIMIT = 1
 // Tiempo que tarda en eliminarse un toast después de ser cerrado (en ms)
 const TOAST_REMOVE_DELAY = 1000000
 
-// Tipo que extiende las props básicas de un toast, agregando id y posibles elementos adicionales
-type ToasterToast = ToastProps & {
+// Tipo para las propiedades básicas de un toast personalizado
+type CustomToastProps = {
   id: string
   title?: React.ReactNode
   description?: React.ReactNode
-  action?: ToastActionElement
+  action?: React.ReactNode
+  variant?: "default" | "destructive" | null | undefined
+  onOpenChange?: (open: boolean) => void
+}
+
+// Tipo para un toast en el toaster
+type ToasterToast = CustomToastProps & {
+  id: string
+  title?: React.ReactNode
+  description?: React.ReactNode
+  action?: React.ReactNode
 }
 
 // Definición de tipos de acción para el reducer
@@ -114,14 +123,13 @@ export const reducer = (state: State, action: Action): State => {
         })
       }
 
-      // Marca el/los toast(s) como cerrados (open: false)
+      // Marca el/los toast(s) como cerrados
       return {
         ...state,
         toasts: state.toasts.map((t) =>
           t.id === toastId || toastId === undefined
             ? {
                 ...t,
-                open: false,
               }
             : t
         ),
@@ -174,14 +182,13 @@ function toast({ ...props }: Toast) {
   // Función para cerrar (dismiss) este toast por ID
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  // Agregar el toast al estado con las props iniciales y open = true
+  // Agregar el toast al estado con las props iniciales
   dispatch({
     type: "ADD_TOAST",
     toast: {
       ...props,
       id,
-      open: true,
-      // Cuando el toast cambia de estado open a false, se dispara dismiss automático
+      // Cuando el toast cambia de estado, se dispara dismiss automático
       onOpenChange: (open: any) => {
         if (!open) dismiss()
       },

@@ -3,15 +3,10 @@ import { Badge, Button } from "react-bootstrap";
 import { PencilFill, TrashFill, CheckCircleFill } from "react-bootstrap-icons";
 import EntidadList from "../../components/EntityList";
 import type { Proveedor } from "../../types/proveedor";
-<<<<<<< HEAD
 
-// Tipo para datos adaptados para EntidadList
-interface ProveedorAdaptado extends Omit<Proveedor, 'id' | 'estado'> {
-  id: string;
-  estado: string;
+interface ProveedorAdaptado extends Proveedor {
+  // Campos adicionales si los necesitas
 }
-=======
->>>>>>> origin/devPaula
 
 // Definición de las propiedades del componente ProveedoresList
 interface PropsProveedoresList {
@@ -72,16 +67,6 @@ const ProveedoresList = ({
 
   // Se renderiza solo la lista, sin su propio contenedor
   return (
-<<<<<<< HEAD
-    <EntidadList<ProveedorAdaptado>
-      titulo="Proveedores"
-      datos={proveedoresAdaptados}
-      columnas={columnas}
-      onEditar={(id: string) => onEditar(parseInt(id))} // Convertir de vuelta a number
-      onEliminar={(id: string) => onBaja(parseInt(id))} // Convertir de vuelta a number
-      campoId="id"
-      esActivo={(proveedor: ProveedorAdaptado) => proveedor.estado === "Activo"}
-=======
     <EntidadList
       titulo="Lista de Proveedores"
       datos={proveedoresAdaptados}
@@ -147,7 +132,6 @@ const ProveedoresList = ({
           </div>
         );
       }}
->>>>>>> origin/devPaula
     />
   );
 };

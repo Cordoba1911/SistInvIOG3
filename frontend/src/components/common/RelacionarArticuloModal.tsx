@@ -25,13 +25,13 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
       precio_unitario: "",
       demora_entrega: "",
       cargos_pedido: "",
-      proveedor_predeterminado: false,
+      proveedor_predeterminado: "false",
     },
   ]);
 
   const handleChange = (
     index: number,
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type } = e.target;
     const isCheckbox = type === "checkbox";
@@ -53,7 +53,7 @@ const RelacionarArticuloModal: React.FC<RelacionarArticuloModalProps> = ({
         precio_unitario: "",
         demora_entrega: "",
         cargos_pedido: "",
-        proveedor_predeterminado: false,
+        proveedor_predeterminado: "false",
       },
     ]);
   };

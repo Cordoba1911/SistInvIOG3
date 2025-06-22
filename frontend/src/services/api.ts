@@ -40,7 +40,7 @@ const request = async <T>(
   // Si la respuesta es OK, devolvemos el cuerpo JSON
   // Si el cuerpo está vacío, response.json() falla. Manejamos ese caso.
   const text = await response.text();
-  return text ? JSON.parse(text) : {};
+  return text ? JSON.parse(text) : ({} as T);
 };
 
 export default request;

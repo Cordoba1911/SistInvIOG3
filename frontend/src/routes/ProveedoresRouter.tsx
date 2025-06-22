@@ -278,12 +278,14 @@ const ProveedoresRouter = () => {
                 </Card.Body>
               </Card>
 
-              <EditarProveedorModal
-                show={showEditModal}
-                proveedor={proveedorAEditar}
-                onHide={() => setShowEditModal(false)}
-                onSave={handleFormSubmit}
-              />
+              {proveedorAEditar && (
+                <EditarProveedorModal
+                  show={showEditModal}
+                  onHide={() => setShowEditModal(false)}
+                  proveedor={proveedorAEditar}
+                  onSave={handleFormSubmit}
+                />
+              )}
             </>
           }
         />

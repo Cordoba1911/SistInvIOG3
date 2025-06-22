@@ -1,33 +1,30 @@
-import { Modal, Button } from "react-bootstrap";
-import ProveedoresForm from "../../pages/Proveedores/ProveedoresForm";
+import { Modal } from "react-bootstrap";
 import type { Proveedor, CreateProveedorDto } from "../../types/proveedor";
+import ProveedoresForm from "../../pages/Proveedores/ProveedoresForm";
 
-interface PropsEditarProveedorModal {
+interface EditarProveedorModalProps {
+  proveedor: Proveedor;
   show: boolean;
   onHide: () => void;
-  proveedor: Proveedor | null;
-  onSave: (proveedorDto: CreateProveedorDto, id: number) => void;
+  onSave: (datos: CreateProveedorDto) => void;
 }
 
-const EditarProveedorModal = ({
+const EditarProveedorModal: React.FC<EditarProveedorModalProps> = ({
+  proveedor,
   show,
   onHide,
-  proveedor,
   onSave,
-}: PropsEditarProveedorModal) => {
-  if (!proveedor) return null;
-
+}) => {
   return (
-    <Modal show={show} onHide={onHide} centered size="lg">
+    <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Editar Proveedor: {proveedor.nombre}</Modal.Title>
+        <Modal.Title>Editar Proveedor</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <ProveedoresForm
           proveedorExistente={proveedor}
-          onSubmit={(datos) => onSave(datos, proveedor.id)}
+          onSubmit={onSave}
           onCancel={onHide}
-          mostrarTitulo={false}
         />
       </Modal.Body>
     </Modal>

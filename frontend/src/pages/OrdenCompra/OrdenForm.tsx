@@ -223,7 +223,7 @@ const OrdenForm = ({ onAlta, ordenAEditar, onUpdate }: PropsOrdenForm) => {
         valoresIniciales={formValues}
         onFormChange={handleFormChange}
         onSubmit={manejarEnvio}
-        titulo={enModoEdicion ? null : "Crear Orden de Compra"}
+        titulo={enModoEdicion ? undefined : "Crear Orden de Compra"}
         textoBoton={enModoEdicion ? "Guardar Cambios" : "Crear Orden"}
       />
       <ErrorModal

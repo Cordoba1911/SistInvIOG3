@@ -17,6 +17,9 @@ interface PropsArticulosForm {
 
 const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArticulosForm) => {
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [modeloInventario, setModeloInventario] = useState<string>(
+    articuloAEditar?.modelo_inventario || "lote_fijo"
+  );
   const [alertModal, setAlertModal] = useState({
     show: false,
     title: '',
@@ -134,14 +137,17 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       step: 0.01,
       placeholder: "Desviación estándar de la demanda diaria",
     },
-    {
+    // Campo condicional: solo se muestra para modelo de período fijo
+    ...(modeloInventario === "periodo_fijo" ? [{
       nombre: "intervalo_revision",
       etiqueta: "Intervalo de Revisión (días)",
-      tipo: "number",
+      tipo: "number" as const,
       min: 1,
       step: 1,
-      placeholder: "Días entre revisiones de inventario (para modelo período fijo)",
-    },
+      requerido: true,
+      placeholder: "Días entre revisiones de inventario",
+      descripcion: "Frecuencia con la que se revisa el inventario en el modelo de período fijo",
+    }] : []),
     {
       nombre: "stock_actual",
       etiqueta: "Stock Actual",
@@ -344,6 +350,11 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         campos={campos}
         valoresIniciales={valoresIniciales}
         onSubmit={manejarEnvio}
+        onFormChange={(datos) => {
+          if (datos.modelo_inventario !== modeloInventario) {
+            setModeloInventario(datos.modelo_inventario || "lote_fijo");
+          }
+        }}
         titulo={enModoEdicion ? `Editar Artículo: ${articuloAEditar.nombre}` : "Agregar Artículo"}
         textoBoton={enModoEdicion ? "Guardar Cambios" : "Guardar Artículo"}
       >

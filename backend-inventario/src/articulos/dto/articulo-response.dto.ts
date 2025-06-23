@@ -29,7 +29,6 @@ export class ArticuloResponseDto {
   inventario_maximo?: number;
   nivel_servicio?: number;
   desviacion_estandar?: number;
-  tiempo_reposicion?: number;
   intervalo_revision?: number;
   cgi?: number;
   stock_actual?: number;

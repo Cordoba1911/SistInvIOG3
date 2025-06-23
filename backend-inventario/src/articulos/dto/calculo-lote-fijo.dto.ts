@@ -42,5 +42,5 @@ export class ResultadoLoteFijoDto {
   punto_pedido: number;
   stock_seguridad: number;
   costo_total_anual: number;
-  tiempo_reposicion: number;
+  intervalo_revision: number;
 } 

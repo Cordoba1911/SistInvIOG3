@@ -63,9 +63,6 @@ export class Articulo {
   desviacion_estandar: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  tiempo_reposicion: number;
-
-  @Column({ type: 'int', nullable: true })
   intervalo_revision: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })

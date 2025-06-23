@@ -422,7 +422,6 @@ export class ArticulosService {
       inventario_maximo: articulo.inventario_maximo,
       nivel_servicio: articulo.nivel_servicio,
       desviacion_estandar: articulo.desviacion_estandar,
-      tiempo_reposicion: articulo.tiempo_reposicion,
       intervalo_revision: articulo.intervalo_revision,
       cgi: articulo.cgi,
       stock_actual: articulo.stock_actual,
@@ -492,14 +491,14 @@ export class ArticulosService {
     const costo_total_anual = costo_ordenes_anual + costo_almacenamiento_anual + costo_compra_anual;
 
     // 5. Tiempo de Reposición (o ciclo de pedido) en días BORRAR
-    const tiempo_reposicion = (lote_optimo / demanda) * 365;
+    const intervalo_revision = (lote_optimo / demanda) * 365;
     
     return {
       lote_optimo: Math.round(lote_optimo),
       punto_pedido: Math.round(punto_pedido),
       stock_seguridad: Math.round(stock_seguridad),
       costo_total_anual: parseFloat(costo_total_anual.toFixed(2)),
-      tiempo_reposicion: parseFloat(tiempo_reposicion.toFixed(2)),
+      intervalo_revision: parseFloat(intervalo_revision.toFixed(2)),
     };
   }
 
@@ -584,7 +583,7 @@ export class ArticulosService {
       articulo.lote_optimo = Math.round(resultado.lote_optimo);
       articulo.punto_pedido = Math.round(resultado.punto_pedido);
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
-      articulo.tiempo_reposicion = resultado.tiempo_reposicion;
+      articulo.intervalo_revision = resultado.intervalo_revision;
     } else if (modelo === 'periodo_fijo') {
       const resultado = await this.calcularIntervaloFijo({
         demanda: articulo.demanda,

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
+import AlertModal from "../../components/common/AlertModal";
 import type { CreateProveedorDto, Proveedor } from "../../types/proveedor";
 import { proveedoresService } from "../../services/proveedoresService";
 import { articulosService } from "../../services/articulosService";
@@ -20,8 +21,100 @@ const ProveedoresForm = ({
   onError,
 }: PropsProveedoresForm) => {
   const [articulos, setArticulos] = useState<any[]>([]);
+  const [alertModal, setAlertModal] = useState({
+    show: false,
+    title: '',
+    message: '',
+    variant: 'danger' as 'danger' | 'warning' | 'success' | 'info'
+  });
+
   const navigate = useNavigate();
   const isEditMode = !!proveedorExistente;
+
+  const showAlert = (title: string, message: string, variant: 'danger' | 'warning' | 'success' | 'info' = 'danger') => {
+    setAlertModal({ show: true, title, message, variant });
+  };
+
+  const hideAlert = () => {
+    setAlertModal(prev => ({ ...prev, show: false }));
+    // Resetear validaciones cuando se cierre la alerta para permitir intentos posteriores
+    setValidacionesAnteriores({});
+  };
+
+  // Función para verificar si un artículo ya tiene proveedor predeterminado
+  const verificarProveedorPredeterminado = async (articuloId: number): Promise<boolean> => {
+    try {
+      const proveedores = await articulosService.getProveedoresPorArticulo(articuloId);
+      return proveedores.some(proveedor => proveedor.proveedor_predeterminado === true);
+    } catch (error) {
+      console.error("Error al verificar proveedor predeterminado:", error);
+      return false;
+    }
+  };
+
+  // Estado para rastrear validaciones previas
+  const [validacionesAnteriores, setValidacionesAnteriores] = useState<Record<string, boolean>>({});
+  const timeoutRef = useRef<number | null>(null);
+
+  // Función para manejar cambios en el formulario y validar proveedor predeterminado
+  const handleFormChange = useCallback((datos: Record<string, any>) => {
+    // Limpiar timeout anterior si existe
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+    }
+    
+    if (datos.articulos && Array.isArray(datos.articulos)) {
+      // Usar un timeout para debounce y evitar múltiples validaciones
+      timeoutRef.current = window.setTimeout(async () => {
+        for (let i = 0; i < datos.articulos.length; i++) {
+          const articulo: any = datos.articulos[i];
+          
+          // Crear una clave única para este artículo en esta posición
+          const claveValidacion = `${i}_${articulo.articulo_id}_${articulo.proveedor_predeterminado}`;
+          
+          // Si se marcó como proveedor predeterminado y no hemos validado este cambio antes
+          if (articulo.proveedor_predeterminado === true && 
+              articulo.articulo_id && 
+              !validacionesAnteriores[claveValidacion]) {
+            
+            try {
+              const yaEsPredeterminado = await verificarProveedorPredeterminado(parseInt(articulo.articulo_id));
+              
+              if (yaEsPredeterminado) {
+                const articuloEncontrado = articulos.find(a => a.id === parseInt(articulo.articulo_id));
+                const nombreArticulo = articuloEncontrado ? articuloEncontrado.nombre : `ID: ${articulo.articulo_id}`;
+                
+                // Mostrar alerta sin afectar el estado del formulario
+                setAlertModal({
+                  show: true,
+                  title: "Artículo Ya Tiene Proveedor Predeterminado",
+                  message: `El artículo "${nombreArticulo}" ya tiene otro proveedor marcado como predeterminado. Solo puede haber un proveedor predeterminado por artículo.`,
+                  variant: "warning"
+                });
+                
+                // Marcar esta validación como realizada para evitar repetirla
+                setValidacionesAnteriores(prev => ({
+                  ...prev,
+                  [claveValidacion]: true
+                }));
+              }
+            } catch (error) {
+              console.error("Error en validación:", error);
+            }
+          }
+        }
+      }, 300); // Debounce de 300ms
+    }
+  }, [articulos, validacionesAnteriores]);
+
+  // Limpiar timeout al desmontar el componente
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        window.clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Cargar artículos disponibles
@@ -36,7 +129,7 @@ const ProveedoresForm = ({
     cargarArticulos();
   }, []);
 
-  const campos: CampoFormulario[] = [
+  const campos: CampoFormulario[] = useMemo(() => [
     {
       nombre: "nombre",
       etiqueta: "Nombre",
@@ -109,17 +202,54 @@ const ProveedoresForm = ({
             },
           },
         ]),
-  ];
+  ], [isEditMode, articulos]);
 
-  const valoresIniciales = {
+  const valoresIniciales = useMemo(() => ({
     nombre: proveedorExistente?.nombre || "",
     telefono: proveedorExistente?.telefono || "",
     email: proveedorExistente?.email || "",
     articulos: proveedorExistente?.articulos || [],
-  };
+  }), [proveedorExistente]);
 
   const manejarEnvio = async (datos: Record<string, any>) => {
     try {
+      // Validar que no haya artículos duplicados
+      if (datos.articulos && datos.articulos.length > 0) {
+        const articulosValidos = datos.articulos.filter((art: any) => art.articulo_id && art.precio_unitario);
+        
+        // Verificar artículos duplicados
+        const articuloIds = articulosValidos.map((art: any) => art.articulo_id);
+        const articulosUnicos = [...new Set(articuloIds)];
+        
+        if (articuloIds.length !== articulosUnicos.length) {
+          showAlert(
+            "Artículos Duplicados",
+            "No se puede incluir el mismo artículo más de una vez. Por favor, elimine los artículos duplicados.",
+            "warning"
+          );
+          return;
+        }
+
+        // Validar que solo haya un artículo marcado como proveedor predeterminado
+        const articulosPredeterminados = articulosValidos.filter(
+          (art: any) => art.proveedor_predeterminado === true
+        );
+        
+        if (articulosPredeterminados.length > 1) {
+          const nombreArticulos = articulosPredeterminados.map((art: any) => {
+            const articuloEncontrado = articulos.find(a => a.id === parseInt(art.articulo_id));
+            return articuloEncontrado ? articuloEncontrado.nombre : `ID: ${art.articulo_id}`;
+          }).join(", ");
+          
+          showAlert(
+            "Múltiples Artículos con Proveedor Predeterminado",
+            `Solo puede ser proveedor predeterminado para un artículo a la vez. Actualmente está marcado como predeterminado para: ${nombreArticulos}. Por favor, seleccione solo uno.`,
+            "warning"
+          );
+          return;
+        }
+      }
+
       const proveedorData: CreateProveedorDto = {
         nombre: datos.nombre,
         telefono: datos.telefono || undefined,
@@ -147,25 +277,41 @@ const ProveedoresForm = ({
       if (onError) {
         onError(error);
       } else {
-        alert("Error al procesar el formulario. Por favor, intente nuevamente.");
+        showAlert(
+          "Error al Procesar Proveedor",
+          "Error al procesar el proveedor. Por favor, intente nuevamente.",
+          "danger"
+        );
       }
     }
   };
 
   return (
-    <Form
-      campos={campos}
-      valoresIniciales={valoresIniciales}
-      onSubmit={manejarEnvio}
-      titulo={isEditMode ? "Editar Proveedor" : "Agregar Proveedor"}
-      textoBoton={isEditMode ? "Guardar Cambios" : "Guardar Proveedor"}
-    >
-      {isEditMode && onCancel && (
-        <Button variant="secondary" onClick={onCancel} className="ms-2">
-          Cancelar
-        </Button>
-      )}
-    </Form>
+    <>
+      <Form
+        key={isEditMode ? `edit-${proveedorExistente?.id}` : "create"}
+        campos={campos}
+        valoresIniciales={valoresIniciales}
+        onSubmit={manejarEnvio}
+        onFormChange={handleFormChange}
+        titulo={isEditMode ? "Editar Proveedor" : "Agregar Proveedor"}
+        textoBoton={isEditMode ? "Guardar Cambios" : "Guardar Proveedor"}
+      >
+        {isEditMode && onCancel && (
+          <Button variant="secondary" onClick={onCancel} className="ms-2">
+            Cancelar
+          </Button>
+        )}
+      </Form>
+
+      <AlertModal
+        show={alertModal.show}
+        onHide={hideAlert}
+        title={alertModal.title}
+        message={alertModal.message}
+        variant={alertModal.variant}
+      />
+    </>
   );
 };
 

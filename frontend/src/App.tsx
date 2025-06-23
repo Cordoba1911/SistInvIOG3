@@ -6,6 +6,7 @@ import ProveedoresRouter from './routes/ProveedoresRouter';
 import ArticulosRouter from './routes/ArticulosRoutes';
 import VentasRouter from './routes/VentasRoute';
 import { OrdenCompraRoutes as OrdenCompraRouter } from './pages/OrdenCompra/OrdenCompraRoutes';
+import ModelosInventarioPage from "./pages/Cálculo de Modelos/ModelosInventarioPage";
 
 function App() { 
   return (
@@ -18,6 +19,7 @@ function App() {
             <Route path="articulos/*" element={<ArticulosRouter />} />
             <Route path="ventas/*" element={<VentasRouter />} />
             <Route path="ordenes/*" element={<OrdenCompraRouter />} />
+            <Route path="modelos" element={<ModelosInventarioPage />} />
       {/* Más rutas */}
           </Route>
 

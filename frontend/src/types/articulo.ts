@@ -28,10 +28,13 @@ export interface Articulo {
 
 export interface ProveedorArticulo {
   proveedor_id: number;
+  nombre: string;
+  telefono?: string;
+  email?: string;
   precio_unitario: number;
   demora_entrega?: number;
   cargos_pedido?: number;
-  proveedor_predeterminado?: boolean;
+  proveedor_predeterminado: boolean;
 }
 
 export interface CreateArticuloDto {

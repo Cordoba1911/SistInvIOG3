@@ -11,7 +11,6 @@ import AjusteInventario from "../pages/Articulos/AjusteInventario";
 import AlertModal from "../components/common/AlertModal";
 import { articulosService } from "../services/articulosService";
 import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/articulo";
-import InventoryCalculations from "../components/InventoryCalculations";
 
 // Definición del componente ArticulosRouter
 const ArticulosRouter = () => {
@@ -161,7 +160,6 @@ const ArticulosRouter = () => {
               {articuloAEditar && (
                 <Card className="mt-4">
                   <Card.Body>
-                    <InventoryCalculations articulo={articuloAEditar} />
                     <ArticulosForm
                       articuloAEditar={articuloAEditar}
                       onUpdate={handleUpdate}

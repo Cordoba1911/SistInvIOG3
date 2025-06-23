@@ -5,7 +5,7 @@ import { Container, Tabs, Tab, Badge, Card, Col, Row } from "react-bootstrap"
 import { FixedLotModel } from "../pages/Cálculo de Modelos/FixedLotModel"
 import { FixedIntervalModel } from "../pages/Cálculo de Modelos/FixedIntervalModel"
 import { CGICalculation } from "../pages/Cálculo de Modelos/CGICalculation"
-import type { Articulo } from "../../types/articulo"
+import type { Articulo } from "../types/articulo"
 
 interface Props {
   articulo: Articulo
@@ -83,6 +83,10 @@ const InventoryCalculations = ({ articulo }: Props) => {
           <Col>
             <p className="mb-0 text-muted">Costo de Almacenamiento</p>
             <p className="lead">{formatCurrency(articulo.costo_almacenamiento)}</p>
+          </Col>
+          <Col>
+            <p className="mb-0 text-muted">CGI (Anual)</p>
+            <p className="lead text-success">{formatCurrency(articulo.cgi)}</p>
           </Col>
         </Row>
       </Card.Body>

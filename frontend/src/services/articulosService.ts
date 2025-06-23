@@ -88,6 +88,16 @@ export const articulosService = {
     );
   },
 
+  // Calcular y actualizar CGI de un artículo específico
+  async calcularCGIArticulo(id: number): Promise<Articulo> {
+    return request<Articulo>(
+      `${ARTICULOS_BASE_URL}/${id}/calcular-cgi`,
+      {
+        method: "POST",
+      }
+    );
+  },
+
   async reactivar(id: number): Promise<any> {
     return request(`${ARTICULOS_BASE_URL}/${id}/reactivar`, {
       method: "PATCH",

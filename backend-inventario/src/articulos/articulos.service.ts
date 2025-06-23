@@ -376,7 +376,7 @@ export class ArticulosService {
 
     if (necesitaRecalculo && articuloGuardado.modelo_inventario) {
       const articuloRecalculado = await this.aplicarCalculoAArticulo(id, articuloGuardado.modelo_inventario);
-      return this.toArticuloResponseDto(articuloRecalculado);
+      return articuloRecalculado;
     }
     
     // Si no se necesita recálculo, recargamos la entidad para devolverla con las relaciones
@@ -548,7 +548,7 @@ export class ArticulosService {
   /**
    * Aplicar resultados de cálculo a un artículo específico
    */
-  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'periodo_fijo'): Promise<Articulo> {
+  async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'periodo_fijo'): Promise<ArticuloResponseDto> {
     const articulo = await this.articuloRepository.findOne({
       where: { id: articuloId, estado: true },
       relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
@@ -600,7 +600,7 @@ export class ArticulosService {
     }
 
     const articuloActualizado = await this.articuloRepository.save(articulo);
-    return articuloActualizado;
+    return this.toArticuloResponseDto(articuloActualizado);
   }
 
   /**

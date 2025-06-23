@@ -13,6 +13,9 @@ export interface Articulo {
   punto_pedido?: number;
   stock_seguridad?: number;
   inventario_maximo?: number;
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  tiempo_reposicion?: number;
   cgi?: number;
   stock_actual?: number;
   estado: boolean;
@@ -42,6 +45,9 @@ export interface CreateArticuloDto {
   punto_pedido?: number;
   stock_seguridad?: number;
   inventario_maximo?: number;
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  tiempo_reposicion?: number;
   cgi?: number;
   stock_actual?: number;
   proveedores: ProveedorArticulo[];
@@ -61,6 +67,9 @@ export interface UpdateArticuloInput {
   punto_pedido?: number;
   stock_seguridad?: number;
   inventario_maximo?: number;
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  tiempo_reposicion?: number;
   cgi?: number;
   stock_actual?: number;
   proveedores?: ProveedorArticulo[];

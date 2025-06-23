@@ -118,12 +118,30 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       ],
     },
     {
+      nombre: "nivel_servicio",
+      etiqueta: "Nivel de Servicio (%)",
+      tipo: "number",
+      min: 0,
+      max: 100,
+      step: 0.1,
+      placeholder: "Ej. 95 para 95%",
+    },
+    {
+      nombre: "desviacion_estandar",
+      etiqueta: "Desviación Estándar de la Demanda Diaria",
+      tipo: "number",
+      min: 0,
+      step: 0.01,
+      placeholder: "Desviación estándar de la demanda diaria",
+    },
+    {
       nombre: "lote_optimo",
       etiqueta: "Lote Óptimo",
       tipo: "number",
       min: 0,
       step: 1,
       placeholder: "Cantidad óptima por pedido (EOQ)",
+      deshabilitado: true,
     },
     {
       nombre: "punto_pedido",
@@ -132,6 +150,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       min: 0,
       step: 1,
       placeholder: "Nivel de stock para realizar pedido",
+      deshabilitado: true,
     },
     {
       nombre: "stock_seguridad",
@@ -140,6 +159,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       min: 0,
       step: 1,
       placeholder: "Stock mínimo de seguridad",
+      deshabilitado: true,
     },
     {
       nombre: "inventario_maximo",
@@ -148,6 +168,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       min: 0,
       step: 1,
       placeholder: "Nivel máximo de inventario",
+      deshabilitado: true,
     },
     {
       nombre: "stock_actual",
@@ -164,6 +185,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       min: 0,
       step: 0.001,
       placeholder: "Costo de gestión del inventario (calculado automáticamente)",
+      deshabilitado: true,
     },
     {
       nombre: "proveedores",
@@ -236,6 +258,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         punto_pedido: articuloAEditar.punto_pedido,
         stock_seguridad: articuloAEditar.stock_seguridad,
         inventario_maximo: articuloAEditar.inventario_maximo,
+        nivel_servicio: articuloAEditar.nivel_servicio ? articuloAEditar.nivel_servicio * 100 : undefined,
+        desviacion_estandar: articuloAEditar.desviacion_estandar,
         stock_actual: articuloAEditar.stock_actual,
         cgi: articuloAEditar.cgi,
         proveedores: articuloAEditar.proveedores?.map(p => ({
@@ -260,6 +284,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         punto_pedido: undefined,
         stock_seguridad: undefined,
         inventario_maximo: undefined,
+        nivel_servicio: undefined,
+        desviacion_estandar: undefined,
         stock_actual: 0,
         cgi: undefined,
         proveedores: [],
@@ -311,6 +337,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
           stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
           inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) / 100 : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
           cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores?.map((prov: any) => ({
@@ -338,6 +366,8 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
           stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
           inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) / 100 : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
           cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores.map((prov: any) => ({

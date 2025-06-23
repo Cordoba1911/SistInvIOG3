@@ -107,6 +107,26 @@ export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   inventario_maximo?: number;
 
   @IsOptional()
+  @IsNumber({}, { message: 'El nivel de servicio debe ser un número' })
+  @IsPositive({ message: 'El nivel de servicio debe ser mayor a 0' })
+  nivel_servicio?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'La desviación estándar debe ser un número' })
+  @IsPositive({ message: 'La desviación estándar debe ser mayor a 0' })
+  desviacion_estandar?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El tiempo de reposición debe ser un número' })
+  @IsPositive({ message: 'El tiempo de reposición debe ser mayor a 0' })
+  tiempo_reposicion?: number;
+
+  @IsOptional()
+  @IsInt({ message: 'El intervalo de revisión debe ser un número entero' })
+  @IsPositive({ message: 'El intervalo de revisión debe ser mayor a 0' })
+  intervalo_revision?: number;
+
+  @IsOptional()
   @IsNumber({}, { message: 'El CGI debe ser un número' })
   @IsPositive({ message: 'El CGI debe ser mayor a 0' })
   cgi?: number;

@@ -6,7 +6,7 @@ import { CreateArticuloProveedorDto } from './dto/create-articulo-proveedor.dto'
 export class ArticuloProveedorController {
   constructor(
     private readonly articuloProveedorService: ArticuloProveedorService,
-  ) {}
+  ) {} 
 
   @Post()
   async createArticuloProveedor(

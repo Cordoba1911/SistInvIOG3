@@ -22,7 +22,7 @@ export class VentaController {
     return this.ventaService.createVenta(createVentaDto);
   }
 
-  @Get()
+  @Get() 
   getVentas() {
     return this.ventaService.getVentas();
   }

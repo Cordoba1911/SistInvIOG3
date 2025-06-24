@@ -29,7 +29,7 @@ export class ArticulosController {
   /**
    * Obtener todos los artículos activos
    */
-  @Get()
+  @Get() 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
     return this.articulosService.getArticulos();
   }

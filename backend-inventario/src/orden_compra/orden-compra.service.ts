@@ -23,7 +23,7 @@ export class OrdenCompraService {
     @InjectRepository(ArticuloProveedor)
     private readonly articuloProveedorRepository: Repository<ArticuloProveedor>,
   ) {}
-
+ 
   // Crear una nueva orden de compra
   async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
     // Buscar el artículo

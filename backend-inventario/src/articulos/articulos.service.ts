@@ -18,7 +18,7 @@ import { ArticuloProveedor } from '../articulo-proveedor/articulo-proveedor.enti
 import { Proveedor } from '../proveedores/proveedor.entity';
 
 @Injectable()
-export class ArticulosService {
+export class ArticulosService { 
   constructor(
     @InjectRepository(Articulo)
     private articuloRepository: Repository<Articulo>,
@@ -30,7 +30,7 @@ export class ArticulosService {
     private proveedorService: ProveedorService,
   ) {}
 
-  async createArticulo(
+  async createArticulo( 
     articulo: CreateArticuloDto,
   ): Promise<ArticuloResponseDto> {
     // Validar que el código no exista

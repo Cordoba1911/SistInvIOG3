@@ -9,7 +9,7 @@ import { DetalleVenta } from './detalle-venta.entity';
 
 @Injectable()
 export class VentaService {
-  constructor(
+  constructor( 
     @InjectRepository(Venta)
     private ventaRepository: Repository<Venta>,
 

@@ -10,7 +10,7 @@ import { OrdenCompra } from 'src/orden_compra/orden-compra.entity';
 import { RelacionarArticulosDto } from './dto/relacionar-articulos.dto';
 
 @Injectable()
-export class ProveedorService {
+export class ProveedorService { 
   constructor(
     @InjectRepository(Proveedor)
     private proveedorRepository: Repository<Proveedor>,

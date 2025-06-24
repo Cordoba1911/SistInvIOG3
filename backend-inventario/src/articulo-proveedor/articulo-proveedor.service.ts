@@ -6,7 +6,7 @@ import { Proveedor } from 'src/proveedores/proveedor.entity';
 import { Repository } from 'typeorm';
 import { CreateArticuloProveedorDto } from './dto/create-articulo-proveedor.dto';
 import { UpdateArticuloProveedorDto } from './dto/update-articulo-proveedor.dto';
-
+ 
 @Injectable()
 export class ArticuloProveedorService {
   constructor(

@@ -30,9 +30,6 @@ export class ArticulosService {
     private proveedorService: ProveedorService,
   ) {}
 
-<<<<<<< HEAD
-  async createArticulo( 
-=======
   /**
    * Calcular automáticamente las fórmulas de inventario según el modelo seleccionado
    * @param articulo - El artículo con los datos necesarios para el cálculo
@@ -118,7 +115,6 @@ export class ArticulosService {
   }
 
   async createArticulo(
->>>>>>> origin/main
     articulo: CreateArticuloDto,
   ): Promise<ArticuloResponseDto> {
     // Validar que el código no exista

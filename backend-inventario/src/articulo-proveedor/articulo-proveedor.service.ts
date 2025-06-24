@@ -40,6 +40,7 @@ export class ArticuloProveedorService {
       demora_entrega: dto.demora_entrega,
       precio_unitario: dto.precio_unitario,
       cargos_pedido: dto.cargos_pedido,
+      proveedor_predeterminado: dto.proveedor_predeterminado || false,
     });
 
     return this.articuloProveedorRepository.save(articuloProveedor);

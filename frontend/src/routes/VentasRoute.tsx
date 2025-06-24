@@ -1,59 +1,69 @@
-import { useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { Card } from "react-bootstrap";
 import VentasForm from "../pages/Ventas/VentasForm";
 import VentasList from "../pages/Ventas/VentasList";
-
-// Definición de la interfaz Venta
-export interface Venta {
-  id: string;
-  articulo: string;
-  cantidad: number;
-  fecha_venta: string; // Formato YYYY-MM-DD
-  activo?: boolean; // Opcional si usás baja lógica
-}
+import { ventasService } from "../services/ventasService";
+import type { Venta, CreateVentaDto } from "../types/venta";
+import ErrorModal from "../components/common/ErrorModal";
 
 const VentasRouter = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const agregarVenta = (datos: Omit<Venta, "id">) => {
-    const nuevaVenta: Venta = {
-      id: crypto.randomUUID(),
-      ...datos,
-      activo: true,
-    };
-    setVentas((prev) => [...prev, nuevaVenta]);
-  };
+  const cargarVentas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await ventasService.getAll();
+      setVentas(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar las ventas");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const modificarVenta = (id: string, nuevosDatos: Partial<Venta>) => {
-    setVentas((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, ...nuevosDatos } : v))
-    );
-  };
+  useEffect(() => {
+    cargarVentas();
+  }, [cargarVentas]);
 
-  const bajaLogicaVenta = (id: string) => {
-    setVentas((prev) =>
-      prev.map((v) => (v.id === id ? { ...v, activo: false } : v))
-    );
+  const handleCrearVenta = async (ventaDto: CreateVentaDto) => {
+    try {
+      await ventasService.create(ventaDto);
+      await cargarVentas(); // Recargar para ver la nueva venta
+    } catch (err: any) {
+      // Intentar parsear el mensaje de error si es un JSON
+      try {
+        const errorData = JSON.parse(err.message);
+        setError(errorData.message || "Ha ocurrido un error inesperado.");
+      } catch (parseError) {
+        // Si no es un JSON, mostrar el mensaje de error directamente
+        setError(err.message || "Error al crear la venta");
+      }
+    }
   };
 
   return (
-    <Routes>
-      {/* Ruta por defecto: al ir a /ventas */}
-      <Route
-        index
-        element={
-          <VentasList
-            ventas={ventas}
-            onModificar={modificarVenta}
-            onBaja={bajaLogicaVenta}
-          />
-        }
+    <>
+      <Card className="mb-4">
+        <Card.Body>
+          <VentasForm onSubmit={handleCrearVenta} />
+        </Card.Body>
+      </Card>
+
+      <Card>
+        <Card.Body>
+          {loading ? <p>Cargando ventas...</p> : <VentasList ventas={ventas} />}
+        </Card.Body>
+      </Card>
+
+      <ErrorModal
+        show={!!error}
+        onHide={() => setError(null)}
+        title="Error en Ventas"
+        message={error}
       />
-      <Route
-        path="nueva"
-        element={<VentasForm onAlta={agregarVenta} />}
-      />
-    </Routes>
+    </>
   );
 };
 

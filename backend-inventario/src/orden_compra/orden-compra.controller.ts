@@ -7,6 +7,7 @@ import {
   Body,
   ParseIntPipe, 
   HttpCode,
+  Query,
 } from '@nestjs/common';
 import { OrdenCompraService } from './orden-compra.service';
 import { CreateOrdenCompraDto } from './dto/create-orden-compra.dto';
@@ -18,8 +19,12 @@ export class OrdenCompraController {
 
   // Crear una nueva orden
   @Post()
-  create(@Body() dto: CreateOrdenCompraDto) {
-    return this.ordenCompraService.createOrdenCompra(dto);
+  create(
+    @Body() dto: CreateOrdenCompraDto,
+    @Query('force') force?: string,
+  ) {
+    const forceBoolean = force === 'true';
+    return this.ordenCompraService.createOrdenCompra(dto, forceBoolean);
   }
 
   // Obtener todas las órdenes

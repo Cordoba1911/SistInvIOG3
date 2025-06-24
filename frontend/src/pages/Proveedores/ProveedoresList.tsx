@@ -1,83 +1,134 @@
 // src/pages/Proveedores/ProveedoresList.tsx
-import { useState } from 'react';
-import Form from '../../components/Formularios/Form';
-import EntidadList from '../../components/EntityList';
-import type { Proveedor } from '../../routes/ProveedoresRouter'; // Asegurate de exportar Proveedor correctamente
-
+import { Badge, Button } from "react-bootstrap";
+import { PencilFill, TrashFill, CheckCircleFill } from "react-bootstrap-icons";
+import EntidadList from "../../components/EntityList";
+import type { Proveedor } from "../../types/proveedor";
 
 // Definición de las propiedades del componente ProveedoresList
 interface PropsProveedoresList {
   proveedores: Proveedor[];
-  onModificar: (id: string, nuevosDatos: Partial<Proveedor>) => void;
-  onBaja: (id: string) => void;
+  onEditar: (id: number) => void;
+  onBaja: (id: number) => void;
+  onActivar: (id: number) => void;
+  accionesPersonalizadas?: (proveedor: Proveedor) => React.ReactNode;
+  botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
 }
 
-// Componente para listar y editar proveedores
-const ProveedoresList = ({ proveedores, onModificar, onBaja }: PropsProveedoresList) => {
-  const [proveedorSeleccionado, setProveedorSeleccionado] = useState<Proveedor | null>(null);
-
-  // Definición de los campos del formulario
-  const campos = [
-    { nombre: 'nombre', etiqueta: 'Nombre', requerido: true },
-    { nombre: 'email', etiqueta: 'Email', tipo: 'email' },
-    { nombre: 'telefono', etiqueta: 'Teléfono', tipo: 'tel' },
-  ];
-
-  // Si hay un proveedor seleccionado, se carga su información en el formulario
+// Componente para listar proveedores
+const ProveedoresList = ({
+  proveedores,
+  onEditar,
+  onBaja,
+  onActivar,
+  accionesPersonalizadas,
+  botonCrear,
+  searchBar,
+}: PropsProveedoresList) => {
   // Las columnas para la lista de proveedores
-    const columnas = [
-    { campo: 'nombre', etiqueta: 'Nombre' },
-    { campo: 'email', etiqueta: 'Email' },
-    { campo: 'telefono', etiqueta: 'Teléfono' },
-    { campo: 'estado', etiqueta: 'Estado' }, // Esta es "falsa", la generaremos
+  const columnas = [
+    {
+      campo: "id",
+      etiqueta: "ID",
+      render: (id: number) => (
+        <span style={{ color: "#0d6efd" }}>
+          {id}
+        </span>
+      ),
+    },
+    {
+      campo: "nombre",
+      etiqueta: "Nombre",
+      render: (nombre: string) => <strong>{nombre}</strong>,
+    },
+    { campo: "email", etiqueta: "Email" },
+    { campo: "telefono", etiqueta: "Teléfono" },
+    {
+      campo: "estado",
+      etiqueta: "Estado",
+      render: (estado: string) => (
+        <Badge pill bg={estado === "Activo" ? "success" : "secondary"}>
+          {estado}
+        </Badge>
+      ),
+    },
   ];
 
-  // Valores iniciales del formulario, si hay un proveedor seleccionado, se carga su nombre
-  const valoresIniciales = proveedorSeleccionado
-    ? { nombre: proveedorSeleccionado.nombre, email: proveedorSeleccionado.email, telefono: proveedorSeleccionado.telefono }
-    : { nombre: '' , email: '', telefono: '' };
-
-  // Función para manejar el envío del formulario
-  const manejarEnvio = (datos: Record<string, string>) => {
-    if (proveedorSeleccionado) {
-      onModificar(proveedorSeleccionado.id, { nombre: datos.nombre,  });
-    }
-    setProveedorSeleccionado(null); // Limpia el formulario
-  };
-
-  // Función para manejar la edición de un proveedor
-  const manejarEditar = (id: string) => {
-    const proveedor = proveedores.find((p) => p.id === id);
-    if (proveedor) setProveedorSeleccionado(proveedor);
-  };
-
+  // Adaptar los datos para que muestren "Activo" o "Inactivo" en lugar de true/false
   const proveedoresAdaptados = proveedores.map((p) => ({
     ...p,
-    estado: p.activo ? 'Activo' : 'Inactivo',
+    estado: p.estado ? "Activo" : "Inactivo",
   }));
 
-  // Renderiza el formulario y la lista de proveedores
-return (
-  <div className="container mt-4">
-    <Form
-      campos={campos}
-      valoresIniciales={valoresIniciales}
-      onSubmit={manejarEnvio}
-      titulo={proveedorSeleccionado ? "Editar Proveedor" : "Nuevo Proveedor"}
-      textoBoton="Guardar"
-    />
-
+  // Se renderiza solo la lista, sin su propio contenedor
+  return (
     <EntidadList
-      titulo="Proveedores"
+      titulo="Lista de Proveedores"
       datos={proveedoresAdaptados}
       columnas={columnas}
-      onEditar={manejarEditar}
-      onEliminar={onBaja}
+      onEditar={(id) => onEditar(Number(id))}
+      onEliminar={(id) => onBaja(Number(id))}
       campoId="id"
-      campoActivo="activo"
+      botonCrear={botonCrear}
+      searchBar={searchBar}
+      esActivo={(proveedor) => proveedor.estado === "Activo"}
+      renderAcciones={(proveedorAdaptado) => {
+        const estaActivo = proveedorAdaptado.estado === "Activo";
+        const commonBadgeProps = {
+          as: "button" as const,
+          style: { cursor: "pointer" },
+        };
+
+        const proveedorOriginal = proveedores.find(
+          (p) => p.id === proveedorAdaptado.id,
+        );
+
+        return (
+          <div className="d-flex justify-content-start align-items-center gap-3">
+            <div style={{ minWidth: "140px" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-100"
+                onClick={() => onEditar(proveedorAdaptado.id)}
+              >
+                <PencilFill color="white" className="me-1" />
+                Editar
+              </Button>
+            </div>
+
+            <div style={{ minWidth: "140px" }}>
+              {estaActivo ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onBaja(proveedorAdaptado.id)}
+                >
+                  <TrashFill color="white" className="me-1" />
+                  Dar de Baja
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onActivar(proveedorAdaptado.id)}
+                >
+                  <CheckCircleFill color="white" className="me-1" />
+                  Activar
+                </Button>
+              )}
+            </div>
+
+            {accionesPersonalizadas &&
+              proveedorOriginal &&
+              accionesPersonalizadas(proveedorOriginal)}
+          </div>
+        );
+      }}
     />
-  </div>
-);
+  );
 };
 
 export default ProveedoresList;

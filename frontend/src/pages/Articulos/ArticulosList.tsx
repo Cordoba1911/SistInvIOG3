@@ -1,96 +1,164 @@
-import { useState } from 'react';
-import Form from '../../components/Formularios/Form';
-import EntidadList from '../../components/EntityList';
-import type { Articulo } from '../../routes/ArticulosRoutes';
+import { Badge, Button } from "react-bootstrap";
+import {
+  PencilFill,
+  TrashFill,
+  CheckCircleFill,
+} from "react-bootstrap-icons";
+import EntidadList from "../../components/EntityList";
+import type { Articulo } from "../../types/articulo";
 
 interface PropsArticulosList {
-  articulo: Articulo[];
-  onModificar: (id: string, nuevosDatos: Partial<Articulo>) => void;
-  onBaja: (id: string) => void;
+  articulos: Articulo[];
+  onEditar: (articulo: Articulo) => void;
+  onBaja: (id: number) => void;
+  onActivar: (id: number) => void;
+  accionesPersonalizadas?: (articulo: Articulo) => React.ReactNode;
+  botonCrear?: React.ReactNode;
+  searchBar?: React.ReactNode;
 }
- 
-const ArticulosList = ({ articulo, onModificar, onBaja }: PropsArticulosList) => {
-  const [articuloSeleccionado, setArticuloSeleccionado] = useState<Articulo | null>(null);
 
-  // Aquí puedes definir los campos que quieres mostrar en la lista de artículos
-  const campos = [
-    { nombre: 'nombre', etiqueta: 'Nombre' },
-    { nombre: 'precio', etiqueta: 'Precio' },
-    { nombre: 'cantidad', etiqueta: 'Cantidad' },
-    { nombre: 'descripcion', etiqueta: 'Descripción' },
-    { nombre: 'categoria', etiqueta: 'Categoría' },
-    { nombre: 'proveedor', etiqueta: 'Proveedor' },
-    { nombre: 'imagen', etiqueta: 'Imagen', tipo: 'file' },
-  ];
+const ArticulosList = ({
+  articulos,
+  onEditar,
+  onBaja,
+  onActivar,
+  accionesPersonalizadas,
+  botonCrear,
+  searchBar,
+}: PropsArticulosList) => {
+  const formatValue = (
+    value: number | string | undefined | null,
+    prefix = "$"
+  ) => {
+    if (value === null || typeof value === "undefined" || value === "")
+      return "N/A";
+    const numValue = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(numValue)) return "N/A";
+    return `${prefix}${numValue.toFixed(2)}`;
+  };
 
-  // Las columnas para la lista de artículos
   const columnas = [
-    { campo: 'nombre', etiqueta: 'Nombre' },
-    { campo: 'precio', etiqueta: 'Precio' },
-    { campo: 'cantidad', etiqueta: 'Cantidad' },
-    { campo: 'descripcion', etiqueta: 'Descripción' },
-    { campo: 'categoria', etiqueta: 'Categoría' },
-    { campo: 'proveedor', etiqueta: 'Proveedor' },
-    { campo: 'imagen', etiqueta: 'Imagen' }, // Aquí podrías mostrar una miniatura de la imagen
+    {
+      campo: "id",
+      etiqueta: "ID",
+      render: (id: number) => <span style={{ color: "#0d6efd" }}>{id}</span>,
+    },
+    { campo: "codigo", etiqueta: "Código" },
+    {
+      campo: "nombre",
+      etiqueta: "Nombre",
+      render: (nombre: string) => <strong>{nombre}</strong>,
+    },
+    { campo: "descripcion", etiqueta: "Descripción" },
+    { campo: "stock_actual", etiqueta: "Stock" },
+    {
+      campo: "modelo_inventario",
+      etiqueta: "Modelo",
+      render: (modelo: string) => {
+        if (!modelo) return <Badge pill bg="light" text="dark">N/A</Badge>;
+
+        const textoMapeado = modelo
+          .split("_")
+          .map((palabra) => palabra.charAt(0).toUpperCase() + palabra.slice(1))
+          .join(" ");
+
+        return (
+          <Badge pill bg="secondary" text="white">
+            {textoMapeado}
+          </Badge>
+        );
+      },
+    },
+    {
+      campo: "costo_compra",
+      etiqueta: "Costo Compra",
+      render: (valor: number) => formatValue(valor),
+    },
+    {
+      campo: "estado",
+      etiqueta: "Estado",
+      render: (estado: string) => (
+        <Badge pill bg={estado === "Activo" ? "success" : "secondary"}>
+          {estado}
+        </Badge>
+      ),
+    },
   ];
 
-// Aquí puedes definir los valores iniciales o el estado de los artículos
-const valoresIniciales = articuloSeleccionado
-  ? { nombre: articuloSeleccionado.nombre,
-    precio: articuloSeleccionado.precio.toString(),
-    cantidad: articuloSeleccionado.cantidad.toString(),
-    descripcion: articuloSeleccionado.descripcion,
-    categoria: articuloSeleccionado.categoria,
-    proveedor: articuloSeleccionado.proveedor,
-    imagen: articuloSeleccionado.imagen || '' }
-  : { nombre: '', precio: '', cantidad: '', descripcion: '', categoria: '', proveedor: '', imagen: '' };
+  // Adaptar los datos para que muestren "Activo" o "Inactivo" en lugar de true/false
+  const articulosAdaptados = articulos.map((a) => ({
+    ...a,
+    estado: a.estado ? "Activo" : "Inactivo",
+  }));
 
-// Función para manejar el envío del formulario
-const manejarEnvio = (datos: Record<string, string>) => {
-    // Si hay un artículo seleccionado, lo modificamos
-    // Si no, podrías manejar la creación de un nuevo artículo
-    if (articuloSeleccionado) {
-      onModificar(articuloSeleccionado.id, {
-        nombre: datos.nombre,
-        precio: parseFloat(datos.precio),
-        cantidad: parseInt(datos.cantidad, 10) || 0,
-        descripcion: datos.descripcion,
-        categoria: datos.categoria,
-        proveedor: datos.proveedor,
-        imagen: datos.imagen, // Aquí deberías manejar la subida de archivos
-      });
-    }
-    // Limpia el formulario después de guardar
-    setArticuloSeleccionado(null); 
-};
-
-// Función para manejar la edición de un artículo
-const manejarEditar = (id: string) => {
-    const articuloEncontrado = articulo.find((a) => a.id === id);
-    // Si encontramos el artículo, lo establecemos como seleccionado
-    // Esto permitirá que el formulario se llene con los datos del artículo seleccionado
-    if (articuloEncontrado) setArticuloSeleccionado(articuloEncontrado);
-};
-
-// Renderiza el formulario y la lista de artículos
   return (
-    <div className="container mt-4">
-      <Form
-        campos={campos}
-        valoresIniciales={valoresIniciales}
-        onSubmit={manejarEnvio}
-        titulo={articuloSeleccionado ? "Editar Articulo" : "Editar Nombre" }
-        textoBoton="Guardar"
-      />
-      <EntidadList
-        titulo="Artículos"
-        datos={articulo}
-        columnas={columnas}
-        onEditar={manejarEditar}
-        onEliminar={onBaja}
-        campoId="id"
-      />
-    </div>
+    <EntidadList
+      titulo="Lista de Artículos"
+      datos={articulosAdaptados}
+      columnas={columnas}
+      onEditar={(id) => {
+        const articuloOriginal = articulos.find(a => a.id === Number(id));
+        if (articuloOriginal) onEditar(articuloOriginal);
+      }}
+      onEliminar={(id) => onBaja(Number(id))}
+      campoId="id"
+      botonCrear={botonCrear}
+      searchBar={searchBar}
+      esActivo={(articulo) => articulo.estado === "Activo"}
+      renderAcciones={(articuloAdaptado) => {
+        const estaActivo = articuloAdaptado.estado === "Activo";
+        
+        const articuloOriginal = articulos.find(
+          (a) => a.id === articuloAdaptado.id,
+        );
+
+        return (
+          <div className="d-flex justify-content-start align-items-center gap-3">
+            <div style={{ minWidth: "140px" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-100"
+                onClick={() => {
+                  if (articuloOriginal) onEditar(articuloOriginal);
+                }}
+              >
+                <PencilFill color="white" className="me-1" />
+                Editar
+              </Button>
+            </div>
+
+            <div style={{ minWidth: "140px" }}>
+              {estaActivo ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onBaja(articuloAdaptado.id)}
+                >
+                  <TrashFill color="white" className="me-1" />
+                  Dar de Baja
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onActivar(articuloAdaptado.id)}
+                >
+                  <CheckCircleFill color="white" className="me-1" />
+                  Activar
+                </Button>
+              )}
+            </div>
+
+            {accionesPersonalizadas &&
+              articuloOriginal &&
+              accionesPersonalizadas(articuloOriginal)}
+          </div>
+        );
+      }}
+    />
   );
 };
 

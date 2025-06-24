@@ -25,7 +25,10 @@ export class OrdenCompraService {
   ) {}
  
   // Crear una nueva orden de compra
-  async createOrdenCompra(dto: CreateOrdenCompraDto): Promise<OrdenCompra> {
+  async createOrdenCompra(
+    dto: CreateOrdenCompraDto,
+    force = false,
+  ): Promise<OrdenCompra> {
     // Buscar el artículo
     const articulo = await this.articuloRepository.findOne({
       where: { id: dto.articulo_id },
@@ -113,6 +116,30 @@ export class OrdenCompraService {
       );
     }
 
+    // Validar si la cantidad supera el punto de pedido ANTES de crear
+    if (
+      !force &&
+      articulo.modelo_inventario === ModeloInventario.lote_fijo &&
+      articulo.punto_pedido &&
+      (articulo.stock_actual || 0) + cantidad <= articulo.punto_pedido
+    ) {
+      const warning = `Atención: La cantidad ordenada (${cantidad}) no superará el punto de pedido (${
+        articulo.punto_pedido
+      }). El stock actual es ${
+        articulo.stock_actual || 0
+      } y el stock final proyectado sería ${
+        (articulo.stock_actual || 0) + cantidad
+      }.`;
+
+      throw new HttpException(
+        {
+          message: 'Warning: Reorder point not met.',
+          warning,
+        },
+        HttpStatus.PRECONDITION_FAILED, // 412
+      );
+    }
+
     // Crear la orden
     const ordenCompra = this.ordenCompraRepository.create({
       articulo_id: articulo.id,
@@ -126,7 +153,9 @@ export class OrdenCompraService {
 
   // Obtener todas las órdenes de compra
   getOrdenesCompra() {
-    return this.ordenCompraRepository.find();
+    return this.ordenCompraRepository.find({
+      relations: ["articulo", "proveedor"],
+    });
   }
 
   // Obtener una orden por ID

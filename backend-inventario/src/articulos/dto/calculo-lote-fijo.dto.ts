@@ -16,6 +16,11 @@ export class CalculoLoteFijoDto {
   @IsPositive({ message: 'El costo de pedido debe ser mayor a 0' })
   costo_pedido: number;
 
+  @IsNotEmpty({ message: 'El costo de compra es obligatorio' })
+  @IsNumber({}, { message: 'El costo de compra debe ser un número' })
+  @IsPositive({ message: 'El costo de compra debe ser mayor a 0' })
+  costo_compra: number;
+
   @IsOptional()
   @IsNumber({}, { message: 'La demora de entrega debe ser un número' })
   @IsPositive({ message: 'La demora de entrega debe ser mayor a 0' })
@@ -37,5 +42,5 @@ export class ResultadoLoteFijoDto {
   punto_pedido: number;
   stock_seguridad: number;
   costo_total_anual: number;
-  tiempo_reposicion: number;
+  intervalo_revision: number;
 } 

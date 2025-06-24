@@ -1,7 +1,10 @@
-import { useState } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import OrdenCompraForm from '../pages/OrdenCompra/OrdenForm';
-import OrdenCompraList from '../pages/OrdenCompra/OrdenList';
+import { useState, useEffect, useCallback } from "react";
+import { Routes, Route } from "react-router-dom";
+import { Card } from "react-bootstrap";
+import OrdenCompraForm from "../pages/OrdenCompra/OrdenForm";
+import OrdenCompraList from "../pages/OrdenCompra/OrdenList";
+import { ordenesService } from "../services/ordenesService";
+import type { OrdenCompra } from "../types/ordenCompra";
 
 export interface OrdenCompra {
   id: string;
@@ -16,44 +19,59 @@ export interface OrdenCompra {
 }
 
 const OrdenCompraRouter = () => {
-
-  // Estado para manejar la lista de órdenes de compra
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Función para agregar una nueva orden de compra
-  const agregarOrden = (datos: Omit<OrdenCompra, 'id' | 'activo'>) => {
-    const nuevaOrden: OrdenCompra = {
-      id: crypto.randomUUID(),
-      ...datos,
-      activo: true,
-    };
-    setOrdenes((prev) => [...prev, nuevaOrden]);
+  const cargarOrdenes = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await ordenesService.getAll();
+      setOrdenes(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar órdenes");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    cargarOrdenes();
+  }, [cargarOrdenes]);
+
+  // Esta función se llama desde el formulario después de crear una orden
+  const handleAlta = () => {
+    cargarOrdenes();
   };
 
-  // Función para modificar una orden existente
-  const modificarOrden = (id: string, nuevosDatos: Partial<OrdenCompra>) => {
-    setOrdenes((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, ...nuevosDatos } : o))
-    );
-  };
+  // Funciones simuladas para que la lista no falle, se implementarán después
+  const handleModificar = () => console.log("Modificar no implementado");
+  const handleBaja = () => console.log("Baja no implementada");
 
-  // Función para dar de baja lógica a una orden (marcar como inactiva)
-  const bajaLogicaOrden = (id: string) => {
-    setOrdenes((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, activo: false } : o))
-    );
-  };
- 
+  if (loading) return <div>Cargando órdenes de compra...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
     <Routes>
-      <Route path="/orden-compra" element={<OrdenCompraForm onAlta={agregarOrden} />} />
+      <Route
+        path="/orden-compra"
+        element={
+          <div className="container mt-4">
+            <Card>
+              <Card.Body>
+                <OrdenCompraForm onAlta={handleAlta} />
+              </Card.Body>
+            </Card>
+          </div>
+        }
+      />
       <Route
         path="/admin-orden-compra"
         element={
           <OrdenCompraList
             ordenes={ordenes}
-            onModificar={modificarOrden}
-            onBaja={bajaLogicaOrden}
+            onModificar={handleModificar}
+            onBaja={handleBaja}
           />
         }
       />

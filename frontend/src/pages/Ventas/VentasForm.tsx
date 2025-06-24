@@ -1,55 +1,95 @@
-import Form from '../../components/Formularios/Form';
-import type { Venta } from '../../routes/VentasRoute';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import Form, { type CampoFormulario } from "../../components/Formularios/Form";
+import type { CreateVentaDto } from "../../types/venta";
+import { articulosService } from "../../services/articulosService";
 
-interface PropsVentasForm {
-  onAlta: (datos: Venta) => void;
+interface VentasFormProps {
+  onSubmit: (datos: CreateVentaDto) => Promise<void>;
 }
 
-const VentasForm = ({ onAlta }: PropsVentasForm) => {
-    // Estado inicial del Formulario
-    const campos = [
-        { nombre: 'articulo', etiqueta: 'Articulo', requerido: true },
-        { nombre: 'cantidad', etiqueta: 'Cantidad', tipo: 'number', requerido: true },
-        { nombre: 'fecha_venta', etiqueta: 'Fecha de Venta', tipo: 'date' },
-    ];
-    
-    // 📆 Función para obtener fecha actual en formato YYYY-MM-DD
-    const obtenerFechaActual = (): string => {
-        return new Date().toISOString().split('T')[0];
+const VentasForm = ({ onSubmit }: VentasFormProps) => {
+  const [articulos, setArticulos] = useState<any[]>([]);
+  // El error se manejará en el router
+  // const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const cargarArticulos = async () => {
+      try {
+        const articulosData = await articulosService.getAll();
+        // Filtrar artículos con stock > 0
+        const articulosConStock = articulosData.filter(
+          (a: any) => a.stock_actual && a.stock_actual > 0
+        );
+        setArticulos(articulosConStock);
+      } catch (error) {
+        console.error("Error al cargar artículos:", error);
+        // Opcional: podrías querer pasar este error al padre
+      }
     };
-    
-    const valoresIniciales = {
-        articulo: '',
-        cantidad: '',
-        fecha_venta: obtenerFechaActual(),
+    cargarArticulos();
+  }, []);
+
+  const campos: CampoFormulario[] = [
+    {
+      nombre: "detalles",
+      etiqueta: "",
+      tipo: "array",
+      requerido: true,
+      arrayConfig: {
+        sinEstilo: true,
+        campos: [
+          {
+            nombre: "articulo_id",
+            etiqueta: "Artículo",
+            tipo: "select",
+            requerido: true,
+            opciones: articulos.map((a) => ({
+              value: a.id,
+              label: `${a.nombre} (Stock: ${a.stock_actual})`,
+            })),
+          },
+          {
+            nombre: "cantidad",
+            etiqueta: "Cantidad",
+            tipo: "number",
+            requerido: true,
+            min: 1,
+            step: 1,
+          },
+        ],
+        titulo: "Artículo",
+        botonAgregar: "Agregar otro artículo",
+        botonEliminar: "Eliminar Artículo",
+      },
+    },
+  ];
+
+  const valoresIniciales = {
+    detalles: [{ articulo_id: "", cantidad: 1 }],
+  };
+
+  const manejarEnvio = async (datos: Record<string, any>) => {
+    // No se necesita try-catch aquí, el router lo manejará.
+    const ventaData: CreateVentaDto = {
+      detalles: datos.detalles.map((detalle: any) => ({
+        articulo_id: parseInt(detalle.articulo_id),
+        cantidad: parseInt(detalle.cantidad),
+      })),
     };
-    
-    // Hook para redirigir después de guardar
-    const navigate = useNavigate();
-    
-    // Función para manejar el envío del formulario
-    const manejarEnvio = (datos: Record<string, string>) => {
-        onAlta({
-        id: '', // Valor temporal, el backend debería asignar el id real
-        articulo: datos.articulo,
-        cantidad: parseInt(datos.cantidad, 10) || 0, // Asegura que sea un número
-        fecha_venta: datos.fecha_venta,
-        });
-    
-        // Redirige al usuario a la lista de ventas después de guardar
-        navigate('/ventas/admin-ventas'); // Redirige a la lista de ventas
-    };
-    
-    return (
-        <Form
-        campos={campos}
-        valoresIniciales={valoresIniciales}
-        onSubmit={manejarEnvio}
-        titulo="Agregar Venta"
-        textoBoton="Enviar"
-        />
-    );
-    }
+
+    // La lógica de creación y navegación se maneja en el componente padre.
+    await onSubmit(ventaData);
+  };
+
+  return (
+    <Form
+      campos={campos}
+      valoresIniciales={valoresIniciales}
+      onSubmit={manejarEnvio}
+      titulo="Crear Nueva Venta"
+      textoBoton="Crear Venta"
+    />
+  );
+};
 
 export default VentasForm;

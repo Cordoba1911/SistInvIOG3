@@ -33,7 +33,7 @@ export class ProveedorService {
     });
 
     if (proveedorFound) {
-      throw new HttpException('Proveedor ya existe', HttpStatus.CONFLICT);
+      throw new HttpException('Ya existe un proveedor con el nombre "' + dto.nombre + '". Por favor, use un nombre diferente.', HttpStatus.CONFLICT);
     }
 
     // Crear el proveedor
@@ -55,10 +55,19 @@ export class ProveedorService {
 
         if (!articulo) {
           throw new HttpException(
-            `No se encontró el artículo con ID ${art.articulo_id}`,
+            `No se encontró el artículo con ID ${art.articulo_id}. El artículo puede haber sido eliminado o estar inactivo.`,
             HttpStatus.BAD_REQUEST,
           );
         }
+
+        // Verificar si el artículo ya tiene un proveedor predeterminado
+        const proveedorPredeterminado =
+          await this.articuloProveedorRepository.findOne({
+            where: {
+              articulo: { id: art.articulo_id },
+              proveedor_predeterminado: true,
+            },
+          });
 
         const articuloProveedor = this.articuloProveedorRepository.create({
           proveedor: savedProveedor,
@@ -66,6 +75,8 @@ export class ProveedorService {
           demora_entrega: art.demora_entrega,
           precio_unitario: art.precio_unitario,
           cargos_pedido: art.cargos_pedido,
+          // Si se especifica como predeterminado o si no hay proveedor predeterminado, este será el predeterminado
+          proveedor_predeterminado: art.proveedor_predeterminado || !proveedorPredeterminado,
         });
 
         await this.articuloProveedorRepository.save(articuloProveedor);
@@ -78,6 +89,13 @@ export class ProveedorService {
   //Obtener todos los proveedores
   getProveedores() {
     return this.proveedorRepository.find();
+  }
+
+  //Obtener solo proveedores activos
+  getProveedoresActivos() {
+    return this.proveedorRepository.find({
+      where: { estado: true }
+    });
   }
 
   //Obtener un proveedor por ID
@@ -155,8 +173,8 @@ export class ProveedorService {
 
     if (relacionesPredeterminadas > 0) {
       throw new HttpException(
-        'No se puede dar de baja al proveedor porque es el proveedor predeterminado de algún artículo',
-        HttpStatus.BAD_REQUEST,
+        "No se puede dar de baja al proveedor porque es el proveedor predeterminado de algún artículo.",
+        HttpStatus.BAD_REQUEST
       );
     }
 
@@ -170,7 +188,7 @@ export class ProveedorService {
 
     if (ordenesPendientes > 0) {
       throw new HttpException(
-        'No se puede dar de baja al proveedor porque tiene órdenes de compra pendientes o en curso',
+        'No se puede dar de baja al proveedor porque tiene órdenes de compra pendientes o en curso. Debe cancelar o finalizar todas las órdenes antes de dar de baja este proveedor.',
         HttpStatus.BAD_REQUEST,
       );
     }
@@ -178,6 +196,32 @@ export class ProveedorService {
     // Baja lógica
     proveedorFound.estado = false;
     proveedorFound.fecha_baja = new Date();
+
+    return this.proveedorRepository.save(proveedorFound);
+  }
+
+  // Reactivar un proveedor
+  async reactivarProveedor(id: number) {
+    const proveedorFound = await this.proveedorRepository.findOne({
+      where: { id },
+    });
+
+    if (!proveedorFound) {
+      throw new HttpException(
+        `Proveedor con ID ${id} no encontrado`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    if (proveedorFound.estado) {
+      throw new HttpException(
+        "El proveedor ya está activo",
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    proveedorFound.estado = true;
+    proveedorFound.fecha_baja = null;
 
     return this.proveedorRepository.save(proveedorFound);
   }
@@ -196,12 +240,16 @@ export class ProveedorService {
     });
 
     const resultado = articulosProveedor.map((relacion) => {
-      const articulo = relacion.articulo;
       return {
-        articulo_id: articulo.id,
-        codigo: articulo.codigo,
-        descripcion: articulo.descripcion,
-        esPredeterminado: relacion.proveedor_predeterminado,
+        articulo: relacion.articulo,
+        precio_unitario: relacion.precio_unitario
+          ? parseFloat(relacion.precio_unitario as any)
+          : null,
+        demora_entrega: relacion.demora_entrega,
+        cargos_pedido: relacion.cargos_pedido
+          ? parseFloat(relacion.cargos_pedido as any)
+          : null,
+        proveedor_predeterminado: relacion.proveedor_predeterminado,
       };
     });
 
@@ -238,8 +286,8 @@ export class ProveedorService {
 
       if (!articulo) {
         throw new HttpException(
-          `Artículo con ID ${item.articulo_id} no encontrado`,
-          HttpStatus.NOT_FOUND,
+          `No se encontró el artículo con ID ${item.articulo_id}. El artículo puede haber sido eliminado o estar inactivo.`,
+          HttpStatus.BAD_REQUEST,
         );
       }
 
@@ -252,7 +300,7 @@ export class ProveedorService {
 
       if (yaRelacionado) {
         throw new HttpException(
-          `Ya existe una relación con el artículo ID ${item.articulo_id}`,
+          `Ya existe una relación entre este proveedor y el artículo ID ${item.articulo_id}. No se puede crear una relación duplicada.`,
           HttpStatus.CONFLICT,
         );
       }

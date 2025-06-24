@@ -87,29 +87,19 @@ export class UpdateArticuloDto extends PartialType(CreateArticuloDto) {
   modelo_inventario?: ModeloInventario;
 
   @IsOptional()
-  @IsInt({ message: 'El lote óptimo debe ser un número entero' })
-  @IsPositive({ message: 'El lote óptimo debe ser mayor a 0' })
-  lote_optimo?: number;
+  @IsNumber({}, { message: 'El nivel de servicio debe ser un número' })
+  @IsPositive({ message: 'El nivel de servicio debe ser mayor a 0' })
+  nivel_servicio?: number;
 
   @IsOptional()
-  @IsInt({ message: 'El punto de pedido debe ser un número entero' })
-  @IsPositive({ message: 'El punto de pedido debe ser mayor a 0' })
-  punto_pedido?: number;
+  @IsNumber({}, { message: 'La desviación estándar debe ser un número' })
+  @IsPositive({ message: 'La desviación estándar debe ser mayor a 0' })
+  desviacion_estandar?: number;
 
   @IsOptional()
-  @IsInt({ message: 'El stock de seguridad debe ser un número entero' })
-  @IsPositive({ message: 'El stock de seguridad debe ser mayor a 0' })
-  stock_seguridad?: number;
-
-  @IsOptional()
-  @IsInt({ message: 'El inventario máximo debe ser un número entero' })
-  @IsPositive({ message: 'El inventario máximo debe ser mayor a 0' })
-  inventario_maximo?: number;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'El CGI debe ser un número' })
-  @IsPositive({ message: 'El CGI debe ser mayor a 0' })
-  cgi?: number;
+  @IsInt({ message: 'El intervalo de revisión debe ser un número entero' })
+  @IsPositive({ message: 'El intervalo de revisión debe ser mayor a 0' })
+  intervalo_revision?: number;
 
   @IsOptional()
   @IsInt({ message: 'El stock actual debe ser un número entero' })

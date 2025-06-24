@@ -30,6 +30,90 @@ export class ArticulosService {
     private proveedorService: ProveedorService,
   ) {}
 
+  /**
+   * Calcular automáticamente las fórmulas de inventario según el modelo seleccionado
+   * @param articulo - El artículo con los datos necesarios para el cálculo
+   * @returns El artículo actualizado con los cálculos aplicados
+   */
+  private async calcularFormulasInventario(articulo: Articulo): Promise<Articulo> {
+    // Verificar que tenga los datos mínimos necesarios para calcular
+    if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido || !articulo.costo_compra) {
+      // Si no tiene los datos necesarios, devolver el artículo sin modificar
+      return articulo;
+    }
+
+    // Verificar que tenga un modelo de inventario definido
+    if (!articulo.modelo_inventario) {
+      return articulo;
+    }
+
+    // Obtener demora_entrega del proveedor predeterminado
+    const proveedorPredeterminado = articulo.articulo_proveedor?.find(ap => ap.proveedor_predeterminado);
+    const demora_entrega = proveedorPredeterminado?.demora_entrega;
+
+    try {
+      if (articulo.modelo_inventario === 'lote_fijo') {
+        const resultado = await this.calcularLoteFijo({
+          demanda: articulo.demanda,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          costo_compra: articulo.costo_compra,
+          demora_entrega: demora_entrega,
+          nivel_servicio: articulo.nivel_servicio,
+          desviacion_estandar: articulo.desviacion_estandar,
+        });
+
+        articulo.lote_optimo = Math.round(resultado.lote_optimo);
+        articulo.punto_pedido = Math.round(resultado.punto_pedido);
+        articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+        articulo.intervalo_revision = resultado.intervalo_revision;
+
+        // Calcular CGI automáticamente
+        const resultadoCgi = await this.calcularCgi({
+          demanda_anual: articulo.demanda,
+          costo_compra: articulo.costo_compra,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          lote_optimo: articulo.lote_optimo,
+        });
+        articulo.cgi = resultadoCgi.cgi;
+
+      } else if (articulo.modelo_inventario === 'periodo_fijo') {
+        // Para período fijo, necesitamos intervalo_revision
+        if (!articulo.intervalo_revision) {
+          return articulo;
+        }
+
+        const resultado = await this.calcularIntervaloFijo({
+          demanda: articulo.demanda,
+          intervalo_revision: articulo.intervalo_revision,
+          demora_entrega: demora_entrega,
+          nivel_servicio: articulo.nivel_servicio,
+          desviacion_estandar: articulo.desviacion_estandar,
+        });
+
+        articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+        articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
+
+        // Para período fijo, calcular CGI usando el inventario máximo como lote
+        const resultadoCgi = await this.calcularCgi({
+          demanda_anual: articulo.demanda,
+          costo_compra: articulo.costo_compra,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          lote_optimo: articulo.inventario_maximo,
+        });
+        articulo.cgi = resultadoCgi.cgi;
+      }
+    } catch (error) {
+      // Si hay algún error en los cálculos, no fallar la operación
+      // Solo registrar el error y continuar
+      console.warn('Error al calcular fórmulas de inventario:', error.message);
+    }
+
+    return articulo;
+  }
+
   async createArticulo(
     articulo: CreateArticuloDto,
   ): Promise<ArticuloResponseDto> {
@@ -129,7 +213,25 @@ export class ArticulosService {
       await this.articuloProveedorRepository.save(articuloProveedor);
     }
 
-    return this.toArticuloResponseDto(savedArticulo);
+    // Recargar el artículo con las relaciones para poder calcular las fórmulas
+    const articuloConRelaciones = await this.articuloRepository.findOne({
+      where: { id: savedArticulo.id },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articuloConRelaciones) {
+      throw new HttpException('Error al recargar el artículo creado', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Aplicar cálculos automáticos si corresponde
+    const articuloConCalculos = await this.calcularFormulasInventario(articuloConRelaciones);
+    
+    // Guardar los cálculos si se aplicaron
+    if (articuloConCalculos !== articuloConRelaciones) {
+      await this.articuloRepository.save(articuloConCalculos);
+    }
+
+    return this.toArticuloResponseDto(articuloConCalculos);
   }
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
@@ -138,6 +240,16 @@ export class ArticulosService {
         estado: true, // Solo artículos activos
       },
       relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
+  }
+
+  // Nuevo método para obtener TODOS los artículos (activos e inactivos)
+  async getAllArticulos(): Promise<ArticuloResponseDto[]> {
+    const articulos = await this.articuloRepository.find({
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+      order: { id: 'ASC' }, // Ordenar por ID para consistencia
     });
 
     return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
@@ -302,7 +414,7 @@ export class ArticulosService {
 
     // Actualizar los campos del artículo
     const updateArticulo = Object.assign(articuloFound, articuloData);
-    const articuloActualizado = await this.articuloRepository.save(updateArticulo);
+    const articuloGuardado = await this.articuloRepository.save(updateArticulo);
 
     // Si se proporcionaron proveedores, actualizar las relaciones
     if (proveedoresData && proveedoresData.length > 0) {
@@ -355,7 +467,7 @@ export class ArticulosService {
           : i === 0; // Si no hay explícito, el primero es predeterminado
 
         const articuloProveedor = this.articuloProveedorRepository.create({
-          articulo: articuloActualizado,
+          articulo: articuloGuardado,
           proveedor: proveedor,
           precio_unitario: proveedorData.precio_unitario,
           demora_entrega: proveedorData.demora_entrega || 0,
@@ -367,14 +479,32 @@ export class ArticulosService {
       }
     }
 
-    // Recargar el artículo con las relaciones actualizadas
+    // Recargar el artículo con las relaciones para poder aplicar cálculos
     const articuloFinal = await this.articuloRepository.findOne({
       where: { id },
       relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
     if (!articuloFinal) {
-      throw new HttpException('Error al recargar el artículo actualizado', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException('Artículo no encontrado después de actualizar', HttpStatus.NOT_FOUND);
+    }
+
+    // Comprobar si se actualizaron campos que afectan los cálculos de inventario
+    const camposRelevantes = [
+      'demanda', 'costo_almacenamiento', 'costo_pedido', 'costo_compra', 
+      'modelo_inventario', 'nivel_servicio', 'desviacion_estandar', 'intervalo_revision'
+    ];
+    const necesitaRecalculo = camposRelevantes.some(campo => campo in articulo);
+
+    if (necesitaRecalculo) {
+      // Aplicar cálculos automáticos si corresponde
+      const articuloConCalculos = await this.calcularFormulasInventario(articuloFinal);
+      
+      // Guardar los cálculos si se aplicaron
+      if (articuloConCalculos !== articuloFinal) {
+        await this.articuloRepository.save(articuloConCalculos);
+        return this.toArticuloResponseDto(articuloConCalculos);
+      }
     }
 
     return this.toArticuloResponseDto(articuloFinal);
@@ -407,6 +537,9 @@ export class ArticulosService {
       punto_pedido: articulo.punto_pedido,
       stock_seguridad: articulo.stock_seguridad,
       inventario_maximo: articulo.inventario_maximo,
+      nivel_servicio: articulo.nivel_servicio,
+      desviacion_estandar: articulo.desviacion_estandar,
+      intervalo_revision: articulo.intervalo_revision,
       cgi: articulo.cgi,
       stock_actual: articulo.stock_actual,
       estado: articulo.estado,
@@ -416,28 +549,73 @@ export class ArticulosService {
   }
 
   /**
+   * Helper para obtener el valor Z (puntuación Z) para un nivel de servicio dado.
+   * La puntuación Z se usa para calcular el stock de seguridad.
+   * @param nivel_servicio - Nivel de servicio como un porcentaje (ej. 95 para 95%).
+   * @returns El valor Z correspondiente.
+   */
+  private getZScore(nivel_servicio: number): number {
+    // Mapeo de niveles de servicio comunes a valores Z
+    // Estos valores se obtienen de tablas de distribución normal estándar.
+    const z_scores = {
+      90: 1.28,
+      95: 1.645,
+      97: 1.88,
+      98: 2.05,
+      99: 2.33,
+    };
+
+    const ns = Math.round(nivel_servicio * 100);
+    return z_scores[ns] || 0; // Devuelve 0 si el nivel no está en la tabla
+  }
+
+  /**
    * Calcular parámetros del modelo de inventario de Lote Fijo
    */
   async calcularLoteFijo(datos: CalculoLoteFijoDto): Promise<ResultadoLoteFijoDto> {
-    // TODO: Implementar fórmulas del modelo Lote Fijo
-    // Fórmulas que debes implementar:
-    // - Lote Óptimo (EOQ): √(2 × D × S / H)
-    // - Punto de Pedido: D × L + SS
-    // - Stock de Seguridad: Z × σ × √L
-    // - Costo Total Anual: (D/Q)×S + (Q/2)×H + D×C
-    
-    const lote_optimo = 0; // TODO: Calcular EOQ
-    const punto_pedido = 0; // TODO: Calcular punto de pedido
-    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
-    const costo_total_anual = 0; // TODO: Calcular costo total
-    const tiempo_reposicion = 0; // TODO: Calcular tiempo de reposición
+    const {
+      demanda,
+      costo_almacenamiento,
+      costo_pedido,
+      costo_compra,
+      demora_entrega,
+      desviacion_estandar,
+      nivel_servicio,
+    } = datos;
+
+    // 1. Lote Óptimo (EOQ - Economic Order Quantity)
+    const lote_optimo = Math.sqrt((2 * demanda * costo_pedido) / costo_almacenamiento);
+
+    // 2. Stock de Seguridad (SS)
+    let stock_seguridad = 0;
+    if (nivel_servicio && desviacion_estandar && demora_entrega) {
+      const z_score = this.getZScore(nivel_servicio);
+      // Asumimos que la desviación estándar es la de la demanda DIARIA
+      // σL = σd * √L
+      const desviacion_demanda_lead_time = desviacion_estandar * Math.sqrt(demora_entrega);
+      stock_seguridad = z_score * desviacion_demanda_lead_time;
+    }
+
+    // 3. Punto de Pedido (ROP - Reorder Point)
+    const demanda_diaria = demanda / 365;
+    let punto_pedido = demanda_diaria * (demora_entrega || 0);
+    punto_pedido += stock_seguridad;
+
+    // 4. Costo Total Anual
+    const costo_ordenes_anual = (demanda / lote_optimo) * costo_pedido;
+    const costo_almacenamiento_anual = (lote_optimo / 2) * costo_almacenamiento;
+    const costo_compra_anual = demanda * costo_compra;
+    const costo_total_anual = costo_ordenes_anual + costo_almacenamiento_anual + costo_compra_anual;
+
+    // 5. Tiempo de Reposición (o ciclo de pedido) en días BORRAR
+    const intervalo_revision = (lote_optimo / demanda) * 365;
     
     return {
-      lote_optimo,
-      punto_pedido,
-      stock_seguridad,
-      costo_total_anual,
-      tiempo_reposicion,
+      lote_optimo: Math.round(lote_optimo),
+      punto_pedido: Math.round(punto_pedido),
+      stock_seguridad: Math.round(stock_seguridad),
+      costo_total_anual: parseFloat(costo_total_anual.toFixed(2)),
+      intervalo_revision: parseFloat(intervalo_revision.toFixed(2)),
     };
   }
 
@@ -445,24 +623,41 @@ export class ArticulosService {
    * Calcular parámetros del modelo de inventario de Intervalo Fijo
    */
   async calcularIntervaloFijo(datos: CalculoIntervaloFijoDto): Promise<ResultadoIntervaloFijoDto> {
-    // TODO: Implementar fórmulas del modelo Intervalo Fijo
-    // Fórmulas que debes implementar:
-    // - Stock de Seguridad: Z × σ × √(R + L)
-    // - Inventario Máximo: D × (R + L) + SS
-    // - Cantidad a Ordenar: IM - I + D × R
+    const {
+      demanda,
+      intervalo_revision,
+      demora_entrega,
+      desviacion_estandar,
+      nivel_servicio,
+    } = datos;
+
+    const demanda_diaria = demanda / 365;
+
+    // 1. Stock de Seguridad: Z × σ × √(R + L)
+    let stock_seguridad = 0;
+    if (nivel_servicio && desviacion_estandar && demora_entrega && intervalo_revision) {
+      const z_score = this.getZScore(nivel_servicio);
+      const tiempo_total = intervalo_revision + demora_entrega;
+      stock_seguridad = z_score * desviacion_estandar * tiempo_total;
+    }
     
-    const stock_seguridad = 0; // TODO: Calcular stock de seguridad
-    const inventario_maximo = 0; // TODO: Calcular inventario máximo
-    const cantidad_ordenar = 0; // TODO: Calcular cantidad a ordenar
-    const costo_total_periodo = 0; // TODO: Calcular costo total del período
-    const nivel_inventario_objetivo = 0; // TODO: Calcular nivel objetivo
+    // 2. Inventario Máximo: D_diaria × (R + L) + SS
+    const demanda_ciclo = demanda_diaria * (intervalo_revision + (demora_entrega || 0));
+    const inventario_maximo = demanda_ciclo + stock_seguridad;
     
     return {
-      stock_seguridad,
-      inventario_maximo,
-      cantidad_ordenar,
-      costo_total_periodo,
-      nivel_inventario_objetivo,
+      stock_seguridad: Math.round(stock_seguridad),
+      inventario_maximo: Math.round(inventario_maximo),
+      // Campos no requeridos en esta implementación
+      cantidad_pedido: 0,
+      nivel_inventario_objetivo: 0,
+      costo_total_anual: 0,
+      tiempo_ciclo: 0,
+      demanda_durante_revision: 0,
+      demanda_durante_entrega: 0,
+      costo_almacenamiento_anual: 0,
+      costo_pedidos_anuales: 0,
+      numero_pedidos_anuales: 0,
     };
   }
 
@@ -472,35 +667,47 @@ export class ArticulosService {
   async aplicarCalculoAArticulo(articuloId: number, modelo: 'lote_fijo' | 'periodo_fijo'): Promise<ArticuloResponseDto> {
     const articulo = await this.articuloRepository.findOne({
       where: { id: articuloId, estado: true },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
     });
 
     if (!articulo) {
       throw new HttpException('Artículo no encontrado', HttpStatus.NOT_FOUND);
     }
 
-    if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido) {
+    if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido || !articulo.costo_compra) {
       throw new HttpException(
-        'El artículo debe tener demanda, costo_almacenamiento y costo_pedido para realizar cálculos',
+        'El artículo debe tener demanda, costo_almacenamiento, costo_pedido y costo_compra para realizar cálculos',
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    // Obtener demora_entrega del proveedor predeterminado
+    const proveedorPredeterminado = articulo.articulo_proveedor.find(ap => ap.proveedor_predeterminado);
+    const demora_entrega = proveedorPredeterminado?.demora_entrega;
 
     if (modelo === 'lote_fijo') {
       const resultado = await this.calcularLoteFijo({
         demanda: articulo.demanda,
         costo_almacenamiento: articulo.costo_almacenamiento,
         costo_pedido: articulo.costo_pedido,
+        costo_compra: articulo.costo_compra,
+        demora_entrega: demora_entrega,
+        nivel_servicio: articulo.nivel_servicio,
+        desviacion_estandar: articulo.desviacion_estandar,
       });
 
       articulo.modelo_inventario = 'lote_fijo' as any;
       articulo.lote_optimo = Math.round(resultado.lote_optimo);
       articulo.punto_pedido = Math.round(resultado.punto_pedido);
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
-      
+      articulo.intervalo_revision = resultado.intervalo_revision;
     } else if (modelo === 'periodo_fijo') {
       const resultado = await this.calcularIntervaloFijo({
         demanda: articulo.demanda,
-        intervalo_revision: 30, // TODO: Este valor podría venir como parámetro
+        intervalo_revision: articulo.intervalo_revision,
+        demora_entrega: demora_entrega,
+        nivel_servicio: articulo.nivel_servicio,
+        desviacion_estandar: articulo.desviacion_estandar,
       });
 
       articulo.modelo_inventario = ModeloInventario.periodo_fijo;

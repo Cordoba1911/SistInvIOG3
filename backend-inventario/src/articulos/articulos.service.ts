@@ -30,6 +30,90 @@ export class ArticulosService {
     private proveedorService: ProveedorService,
   ) {}
 
+  /**
+   * Calcular automáticamente las fórmulas de inventario según el modelo seleccionado
+   * @param articulo - El artículo con los datos necesarios para el cálculo
+   * @returns El artículo actualizado con los cálculos aplicados
+   */
+  private async calcularFormulasInventario(articulo: Articulo): Promise<Articulo> {
+    // Verificar que tenga los datos mínimos necesarios para calcular
+    if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido || !articulo.costo_compra) {
+      // Si no tiene los datos necesarios, devolver el artículo sin modificar
+      return articulo;
+    }
+
+    // Verificar que tenga un modelo de inventario definido
+    if (!articulo.modelo_inventario) {
+      return articulo;
+    }
+
+    // Obtener demora_entrega del proveedor predeterminado
+    const proveedorPredeterminado = articulo.articulo_proveedor?.find(ap => ap.proveedor_predeterminado);
+    const demora_entrega = proveedorPredeterminado?.demora_entrega;
+
+    try {
+      if (articulo.modelo_inventario === 'lote_fijo') {
+        const resultado = await this.calcularLoteFijo({
+          demanda: articulo.demanda,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          costo_compra: articulo.costo_compra,
+          demora_entrega: demora_entrega,
+          nivel_servicio: articulo.nivel_servicio,
+          desviacion_estandar: articulo.desviacion_estandar,
+        });
+
+        articulo.lote_optimo = Math.round(resultado.lote_optimo);
+        articulo.punto_pedido = Math.round(resultado.punto_pedido);
+        articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+        articulo.intervalo_revision = resultado.intervalo_revision;
+
+        // Calcular CGI automáticamente
+        const resultadoCgi = await this.calcularCgi({
+          demanda_anual: articulo.demanda,
+          costo_compra: articulo.costo_compra,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          lote_optimo: articulo.lote_optimo,
+        });
+        articulo.cgi = resultadoCgi.cgi;
+
+      } else if (articulo.modelo_inventario === 'periodo_fijo') {
+        // Para período fijo, necesitamos intervalo_revision
+        if (!articulo.intervalo_revision) {
+          return articulo;
+        }
+
+        const resultado = await this.calcularIntervaloFijo({
+          demanda: articulo.demanda,
+          intervalo_revision: articulo.intervalo_revision,
+          demora_entrega: demora_entrega,
+          nivel_servicio: articulo.nivel_servicio,
+          desviacion_estandar: articulo.desviacion_estandar,
+        });
+
+        articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
+        articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
+
+        // Para período fijo, calcular CGI usando el inventario máximo como lote
+        const resultadoCgi = await this.calcularCgi({
+          demanda_anual: articulo.demanda,
+          costo_compra: articulo.costo_compra,
+          costo_almacenamiento: articulo.costo_almacenamiento,
+          costo_pedido: articulo.costo_pedido,
+          lote_optimo: articulo.inventario_maximo,
+        });
+        articulo.cgi = resultadoCgi.cgi;
+      }
+    } catch (error) {
+      // Si hay algún error en los cálculos, no fallar la operación
+      // Solo registrar el error y continuar
+      console.warn('Error al calcular fórmulas de inventario:', error.message);
+    }
+
+    return articulo;
+  }
+
   async createArticulo(
     articulo: CreateArticuloDto,
   ): Promise<ArticuloResponseDto> {
@@ -129,7 +213,25 @@ export class ArticulosService {
       await this.articuloProveedorRepository.save(articuloProveedor);
     }
 
-    return this.toArticuloResponseDto(savedArticulo);
+    // Recargar el artículo con las relaciones para poder calcular las fórmulas
+    const articuloConRelaciones = await this.articuloRepository.findOne({
+      where: { id: savedArticulo.id },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articuloConRelaciones) {
+      throw new HttpException('Error al recargar el artículo creado', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    // Aplicar cálculos automáticos si corresponde
+    const articuloConCalculos = await this.calcularFormulasInventario(articuloConRelaciones);
+    
+    // Guardar los cálculos si se aplicaron
+    if (articuloConCalculos !== articuloConRelaciones) {
+      await this.articuloRepository.save(articuloConCalculos);
+    }
+
+    return this.toArticuloResponseDto(articuloConCalculos);
   }
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
@@ -377,6 +479,16 @@ export class ArticulosService {
       }
     }
 
+    // Recargar el artículo con las relaciones para poder aplicar cálculos
+    const articuloFinal = await this.articuloRepository.findOne({
+      where: { id },
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+    });
+
+    if (!articuloFinal) {
+      throw new HttpException('Artículo no encontrado después de actualizar', HttpStatus.NOT_FOUND);
+    }
+
     // Comprobar si se actualizaron campos que afectan los cálculos de inventario
     const camposRelevantes = [
       'demanda', 'costo_almacenamiento', 'costo_pedido', 'costo_compra', 
@@ -384,20 +496,15 @@ export class ArticulosService {
     ];
     const necesitaRecalculo = camposRelevantes.some(campo => campo in articulo);
 
-    if (necesitaRecalculo && articuloGuardado.modelo_inventario) {
-      const articuloRecalculado = await this.aplicarCalculoAArticulo(id, articuloGuardado.modelo_inventario);
-      return articuloRecalculado;
-    }
-    
-    // Si no se necesita recálculo, recargamos la entidad para devolverla con las relaciones
-    const articuloFinal = await this.articuloRepository.findOne({
-      where: { id },
-      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
-    });
-
-    if (!articuloFinal) {
-      // Esto no debería pasar si la actualización fue exitosa, pero es un seguro
-      throw new HttpException('Artículo no encontrado después de actualizar', HttpStatus.NOT_FOUND);
+    if (necesitaRecalculo) {
+      // Aplicar cálculos automáticos si corresponde
+      const articuloConCalculos = await this.calcularFormulasInventario(articuloFinal);
+      
+      // Guardar los cálculos si se aplicaron
+      if (articuloConCalculos !== articuloFinal) {
+        await this.articuloRepository.save(articuloConCalculos);
+        return this.toArticuloResponseDto(articuloConCalculos);
+      }
     }
 
     return this.toArticuloResponseDto(articuloFinal);

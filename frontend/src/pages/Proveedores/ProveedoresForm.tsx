@@ -229,25 +229,6 @@ const ProveedoresForm = ({
           );
           return;
         }
-
-        // Validar que solo haya un artículo marcado como proveedor predeterminado
-        const articulosPredeterminados = articulosValidos.filter(
-          (art: any) => art.proveedor_predeterminado === true
-        );
-        
-        if (articulosPredeterminados.length > 1) {
-          const nombreArticulos = articulosPredeterminados.map((art: any) => {
-            const articuloEncontrado = articulos.find(a => a.id === parseInt(art.articulo_id));
-            return articuloEncontrado ? articuloEncontrado.nombre : `ID: ${art.articulo_id}`;
-          }).join(", ");
-          
-          showAlert(
-            "Múltiples Artículos con Proveedor Predeterminado",
-            `Solo puede ser proveedor predeterminado para un artículo a la vez. Actualmente está marcado como predeterminado para: ${nombreArticulos}. Por favor, seleccione solo uno.`,
-            "warning"
-          );
-          return;
-        }
       }
 
       const proveedorData: CreateProveedorDto = {

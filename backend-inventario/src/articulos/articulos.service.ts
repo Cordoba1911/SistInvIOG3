@@ -143,6 +143,16 @@ export class ArticulosService {
     return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
   }
 
+  // Nuevo método para obtener TODOS los artículos (activos e inactivos)
+  async getAllArticulos(): Promise<ArticuloResponseDto[]> {
+    const articulos = await this.articuloRepository.find({
+      relations: ['articulo_proveedor', 'articulo_proveedor.proveedor'],
+      order: { id: 'ASC' }, // Ordenar por ID para consistencia
+    });
+
+    return articulos.map((articulo) => this.toArticuloResponseDto(articulo));
+  }
+
   async getArticulo(id: number): Promise<ArticuloResponseDto> {
     const articuloFound = await this.articuloRepository.findOne({
       where: {

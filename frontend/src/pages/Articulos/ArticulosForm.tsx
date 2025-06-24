@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import AlertModal from "../../components/common/AlertModal";
 import InventoryFieldsHelp from "../../components/common/InventoryFieldsHelp";
-import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../../types/articulo";
+import type { CreateArticuloDto, Articulo, UpdateArticuloInput } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
 import { useNavigate } from "react-router-dom";
@@ -29,95 +29,21 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
   const navigate = useNavigate();
   const enModoEdicion = !!articuloAEditar;
 
-  // Estados para validación en tiempo real
-  const [validacionesAnteriores, setValidacionesAnteriores] = useState<Record<string, boolean>>({});
-  const timeoutRef = useRef<number | null>(null);
-
   const showAlert = (title: string, message: string, variant: 'danger' | 'warning' | 'success' | 'info' = 'danger') => {
     setAlertModal({ show: true, title, message, variant });
   };
 
   const hideAlert = () => {
     setAlertModal(prev => ({ ...prev, show: false }));
-    // Resetear validaciones cuando se cierre la alerta para permitir intentos posteriores
-    setValidacionesAnteriores({});
   };
 
-  // Función para verificar si un proveedor ya es predeterminado en otros artículos
-  const verificarProveedorPredeterminado = async (proveedorId: number): Promise<boolean> => {
-    try {
-      const articulos = await proveedoresService.getArticulos(proveedorId);
-      return articulos.some(articulo => articulo.proveedor_predeterminado === true);
-    } catch (error) {
-      console.error("Error al verificar proveedor predeterminado:", error);
-      return false;
-    }
-  };
-
-  // Función para manejar cambios en el formulario y validar proveedor predeterminado
-  const handleFormChange = useCallback((datos: Record<string, any>) => {
-    // Limpiar timeout anterior si existe
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-    }
-    
+  // Función para manejar cambios en el formulario
+  const handleFormChange = (datos: Record<string, any>) => {
     // Actualizar modelo de inventario si cambió
     if (datos.modelo_inventario !== modeloInventario) {
       setModeloInventario(datos.modelo_inventario || "lote_fijo");
     }
-    
-    if (datos.proveedores && Array.isArray(datos.proveedores)) {
-      // Usar un timeout para debounce y evitar múltiples validaciones
-      timeoutRef.current = window.setTimeout(async () => {
-        for (let i = 0; i < datos.proveedores.length; i++) {
-          const proveedor: any = datos.proveedores[i];
-          
-          // Crear una clave única para este proveedor en esta posición
-          const claveValidacion = `${i}_${proveedor.proveedor_id}_${proveedor.proveedor_predeterminado}`;
-          
-          // Si se marcó como proveedor predeterminado y no hemos validado este cambio antes
-          if (proveedor.proveedor_predeterminado === "true" && 
-              proveedor.proveedor_id && 
-              !validacionesAnteriores[claveValidacion]) {
-            
-            try {
-              const yaEsPredeterminado = await verificarProveedorPredeterminado(parseInt(proveedor.proveedor_id));
-              
-              if (yaEsPredeterminado) {
-                const proveedorEncontrado = proveedores.find(p => p.id === parseInt(proveedor.proveedor_id));
-                const nombreProveedor = proveedorEncontrado ? proveedorEncontrado.nombre : `ID: ${proveedor.proveedor_id}`;
-                
-                // Mostrar alerta sin afectar el estado del formulario
-                setAlertModal({
-                  show: true,
-                  title: "Proveedor Ya Es Predeterminado",
-                  message: `El proveedor "${nombreProveedor}" ya está marcado como predeterminado para otro artículo. Solo puede ser predeterminado para un artículo a la vez.`,
-                  variant: "warning"
-                });
-                
-                // Marcar esta validación como realizada para evitar repetirla
-                setValidacionesAnteriores(prev => ({
-                  ...prev,
-                  [claveValidacion]: true
-                }));
-              }
-            } catch (error) {
-              console.error("Error en validación:", error);
-            }
-          }
-        }
-      }, 300); // Debounce de 300ms
-    }
-  }, [proveedores, validacionesAnteriores, modeloInventario]);
-
-  // Limpiar timeout al desmontar el componente
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
+  };
 
   useEffect(() => {
     const cargarProveedores = async () => {

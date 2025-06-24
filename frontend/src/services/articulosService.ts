@@ -15,6 +15,11 @@ export const articulosService = {
     return request<Articulo[]>(ARTICULOS_BASE_URL);
   },
 
+  // Obtener TODOS los artículos (activos e inactivos) para administración
+  async getAllForAdmin(): Promise<Articulo[]> {
+    return request<Articulo[]>(`${ARTICULOS_BASE_URL}/admin/todos`);
+  },
+
   // Obtener artículo por ID
   async getById(id: number): Promise<Articulo> {
     return request<Articulo>(`${ARTICULOS_BASE_URL}/${id}`);

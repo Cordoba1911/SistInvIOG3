@@ -8,7 +8,8 @@ import ProductosAReponer from "../pages/Articulos/ProductosAReponer";
 import ProductosFaltantes from "../pages/Articulos/ProductosFaltantes";
 import ProveedoresPorArticulo from "../pages/Articulos/ProveedoresPorArticulo";
 import AjusteInventario from "../pages/Articulos/AjusteInventario";
-import AlertModal from "../components/common/AlertModal";
+import ErrorModal from "../components/common/ErrorModal";
+import ConfirmationModal from "../components/common/ConfirmationModal";
 import { articulosService } from "../services/articulosService";
 import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../types/articulo";
 
@@ -17,30 +18,86 @@ const ArticulosRouter = () => {
   const [articulos, setArticulos] = useState<Articulo[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [articuloAEditar, setArticuloAEditar] = useState<Articulo | null>(null);
-  const [alertModal, setAlertModal] = useState({
-    show: false,
-    title: '',
-    message: '',
-    variant: 'danger' as 'danger' | 'warning' | 'success' | 'info'
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorModalData, setErrorModalData] = useState<{ title: string; message: string; }>({ title: "", message: "" });
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalData, setConfirmModalData] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    confirmText: string;
+  }>({
+    title: "",
+    message: "",
+    onConfirm: () => {},
+    confirmText: "Confirmar"
   });
   const navigate = useNavigate();
 
   const cargarArticulos = async () => {
     try {
-      const data = await articulosService.getAll();
+      const data = await articulosService.getAllForAdmin();
       setArticulos(data);
     } catch (error: any) {
       console.error("Error al cargar artículos:", error);
-      showAlert('Error al cargar artículos', error.message || 'Error desconocido', 'danger');
+      procesarError(error, "cargar_articulos");
     }
   };
 
-  const showAlert = (title: string, message: string, variant: 'danger' | 'warning' | 'success' | 'info' = 'danger') => {
-    setAlertModal({ show: true, title, message, variant });
+  // Función helper para mostrar errores en modal
+  const mostrarError = (title: string, error: any) => {
+    const message = error instanceof Error ? error.message : String(error);
+    setErrorModalData({ title, message });
+    setShowErrorModal(true);
   };
 
-  const hideAlert = () => {
-    setAlertModal(prev => ({ ...prev, show: false }));
+  // Función helper para mostrar confirmación
+  const mostrarConfirmacion = (title: string, message: string, onConfirm: () => void, confirmText: string = "Confirmar") => {
+    setConfirmModalData({ title, message, onConfirm, confirmText });
+    setShowConfirmModal(true);
+  };
+
+  // Función mejorada para procesar errores específicos
+  const procesarError = (error: any, contexto: string) => {
+    const rawMessage = error?.message || "Ha ocurrido un error inesperado";
+    const errorMessageForTitle = rawMessage.toLowerCase();
+    let titulo = "Error";
+
+    if (contexto === "crear_articulo") {
+        if (errorMessageForTitle.includes("ya existe un artículo con este código")) titulo = "Código duplicado";
+        else if (errorMessageForTitle.includes("ya existe un artículo con esta descripción")) titulo = "Descripción duplicada";
+    } else if (contexto === "actualizar_articulo") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Artículo no encontrado";
+        else if (errorMessageForTitle.includes("ya existe un artículo con este código")) titulo = "Código duplicado";
+        else if (errorMessageForTitle.includes("ya existe un artículo con esta descripción")) titulo = "Descripción duplicada";
+    } else if (contexto === "baja_articulo") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Artículo no encontrado";
+        else if (errorMessageForTitle.includes("ya está dado de baja")) titulo = "Artículo ya inactivo";
+        else if (errorMessageForTitle.includes("tiene") && errorMessageForTitle.includes("unidades en stock")) titulo = "Artículo con stock";
+        else if (errorMessageForTitle.includes("órdenes de compra activas")) titulo = "Órdenes de compra activas";
+    } else if (contexto === "activar_articulo") {
+        if (errorMessageForTitle.includes("no encontrado")) titulo = "Artículo no encontrado";
+        else if (errorMessageForTitle.includes("ya está activo")) titulo = "Artículo ya activo";
+    } else if (contexto === "cargar_articulos") {
+        titulo = "Error al cargar artículos";
+    } else if (contexto === "cargar_articulo") {
+        titulo = "Error al cargar artículo";
+    } else {
+        titulo = `Error en ${contexto.replace(/_/g, " ")}`;
+    }
+    
+    let displayMessage = rawMessage;
+    try {
+      const parsedError = JSON.parse(rawMessage);
+      if (parsedError && parsedError.message) {
+        displayMessage = parsedError.message;
+      }
+    } catch (e) {
+      // No es un JSON, se usa el mensaje tal cual
+    }
+
+    setErrorModalData({ title: titulo, message: displayMessage });
+    setShowErrorModal(true);
   };
 
   useEffect(() => {
@@ -59,7 +116,7 @@ const ArticulosRouter = () => {
       setArticuloAEditar(articuloCompleto);
     } catch (error: any) {
       console.error('Error al cargar artículo:', error);
-      showAlert('Error', 'No se pudo cargar los datos del artículo', 'danger');
+      procesarError(error, "cargar_articulo");
     }
   };
   
@@ -68,43 +125,62 @@ const ArticulosRouter = () => {
   };
 
   const handleUpdate = async (id: number, data: UpdateArticuloInput) => {
-    await articulosService.update(id, data);
-    setArticuloAEditar(null);
-    await cargarArticulos();
+    try {
+      await articulosService.update(id, data);
+      setArticuloAEditar(null);
+      await cargarArticulos();
+    } catch (error: any) {
+      console.error('Error al actualizar artículo:', error);
+      procesarError(error, "actualizar_articulo");
+    }
   };
 
   const handleBaja = async (id: number) => {
     const articulo = articulos.find(a => a.id === id);
     if (!articulo || !articulo.estado) return;
 
-    try {
-      const confirmacion = window.confirm(`¿Está seguro que desea dar de baja el artículo "${articulo.nombre}"?`);
-      if (!confirmacion) return;
+    const confirmarBaja = async () => {
+      try {
+        await articulosService.delete(id);
+        await cargarArticulos();
+        setShowConfirmModal(false);
+      } catch (error: any) {
+        console.error('Error al dar de baja:', error);
+        setShowConfirmModal(false);
+        procesarError(error, "baja_articulo");
+      }
+    };
 
-      await articulosService.delete(id);
-      showAlert('Éxito', 'Artículo dado de baja exitosamente', 'success');
-      await cargarArticulos();
-    } catch (error: any) {
-      console.error('Error al dar de baja:', error);
-      showAlert('Error al dar de baja', error.message || 'Error desconocido', 'danger');
-    }
+    mostrarConfirmacion(
+      "Confirmar baja de artículo",
+      `¿Está seguro que desea dar de baja el artículo "${articulo.nombre}"?`,
+      confirmarBaja,
+      "Dar de Baja"
+    );
   };
 
   const handleActivar = async (id: number) => {
     const articulo = articulos.find(a => a.id === id);
     if (!articulo || articulo.estado) return;
 
-    try {
-      const confirmacion = window.confirm(`¿Está seguro que desea reactivar el artículo "${articulo.nombre}"?`);
-      if (!confirmacion) return;
+    const confirmarActivacion = async () => {
+      try {
+        await articulosService.reactivar(id);
+        await cargarArticulos();
+        setShowConfirmModal(false);
+      } catch (error: any) {
+        console.error('Error al reactivar:', error);
+        setShowConfirmModal(false);
+        procesarError(error, "activar_articulo");
+      }
+    };
 
-      await articulosService.reactivar(id);
-      showAlert('Éxito', 'Artículo reactivado exitosamente', 'success');
-      await cargarArticulos();
-    } catch (error: any) {
-      console.error('Error al reactivar:', error);
-      showAlert('Error al reactivar', error.message || 'Error desconocido', 'danger');
-    }
+    mostrarConfirmacion(
+      "Confirmar reactivación de artículo",
+      `¿Está seguro que desea reactivar el artículo "${articulo.nombre}"?`,
+      confirmarActivacion,
+      "Reactivar"
+    );
   };
 
   const filteredArticulos = articulos.filter((articulo) => {
@@ -199,12 +275,21 @@ const ArticulosRouter = () => {
         />
       </Routes>
 
-      <AlertModal
-        show={alertModal.show}
-        onHide={hideAlert}
-        title={alertModal.title}
-        message={alertModal.message}
-        variant={alertModal.variant}
+      <ErrorModal
+        show={showErrorModal}
+        onHide={() => setShowErrorModal(false)}
+        title={errorModalData.title}
+        message={errorModalData.message}
+      />
+
+      <ConfirmationModal
+        show={showConfirmModal}
+        onHide={() => setShowConfirmModal(false)}
+        onConfirm={confirmModalData.onConfirm}
+        title={confirmModalData.title}
+        message={confirmModalData.message}
+        confirmText={confirmModalData.confirmText}
+        cancelText="Cancelar"
       />
     </>
   );

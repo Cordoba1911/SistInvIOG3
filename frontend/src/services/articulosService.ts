@@ -15,6 +15,11 @@ export const articulosService = {
     return request<Articulo[]>(ARTICULOS_BASE_URL);
   },
 
+  // Obtener TODOS los artículos (activos e inactivos) para administración
+  async getAllForAdmin(): Promise<Articulo[]> {
+    return request<Articulo[]>(`${ARTICULOS_BASE_URL}/admin/todos`);
+  },
+
   // Obtener artículo por ID
   async getById(id: number): Promise<Articulo> {
     return request<Articulo>(`${ARTICULOS_BASE_URL}/${id}`);
@@ -82,6 +87,16 @@ export const articulosService = {
   async aplicarCalculo(id: number, modelo: string): Promise<Articulo> {
     return request<Articulo>(
       `${ARTICULOS_BASE_URL}/${id}/aplicar-calculo/${modelo}`,
+      {
+        method: "POST",
+      }
+    );
+  },
+
+  // Calcular y actualizar CGI de un artículo específico
+  async calcularCGIArticulo(id: number): Promise<Articulo> {
+    return request<Articulo>(
+      `${ARTICULOS_BASE_URL}/${id}/calcular-cgi`,
       {
         method: "POST",
       }

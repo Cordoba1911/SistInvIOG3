@@ -77,63 +77,87 @@ const ArticulosList = ({
     {
       campo: "estado",
       etiqueta: "Estado",
-      render: (estado: boolean) => (
-        <Badge pill bg={estado ? "success" : "secondary"}>
-          {estado ? "Activo" : "Inactivo"}
+      render: (estado: string) => (
+        <Badge pill bg={estado === "Activo" ? "success" : "secondary"}>
+          {estado}
         </Badge>
       ),
     },
   ];
 
-  const renderAccionesArticulo = (articulo: Articulo) => {
-    const estaActivo = articulo.estado;
-    return (
-      <div className="d-flex justify-content-start align-items-center gap-3">
-        <div style={{ minWidth: "140px" }}>
-          <Button
-            variant="primary"
-            size="sm"
-            className="w-100"
-            onClick={() => onEditar(articulo)}
-          >
-            <PencilFill className="me-1" /> Editar
-          </Button>
-        </div>
-        <div style={{ minWidth: "140px" }}>
-          {estaActivo ? (
-            <Button
-              variant="danger"
-              size="sm"
-              className="w-100"
-              onClick={() => onBaja(articulo.id)}
-            >
-              <TrashFill className="me-1" /> Dar de Baja
-            </Button>
-          ) : (
-            <Button
-              variant="success"
-              size="sm"
-              className="w-100"
-              onClick={() => onActivar(articulo.id)}
-            >
-              <CheckCircleFill className="me-1" /> Activar
-            </Button>
-          )}
-        </div>
-        {accionesPersonalizadas && accionesPersonalizadas(articulo)}
-      </div>
-    );
-  };
+  // Adaptar los datos para que muestren "Activo" o "Inactivo" en lugar de true/false
+  const articulosAdaptados = articulos.map((a) => ({
+    ...a,
+    estado: a.estado ? "Activo" : "Inactivo",
+  }));
 
   return (
     <EntidadList
       titulo="Lista de Artículos"
-      datos={articulos}
+      datos={articulosAdaptados}
       columnas={columnas}
+      onEditar={(id) => {
+        const articuloOriginal = articulos.find(a => a.id === Number(id));
+        if (articuloOriginal) onEditar(articuloOriginal);
+      }}
+      onEliminar={(id) => onBaja(Number(id))}
       campoId="id"
-      renderAcciones={renderAccionesArticulo}
       botonCrear={botonCrear}
       searchBar={searchBar}
+      esActivo={(articulo) => articulo.estado === "Activo"}
+      renderAcciones={(articuloAdaptado) => {
+        const estaActivo = articuloAdaptado.estado === "Activo";
+        
+        const articuloOriginal = articulos.find(
+          (a) => a.id === articuloAdaptado.id,
+        );
+
+        return (
+          <div className="d-flex justify-content-start align-items-center gap-3">
+            <div style={{ minWidth: "140px" }}>
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-100"
+                onClick={() => {
+                  if (articuloOriginal) onEditar(articuloOriginal);
+                }}
+              >
+                <PencilFill color="white" className="me-1" />
+                Editar
+              </Button>
+            </div>
+
+            <div style={{ minWidth: "140px" }}>
+              {estaActivo ? (
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onBaja(articuloAdaptado.id)}
+                >
+                  <TrashFill color="white" className="me-1" />
+                  Dar de Baja
+                </Button>
+              ) : (
+                <Button
+                  variant="success"
+                  size="sm"
+                  className="w-100"
+                  onClick={() => onActivar(articuloAdaptado.id)}
+                >
+                  <CheckCircleFill color="white" className="me-1" />
+                  Activar
+                </Button>
+              )}
+            </div>
+
+            {accionesPersonalizadas &&
+              articuloOriginal &&
+              accionesPersonalizadas(articuloOriginal)}
+          </div>
+        );
+      }}
     />
   );
 };

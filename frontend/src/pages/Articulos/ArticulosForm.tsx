@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "react-bootstrap";
 import Form, { type CampoFormulario } from "../../components/Formularios/Form";
 import AlertModal from "../../components/common/AlertModal";
 import InventoryFieldsHelp from "../../components/common/InventoryFieldsHelp";
-import type { Articulo, CreateArticuloDto, UpdateArticuloInput } from "../../types/articulo";
+import type { CreateArticuloDto, Articulo, UpdateArticuloInput } from "../../types/articulo";
 import { articulosService } from "../../services/articulosService";
 import { proveedoresService } from "../../services/proveedoresService";
 import { useNavigate } from "react-router-dom";
@@ -17,6 +17,9 @@ interface PropsArticulosForm {
 
 const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArticulosForm) => {
   const [proveedores, setProveedores] = useState<any[]>([]);
+  const [modeloInventario, setModeloInventario] = useState<string>(
+    articuloAEditar?.modelo_inventario || "lote_fijo"
+  );
   const [alertModal, setAlertModal] = useState({
     show: false,
     title: '',
@@ -34,6 +37,14 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
     setAlertModal(prev => ({ ...prev, show: false }));
   };
 
+  // Función para manejar cambios en el formulario
+  const handleFormChange = (datos: Record<string, any>) => {
+    // Actualizar modelo de inventario si cambió
+    if (datos.modelo_inventario !== modeloInventario) {
+      setModeloInventario(datos.modelo_inventario || "lote_fijo");
+    }
+  };
+
   useEffect(() => {
     const cargarProveedores = async () => {
       try {
@@ -46,7 +57,7 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
     cargarProveedores();
   }, []);
 
-  const campos: CampoFormulario[] = [
+  const campos: CampoFormulario[] = useMemo(() => [
     {
       nombre: "codigo",
       etiqueta: "Código",
@@ -118,37 +129,33 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       ],
     },
     {
-      nombre: "lote_optimo",
-      etiqueta: "Lote Óptimo",
+      nombre: "nivel_servicio",
+      etiqueta: "Nivel de Servicio (%)",
       tipo: "number",
       min: 0,
-      step: 1,
-      placeholder: "Cantidad óptima por pedido (EOQ)",
+      max: 100,
+      step: 0.1,
+      placeholder: "Ej. 95 para 95%",
     },
     {
-      nombre: "punto_pedido",
-      etiqueta: "Punto de Pedido",
+      nombre: "desviacion_estandar",
+      etiqueta: "Desviación Estándar de la Demanda Diaria",
       tipo: "number",
       min: 0,
-      step: 1,
-      placeholder: "Nivel de stock para realizar pedido",
+      step: 0.01,
+      placeholder: "Desviación estándar de la demanda diaria",
     },
-    {
-      nombre: "stock_seguridad",
-      etiqueta: "Stock de Seguridad",
-      tipo: "number",
-      min: 0,
+    // Campo condicional: solo se muestra para modelo de período fijo
+    ...(modeloInventario === "periodo_fijo" ? [{
+      nombre: "intervalo_revision",
+      etiqueta: "Intervalo de Revisión (días)",
+      tipo: "number" as const,
+      min: 1,
       step: 1,
-      placeholder: "Stock mínimo de seguridad",
-    },
-    {
-      nombre: "inventario_maximo",
-      etiqueta: "Inventario Máximo",
-      tipo: "number",
-      min: 0,
-      step: 1,
-      placeholder: "Nivel máximo de inventario",
-    },
+      requerido: true,
+      placeholder: "Días entre revisiones de inventario",
+      descripcion: "Frecuencia con la que se revisa el inventario en el modelo de período fijo",
+    }] : []),
     {
       nombre: "stock_actual",
       etiqueta: "Stock Actual",
@@ -156,14 +163,6 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
       min: 0,
       step: 1,
       placeholder: "Cantidad actual en inventario",
-    },
-    {
-      nombre: "cgi",
-      etiqueta: "CGI (Costo Gestión Inventario)",
-      tipo: "number",
-      min: 0,
-      step: 0.001,
-      placeholder: "Costo de gestión del inventario (calculado automáticamente)",
     },
     {
       nombre: "proveedores",
@@ -219,9 +218,9 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         botonEliminar: "Eliminar Proveedor",
       },
     },
-  ];
+  ], [enModoEdicion, proveedores, modeloInventario]);
 
-  const valoresIniciales = enModoEdicion
+  const valoresIniciales = useMemo(() => enModoEdicion
     ? {
         codigo: articuloAEditar.codigo,
         nombre: articuloAEditar.nombre,
@@ -232,12 +231,10 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         costo_compra: articuloAEditar.costo_compra,
         precio_venta: articuloAEditar.precio_venta,
         modelo_inventario: articuloAEditar.modelo_inventario,
-        lote_optimo: articuloAEditar.lote_optimo,
-        punto_pedido: articuloAEditar.punto_pedido,
-        stock_seguridad: articuloAEditar.stock_seguridad,
-        inventario_maximo: articuloAEditar.inventario_maximo,
+        nivel_servicio: articuloAEditar.nivel_servicio ? articuloAEditar.nivel_servicio * 100 : undefined,
+        desviacion_estandar: articuloAEditar.desviacion_estandar,
+        intervalo_revision: articuloAEditar.intervalo_revision,
         stock_actual: articuloAEditar.stock_actual,
-        cgi: articuloAEditar.cgi,
         proveedores: articuloAEditar.proveedores?.map(p => ({
           proveedor_id: p.proveedor_id,
           precio_unitario: p.precio_unitario,
@@ -256,14 +253,12 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
         costo_compra: undefined,
         precio_venta: undefined,
         modelo_inventario: "lote_fijo",
-        lote_optimo: undefined,
-        punto_pedido: undefined,
-        stock_seguridad: undefined,
-        inventario_maximo: undefined,
+        nivel_servicio: undefined,
+        desviacion_estandar: undefined,
+        intervalo_revision: undefined,
         stock_actual: 0,
-        cgi: undefined,
         proveedores: [],
-      };
+      }, [enModoEdicion, articuloAEditar]);
 
   const manejarEnvio = async (datos: Record<string, any>) => {
     try {
@@ -307,12 +302,10 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
           precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
           modelo_inventario: datos.modelo_inventario,
-          lote_optimo: datos.lote_optimo ? parseInt(datos.lote_optimo) : undefined,
-          punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
-          stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
-          inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) / 100 : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
+          intervalo_revision: datos.intervalo_revision ? parseInt(datos.intervalo_revision) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
-          cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores?.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -334,12 +327,10 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
           costo_compra: datos.costo_compra ? parseFloat(datos.costo_compra) : undefined,
           precio_venta: datos.precio_venta ? parseFloat(datos.precio_venta) : undefined,
           modelo_inventario: datos.modelo_inventario,
-          lote_optimo: datos.lote_optimo ? parseInt(datos.lote_optimo) : undefined,
-          punto_pedido: datos.punto_pedido ? parseInt(datos.punto_pedido) : undefined,
-          stock_seguridad: datos.stock_seguridad ? parseInt(datos.stock_seguridad) : undefined,
-          inventario_maximo: datos.inventario_maximo ? parseInt(datos.inventario_maximo) : undefined,
+          nivel_servicio: datos.nivel_servicio ? parseFloat(datos.nivel_servicio) / 100 : undefined,
+          desviacion_estandar: datos.desviacion_estandar ? parseFloat(datos.desviacion_estandar) : undefined,
+          intervalo_revision: datos.intervalo_revision ? parseInt(datos.intervalo_revision) : undefined,
           stock_actual: datos.stock_actual ? parseInt(datos.stock_actual) : 0,
-          cgi: datos.cgi ? parseFloat(datos.cgi) : undefined,
           proveedores: datos.proveedores.map((prov: any) => ({
             proveedor_id: parseInt(prov.proveedor_id),
             precio_unitario: parseFloat(prov.precio_unitario),
@@ -364,9 +355,11 @@ const ArticulosForm = ({ onAlta, articuloAEditar, onUpdate, onCancel }: PropsArt
   return (
     <>
       <Form
+        key={enModoEdicion ? `edit-${articuloAEditar?.id}` : "create"}
         campos={campos}
         valoresIniciales={valoresIniciales}
         onSubmit={manejarEnvio}
+        onFormChange={handleFormChange}
         titulo={enModoEdicion ? `Editar Artículo: ${articuloAEditar.nombre}` : "Agregar Artículo"}
         textoBoton={enModoEdicion ? "Guardar Cambios" : "Guardar Artículo"}
       >

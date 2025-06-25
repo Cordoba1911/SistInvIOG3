@@ -9,11 +9,17 @@ export interface Articulo {
   costo_compra?: number;
   precio_venta?: number;
   modelo_inventario?: "lote_fijo" | "periodo_fijo";
+  // Campos calculados (solo para visualización)
   lote_optimo?: number;
   punto_pedido?: number;
   stock_seguridad?: number;
   inventario_maximo?: number;
+  tiempo_reposicion?: number;
   cgi?: number;
+  // Campos para cálculos de inventario
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  intervalo_revision?: number;
   stock_actual?: number;
   estado: boolean;
   fecha_baja?: Date;
@@ -22,10 +28,13 @@ export interface Articulo {
 
 export interface ProveedorArticulo {
   proveedor_id: number;
+  nombre: string;
+  telefono?: string;
+  email?: string;
   precio_unitario: number;
   demora_entrega?: number;
   cargos_pedido?: number;
-  proveedor_predeterminado?: boolean;
+  proveedor_predeterminado: boolean;
 }
 
 export interface CreateArticuloDto {
@@ -38,11 +47,10 @@ export interface CreateArticuloDto {
   costo_compra?: number;
   precio_venta?: number;
   modelo_inventario?: "lote_fijo" | "periodo_fijo";
-  lote_optimo?: number;
-  punto_pedido?: number;
-  stock_seguridad?: number;
-  inventario_maximo?: number;
-  cgi?: number;
+  // Campos para cálculos de inventario (opcionales)
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  intervalo_revision?: number;
   stock_actual?: number;
   proveedores: ProveedorArticulo[];
 }
@@ -57,11 +65,10 @@ export interface UpdateArticuloInput {
   costo_compra?: number;
   precio_venta?: number;
   modelo_inventario?: "lote_fijo" | "periodo_fijo";
-  lote_optimo?: number;
-  punto_pedido?: number;
-  stock_seguridad?: number;
-  inventario_maximo?: number;
-  cgi?: number;
+  // Campos para cálculos de inventario (opcionales)
+  nivel_servicio?: number;
+  desviacion_estandar?: number;
+  intervalo_revision?: number;
   stock_actual?: number;
   proveedores?: ProveedorArticulo[];
 }

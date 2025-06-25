@@ -35,6 +35,15 @@ export class ArticulosController {
   }
 
   /**
+   * Obtener TODOS los artículos (activos e inactivos)
+   * Para la administración de artículos
+   */
+  @Get('admin/todos')
+  async getAllArticulos(): Promise<ArticuloResponseDto[]> {
+    return this.articulosService.getAllArticulos();
+  }
+
+  /**
    * Obtener listado de productos faltantes
    * Devuelve artículos cuyo stock actual está por debajo del stock de seguridad
    */

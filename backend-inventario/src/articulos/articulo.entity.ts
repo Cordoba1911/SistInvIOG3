@@ -56,6 +56,15 @@ export class Articulo {
   @Column({ type: 'int', nullable: true })
   inventario_maximo: number;
 
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  nivel_servicio: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  desviacion_estandar: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  intervalo_revision: number;
+
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   cgi: number;
 

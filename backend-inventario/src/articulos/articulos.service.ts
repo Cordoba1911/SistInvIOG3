@@ -33,26 +33,44 @@ export class ArticulosService {
   /**
    * Calcular automáticamente las fórmulas de inventario según el modelo seleccionado
    * @param articulo - El artículo con los datos necesarios para el cálculo
-   * @returns El artículo actualizado con los cálculos aplicados
+   * @returns El artículo actualizado con los cálculos aplicados y un flag indicando si se aplicaron cambios
    */
-  private async calcularFormulasInventario(articulo: Articulo): Promise<Articulo> {
+  private async calcularFormulasInventario(articulo: Articulo): Promise<{ articulo: Articulo; calculosAplicados: boolean }> {
+    console.log('🔍 Iniciando cálculo automático para artículo:', articulo.id);
+    console.log('📊 Datos del artículo:', {
+      demanda: articulo.demanda,
+      costo_almacenamiento: articulo.costo_almacenamiento,
+      costo_pedido: articulo.costo_pedido,
+      costo_compra: articulo.costo_compra,
+      modelo_inventario: articulo.modelo_inventario,
+      nivel_servicio: articulo.nivel_servicio,
+      desviacion_estandar: articulo.desviacion_estandar,
+      intervalo_revision: articulo.intervalo_revision
+    });
+
     // Verificar que tenga los datos mínimos necesarios para calcular
     if (!articulo.demanda || !articulo.costo_almacenamiento || !articulo.costo_pedido || !articulo.costo_compra) {
-      // Si no tiene los datos necesarios, devolver el artículo sin modificar
-      return articulo;
+      console.log('⚠️ Faltan datos necesarios para el cálculo');
+      return { articulo, calculosAplicados: false };
     }
 
     // Verificar que tenga un modelo de inventario definido
     if (!articulo.modelo_inventario) {
-      return articulo;
+      console.log('⚠️ No hay modelo de inventario definido');
+      return { articulo, calculosAplicados: false };
     }
 
     // Obtener demora_entrega del proveedor predeterminado
     const proveedorPredeterminado = articulo.articulo_proveedor?.find(ap => ap.proveedor_predeterminado);
     const demora_entrega = proveedorPredeterminado?.demora_entrega;
+    console.log('🚚 Demora de entrega del proveedor predeterminado:', demora_entrega);
+
+    let calculosAplicados = false;
 
     try {
       if (articulo.modelo_inventario === 'lote_fijo') {
+        console.log('📦 Aplicando modelo de Lote Fijo');
+        
         const resultado = await this.calcularLoteFijo({
           demanda: articulo.demanda,
           costo_almacenamiento: articulo.costo_almacenamiento,
@@ -62,6 +80,8 @@ export class ArticulosService {
           nivel_servicio: articulo.nivel_servicio,
           desviacion_estandar: articulo.desviacion_estandar,
         });
+
+        console.log('📊 Resultados Lote Fijo:', resultado);
 
         articulo.lote_optimo = Math.round(resultado.lote_optimo);
         articulo.punto_pedido = Math.round(resultado.punto_pedido);
@@ -78,10 +98,16 @@ export class ArticulosService {
         });
         articulo.cgi = resultadoCgi.cgi;
 
+        console.log('💰 CGI calculado:', resultadoCgi.cgi);
+        calculosAplicados = true;
+
       } else if (articulo.modelo_inventario === 'periodo_fijo') {
+        console.log('🔄 Aplicando modelo de Período Fijo');
+        
         // Para período fijo, necesitamos intervalo_revision
         if (!articulo.intervalo_revision) {
-          return articulo;
+          console.log('⚠️ Falta intervalo_revision para período fijo');
+          return { articulo, calculosAplicados: false };
         }
 
         const resultado = await this.calcularIntervaloFijo({
@@ -91,6 +117,8 @@ export class ArticulosService {
           nivel_servicio: articulo.nivel_servicio,
           desviacion_estandar: articulo.desviacion_estandar,
         });
+
+        console.log('📊 Resultados Período Fijo:', resultado);
 
         articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
         articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
@@ -104,14 +132,18 @@ export class ArticulosService {
           lote_optimo: articulo.inventario_maximo,
         });
         articulo.cgi = resultadoCgi.cgi;
+
+        console.log('💰 CGI calculado:', resultadoCgi.cgi);
+        calculosAplicados = true;
       }
     } catch (error) {
       // Si hay algún error en los cálculos, no fallar la operación
       // Solo registrar el error y continuar
-      console.warn('Error al calcular fórmulas de inventario:', error.message);
+      console.error('❌ Error al calcular fórmulas de inventario:', error.message);
     }
 
-    return articulo;
+    console.log('✅ Cálculo automático completado. Cálculos aplicados:', calculosAplicados);
+    return { articulo, calculosAplicados };
   }
 
   async createArticulo(
@@ -224,14 +256,14 @@ export class ArticulosService {
     }
 
     // Aplicar cálculos automáticos si corresponde
-    const articuloConCalculos = await this.calcularFormulasInventario(articuloConRelaciones);
+    const resultado = await this.calcularFormulasInventario(articuloConRelaciones);
     
     // Guardar los cálculos si se aplicaron
-    if (articuloConCalculos !== articuloConRelaciones) {
-      await this.articuloRepository.save(articuloConCalculos);
+    if (resultado.calculosAplicados) {
+      await this.articuloRepository.save(resultado.articulo);
     }
 
-    return this.toArticuloResponseDto(articuloConCalculos);
+    return this.toArticuloResponseDto(resultado.articulo);
   }
 
   async getArticulos(): Promise<ArticuloResponseDto[]> {
@@ -498,12 +530,12 @@ export class ArticulosService {
 
     if (necesitaRecalculo) {
       // Aplicar cálculos automáticos si corresponde
-      const articuloConCalculos = await this.calcularFormulasInventario(articuloFinal);
+      const resultado = await this.calcularFormulasInventario(articuloFinal);
       
       // Guardar los cálculos si se aplicaron
-      if (articuloConCalculos !== articuloFinal) {
-        await this.articuloRepository.save(articuloConCalculos);
-        return this.toArticuloResponseDto(articuloConCalculos);
+      if (resultado.calculosAplicados) {
+        await this.articuloRepository.save(resultado.articulo);
+        return this.toArticuloResponseDto(resultado.articulo);
       }
     }
 

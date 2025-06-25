@@ -1,0 +1,73 @@
+### Pruebas del CGI Diferenciado por Modelo de Inventario
+
+### 1. Calcular CGI para Modelo Lote Fijo (EOQ tradicional)
+POST http://localhost:3000/api/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 50,
+  "costo_almacenamiento": 10,
+  "costo_pedido": 100,
+  "modelo_inventario": "lote_fijo",
+  "lote_optimo": 141
+}
+
+### 2. Calcular CGI para Modelo Período Fijo (usando intervalo de revisión)
+POST http://localhost:3000/api/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 50,
+  "costo_almacenamiento": 10,
+  "costo_pedido": 100,
+  "modelo_inventario": "periodo_fijo",
+  "intervalo_revision": 30,
+  "inventario_maximo": 200
+}
+
+### 3. Calcular CGI para Modelo Período Fijo (sin inventario máximo - se calcula automáticamente)
+POST http://localhost:3000/api/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 50,
+  "costo_almacenamiento": 10,
+  "costo_pedido": 100,
+  "modelo_inventario": "periodo_fijo",
+  "intervalo_revision": 30
+}
+
+### 4. Error: Período Fijo sin intervalo de revisión
+POST http://localhost:3000/api/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 50,
+  "costo_almacenamiento": 10,
+  "costo_pedido": 100,
+  "modelo_inventario": "periodo_fijo"
+}
+
+### 5. Error: Modelo de inventario inválido
+POST http://localhost:3000/api/articulos/calcular/cgi
+Content-Type: application/json
+
+{
+  "demanda_anual": 1000,
+  "costo_compra": 50,
+  "costo_almacenamiento": 10,
+  "costo_pedido": 100,
+  "modelo_inventario": "modelo_invalido"
+}
+
+### 6. Calcular y actualizar CGI de un artículo específico (ID 1)
+POST http://localhost:3000/api/articulos/1/calcular-cgi
+
+### 7. Comparar resultados entre modelos
+# Ejecutar las pruebas 1 y 2 para comparar los resultados
+# El modelo lote fijo debería tener menor CGI debido a la optimización EOQ
+# El modelo período fijo debería tener mayor CGI debido a la frecuencia fija de pedidos 

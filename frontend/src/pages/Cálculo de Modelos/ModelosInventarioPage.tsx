@@ -149,8 +149,8 @@ const ModelosInventarioPage: React.FC = () => {
       setArticuloSeleccionado(articuloActualizado);
 
       setSuccess(
-        `CGI calculado exitosamente: $${resultado.cgi?.toLocaleString('es-AR')}${
-          proveedorSeleccionado ? ` (usando datos del proveedor ${proveedorSeleccionado.nombre})` : ''
+        `CGI calculado exitosamente: $${resultado.cgi?.toLocaleString('es-AR')} (Modelo: ${resultado.modelo_inventario === 'lote_fijo' ? 'Lote Fijo (EOQ)' : 'Período Fijo (Intervalo Revisión)'})${
+          proveedorSeleccionado ? ` usando datos del proveedor ${proveedorSeleccionado.nombre}` : ''
         }.`
       );
 

@@ -673,7 +673,7 @@ export class ArticulosService {
     if (nivel_servicio && desviacion_estandar && demora_entrega && intervalo_revision) {
       const z_score = this.getZScore(nivel_servicio);
       const tiempo_total = intervalo_revision + demora_entrega;
-      stock_seguridad = z_score * desviacion_estandar * tiempo_total;
+      stock_seguridad = z_score * desviacion_estandar * Math.sqrt(tiempo_total);
     }
     
     // 2. Inventario Máximo: D_diaria × (R + L) + SS

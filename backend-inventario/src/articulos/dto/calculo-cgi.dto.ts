@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsNumber, IsPositive, IsOptional, IsInt } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsPositive, IsOptional, IsInt, IsEnum } from 'class-validator';
+import { ModeloInventario } from '../articulo.entity';
 
 export class CalculoCgiDto {
   @IsNotEmpty({ message: 'La demanda anual es obligatoria' })
@@ -22,6 +23,15 @@ export class CalculoCgiDto {
   costo_pedido: number;
 
   @IsOptional()
+  @IsEnum(ModeloInventario, { message: 'El modelo de inventario debe ser lote_fijo o periodo_fijo' })
+  modelo_inventario?: ModeloInventario;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El intervalo de revisión debe ser un número' })
+  @IsPositive({ message: 'El intervalo de revisión debe ser mayor a 0' })
+  intervalo_revision?: number;
+
+  @IsOptional()
   @IsInt({ message: 'El lote óptimo debe ser un número entero' })
   @IsPositive({ message: 'El lote óptimo debe ser mayor a 0' })
   lote_optimo?: number;
@@ -30,6 +40,11 @@ export class CalculoCgiDto {
   @IsNumber({}, { message: 'El stock promedio debe ser un número' })
   @IsPositive({ message: 'El stock promedio debe ser mayor a 0' })
   stock_promedio?: number;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'El inventario máximo debe ser un número' })
+  @IsPositive({ message: 'El inventario máximo debe ser mayor a 0' })
+  inventario_maximo?: number;
 }
 
 export class ResultadoCgiDto {
@@ -41,4 +56,6 @@ export class ResultadoCgiDto {
   stock_promedio: number;
   numero_pedidos_anuales: number;
   frecuencia_pedidos_dias: number;
+  modelo_utilizado: string;
+  observaciones?: string;
 } 

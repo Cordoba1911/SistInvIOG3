@@ -68,7 +68,7 @@ export class ArticulosService {
     let calculosAplicados = false;
 
     try {
-      if (articulo.modelo_inventario === 'lote_fijo') {
+      if (articulo.modelo_inventario === ModeloInventario.lote_fijo) {
         console.log('📦 Aplicando modelo de Lote Fijo');
         
         const resultado = await this.calcularLoteFijo({
@@ -88,20 +88,21 @@ export class ArticulosService {
         articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
         articulo.intervalo_revision = resultado.intervalo_revision;
 
-        // Calcular CGI automáticamente
+        // Calcular CGI automáticamente para lote fijo
         const resultadoCgi = await this.calcularCgi({
           demanda_anual: articulo.demanda,
           costo_compra: articulo.costo_compra,
           costo_almacenamiento: articulo.costo_almacenamiento,
           costo_pedido: articulo.costo_pedido,
+          modelo_inventario: ModeloInventario.lote_fijo,
           lote_optimo: articulo.lote_optimo,
         });
         articulo.cgi = resultadoCgi.cgi;
 
-        console.log('💰 CGI calculado:', resultadoCgi.cgi);
+        console.log('💰 CGI calculado (Lote Fijo):', resultadoCgi.cgi);
         calculosAplicados = true;
 
-      } else if (articulo.modelo_inventario === 'periodo_fijo') {
+      } else if (articulo.modelo_inventario === ModeloInventario.periodo_fijo) {
         console.log('🔄 Aplicando modelo de Período Fijo');
         
         // Para período fijo, necesitamos intervalo_revision
@@ -123,17 +124,19 @@ export class ArticulosService {
         articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
         articulo.inventario_maximo = Math.round(resultado.inventario_maximo);
 
-        // Para período fijo, calcular CGI usando el inventario máximo como lote
+        // Calcular CGI automáticamente para período fijo
         const resultadoCgi = await this.calcularCgi({
           demanda_anual: articulo.demanda,
           costo_compra: articulo.costo_compra,
           costo_almacenamiento: articulo.costo_almacenamiento,
           costo_pedido: articulo.costo_pedido,
-          lote_optimo: articulo.inventario_maximo,
+          modelo_inventario: ModeloInventario.periodo_fijo,
+          intervalo_revision: articulo.intervalo_revision,
+          inventario_maximo: articulo.inventario_maximo,
         });
         articulo.cgi = resultadoCgi.cgi;
 
-        console.log('💰 CGI calculado:', resultadoCgi.cgi);
+        console.log('💰 CGI calculado (Período Fijo):', resultadoCgi.cgi);
         calculosAplicados = true;
       }
     } catch (error) {
@@ -728,7 +731,7 @@ export class ArticulosService {
         desviacion_estandar: articulo.desviacion_estandar,
       });
 
-      articulo.modelo_inventario = 'lote_fijo' as any;
+      articulo.modelo_inventario = ModeloInventario.lote_fijo;
       articulo.lote_optimo = Math.round(resultado.lote_optimo);
       articulo.punto_pedido = Math.round(resultado.punto_pedido);
       articulo.stock_seguridad = Math.round(resultado.stock_seguridad);
@@ -768,22 +771,79 @@ export class ArticulosService {
    * - CGI: Costo Total Anual / Costo Compra Anual
    */
   async calcularCgi(datos: CalculoCgiDto): Promise<ResultadoCgiDto> {
-    const { demanda_anual, costo_compra, costo_almacenamiento, costo_pedido } = datos;
+    const { 
+      demanda_anual, 
+      costo_compra, 
+      costo_almacenamiento, 
+      costo_pedido,
+      modelo_inventario = 'lote_fijo',
+      intervalo_revision,
+      lote_optimo,
+      inventario_maximo
+    } = datos;
     
-    // Si no se proporciona el lote óptimo, calcularlo usando EOQ
-    let lote_optimo = datos.lote_optimo;
-    if (!lote_optimo) {
-      lote_optimo = Math.sqrt((2 * demanda_anual * costo_pedido) / costo_almacenamiento);
-    }
-
-    // Si no se proporciona stock promedio, calcularlo como Q/2
     let stock_promedio = datos.stock_promedio;
-    if (!stock_promedio) {
-      stock_promedio = lote_optimo / 2;
+    let numero_pedidos_anuales: number;
+    let observaciones: string | undefined;
+
+    if (modelo_inventario === ModeloInventario.lote_fijo) {
+      // CÁLCULO CGI PARA MODELO LOTE FIJO (EOQ tradicional)
+      console.log('📦 Calculando CGI para modelo Lote Fijo');
+      
+      // Si no se proporciona el lote óptimo, calcularlo usando EOQ
+      let lote_optimo_calculado = lote_optimo;
+      if (!lote_optimo_calculado) {
+        lote_optimo_calculado = Math.sqrt((2 * demanda_anual * costo_pedido) / costo_almacenamiento);
+        observaciones = 'Lote óptimo calculado automáticamente usando EOQ';
+      }
+
+      // Si no se proporciona stock promedio, calcularlo como Q/2
+      if (!stock_promedio) {
+        stock_promedio = lote_optimo_calculado / 2;
+      }
+
+      numero_pedidos_anuales = demanda_anual / lote_optimo_calculado;
+
+    } else if (modelo_inventario === ModeloInventario.periodo_fijo) {
+      // CÁLCULO CGI PARA MODELO PERÍODO FIJO (usando intervalo de revisión)
+      console.log('🔄 Calculando CGI para modelo Período Fijo');
+      
+      if (!intervalo_revision) {
+        throw new HttpException(
+          'Para el modelo de período fijo, el intervalo de revisión es obligatorio',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Para período fijo, el inventario máximo es el lote de pedido
+      let inventario_maximo_calculado = inventario_maximo;
+      if (!inventario_maximo_calculado) {
+        // Si no se proporciona, calcular basado en la demanda durante el período de revisión
+        const demanda_periodo = (demanda_anual / 365) * intervalo_revision;
+        inventario_maximo_calculado = demanda_periodo;
+        observaciones = `Inventario máximo calculado automáticamente (período: ${intervalo_revision}d)`;
+      }
+
+      // Para período fijo, el stock promedio es diferente
+      if (!stock_promedio) {
+        // Stock promedio = inventario máximo / 2 + stock de seguridad
+        // Asumiendo stock de seguridad como 20% del inventario máximo
+        const stock_seguridad = inventario_maximo_calculado * 0.2;
+        stock_promedio = (inventario_maximo_calculado / 2) + stock_seguridad;
+      }
+
+      // Número de pedidos anuales para período fijo
+      // Se calcula basado en la frecuencia de revisión
+      numero_pedidos_anuales = 365 / intervalo_revision;
+
+    } else {
+      throw new HttpException(
+        'Modelo de inventario no válido. Debe ser lote_fijo o periodo_fijo',
+        HttpStatus.BAD_REQUEST,
+      );
     }
 
-    // Cálculos del CGI
-    const numero_pedidos_anuales = demanda_anual / lote_optimo;
+    // Cálculos comunes del CGI
     const costo_pedidos_anuales = numero_pedidos_anuales * costo_pedido;
     const costo_almacenamiento_anual = stock_promedio * costo_almacenamiento;
     const costo_compra_anual = demanda_anual * costo_compra;
@@ -804,6 +864,8 @@ export class ArticulosService {
       stock_promedio: Math.round(stock_promedio * 100) / 100,
       numero_pedidos_anuales: Math.round(numero_pedidos_anuales * 100) / 100,
       frecuencia_pedidos_dias: Math.round(frecuencia_pedidos_dias * 10) / 10,
+      modelo_utilizado: modelo_inventario === ModeloInventario.lote_fijo ? 'Lote Fijo (EOQ)' : 'Período Fijo (Intervalo Revisión)',
+      observaciones,
     };
   }
 
@@ -828,14 +890,27 @@ export class ArticulosService {
       );
     }
 
-    // Calcular CGI
-    const resultadoCgi = await this.calcularCgi({
+    // Validar que para período fijo se tenga intervalo de revisión
+    if (articulo.modelo_inventario === ModeloInventario.periodo_fijo && !articulo.intervalo_revision) {
+      throw new HttpException(
+        'Para el modelo de período fijo, el artículo debe tener un intervalo de revisión configurado',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Calcular CGI según el modelo de inventario
+    const datosCgi: CalculoCgiDto = {
       demanda_anual: articulo.demanda,
       costo_compra: articulo.costo_compra,
       costo_almacenamiento: articulo.costo_almacenamiento,
       costo_pedido: articulo.costo_pedido,
+      modelo_inventario: articulo.modelo_inventario,
+      intervalo_revision: articulo.intervalo_revision || undefined,
       lote_optimo: articulo.lote_optimo || undefined,
-    });
+      inventario_maximo: articulo.inventario_maximo || undefined,
+    };
+
+    const resultadoCgi = await this.calcularCgi(datosCgi);
 
     // Actualizar el CGI en el artículo
     articulo.cgi = resultadoCgi.cgi;

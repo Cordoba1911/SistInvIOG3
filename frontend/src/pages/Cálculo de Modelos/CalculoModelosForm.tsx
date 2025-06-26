@@ -143,31 +143,80 @@ const CalculoModelosForm = ({
 
   const getCamposCGI = (): CampoFormulario[] => [
     {
-      nombre: "articulos",
-      etiqueta: "Artículos",
-      tipo: "array",
+      nombre: "demanda_anual",
+      etiqueta: "Demanda Anual",
+      tipo: "number",
       requerido: true,
-      arrayConfig: {
-        campos: [
-          {
-            nombre: "nombre",
-            etiqueta: "Nombre del Artículo",
-            tipo: "text",
-            requerido: true,
-          },
-          {
-            nombre: "valor_anual",
-            etiqueta: "Valor Anual de Consumo",
-            tipo: "number",
-            requerido: true,
-            min: 0,
-            step: 0.01,
-          },
-        ],
-        titulo: "Artículo",
-        botonAgregar: "Agregar Artículo",
-        botonEliminar: "Eliminar Artículo",
-      },
+      min: 0,
+      step: 1,
+      placeholder: "Demanda anual del artículo",
+    },
+    {
+      nombre: "costo_compra",
+      etiqueta: "Costo de Compra ($)",
+      tipo: "number",
+      requerido: true,
+      min: 0,
+      step: 0.01,
+      placeholder: "Costo unitario de compra",
+    },
+    {
+      nombre: "costo_almacenamiento",
+      etiqueta: "Costo de Almacenamiento ($)",
+      tipo: "number",
+      requerido: true,
+      min: 0,
+      step: 0.01,
+      placeholder: "Costo de almacenamiento por unidad",
+    },
+    {
+      nombre: "costo_pedido",
+      etiqueta: "Costo de Pedido ($)",
+      tipo: "number",
+      requerido: true,
+      min: 0,
+      step: 0.01,
+      placeholder: "Costo fijo por pedido",
+    },
+    {
+      nombre: "modelo_inventario",
+      etiqueta: "Modelo de Inventario",
+      tipo: "select",
+      requerido: true,
+      opciones: [
+        { valor: "lote_fijo", etiqueta: "Lote Fijo (EOQ)" },
+        { valor: "periodo_fijo", etiqueta: "Período Fijo" },
+      ],
+    },
+    {
+      nombre: "intervalo_revision",
+      etiqueta: "Intervalo de Revisión (días)",
+      tipo: "number",
+      requerido: false,
+      min: 0,
+      step: 1,
+      placeholder: "Días entre revisiones",
+      descripcion: "Obligatorio para modelo Período Fijo",
+    },
+    {
+      nombre: "lote_optimo",
+      etiqueta: "Lote Óptimo",
+      tipo: "number",
+      requerido: false,
+      min: 0,
+      step: 1,
+      placeholder: "Lote óptimo calculado",
+      descripcion: "Opcional - se calcula automáticamente si no se proporciona",
+    },
+    {
+      nombre: "inventario_maximo",
+      etiqueta: "Inventario Máximo",
+      tipo: "number",
+      requerido: false,
+      min: 0,
+      step: 1,
+      placeholder: "Inventario máximo",
+      descripcion: "Opcional para modelo Período Fijo",
     },
   ];
 
@@ -207,7 +256,14 @@ const CalculoModelosForm = ({
         };
       case "cgi":
         return {
-          articulos: [],
+          demanda_anual: undefined,
+          costo_compra: undefined,
+          costo_almacenamiento: undefined,
+          costo_pedido: undefined,
+          modelo_inventario: undefined,
+          intervalo_revision: undefined,
+          lote_optimo: undefined,
+          inventario_maximo: undefined,
         };
       default:
         return {};
@@ -221,7 +277,7 @@ const CalculoModelosForm = ({
       case "periodo_fijo":
         return "Cálculo Modelo de Período Fijo";
       case "cgi":
-        return "Cálculo CGI (Análisis ABC)";
+        return "Cálculo CGI (Costo de Gestión del Inventario)";
       default:
         return "Cálculo de Modelo";
     }
